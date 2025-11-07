@@ -1,0 +1,97 @@
+
+import { MenuItem } from '@/types';
+
+export const menuCategories = [
+  'All',
+  'Appetizers',
+  'Main Dishes',
+  'Sides',
+  'Desserts',
+  'Drinks',
+];
+
+export const menuItems: MenuItem[] = [
+  {
+    id: '1',
+    name: 'Jollof Rice',
+    description: 'Traditional West African rice dish with rich tomato sauce and spices',
+    price: 14.99,
+    category: 'Main Dishes',
+    image: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400',
+    popular: true,
+  },
+  {
+    id: '2',
+    name: 'Suya Skewers',
+    description: 'Spicy grilled meat skewers with peanut spice blend',
+    price: 12.99,
+    category: 'Appetizers',
+    image: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=400',
+    popular: true,
+  },
+  {
+    id: '3',
+    name: 'Egusi Soup',
+    description: 'Melon seed soup with vegetables and your choice of protein',
+    price: 16.99,
+    category: 'Main Dishes',
+    image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400',
+  },
+  {
+    id: '4',
+    name: 'Puff Puff',
+    description: 'Sweet fried dough balls, perfect as a snack or dessert',
+    price: 6.99,
+    category: 'Desserts',
+    image: 'https://images.unsplash.com/photo-1626804475297-41608ea09aeb?w=400',
+  },
+  {
+    id: '5',
+    name: 'Plantain Chips',
+    description: 'Crispy fried plantain slices with spicy dipping sauce',
+    price: 5.99,
+    category: 'Sides',
+    image: 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=400',
+  },
+  {
+    id: '6',
+    name: 'Chin Chin',
+    description: 'Crunchy fried pastry snack, lightly sweetened',
+    price: 4.99,
+    category: 'Desserts',
+    image: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400',
+  },
+  {
+    id: '7',
+    name: 'Moi Moi',
+    description: 'Steamed bean pudding with peppers and spices',
+    price: 8.99,
+    category: 'Sides',
+    image: 'https://images.unsplash.com/photo-1606923829579-0cb981a83e2e?w=400',
+  },
+  {
+    id: '8',
+    name: 'Zobo Drink',
+    description: 'Refreshing hibiscus tea with ginger and pineapple',
+    price: 3.99,
+    category: 'Drinks',
+    image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400',
+    popular: true,
+  },
+  {
+    id: '9',
+    name: 'Fried Rice',
+    description: 'Nigerian-style fried rice with vegetables and chicken',
+    price: 13.99,
+    category: 'Main Dishes',
+    image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
+  },
+  {
+    id: '10',
+    name: 'Akara',
+    description: 'Black-eyed pea fritters, crispy outside and soft inside',
+    price: 7.99,
+    category: 'Appetizers',
+    image: 'https://images.unsplash.com/photo-1626804475297-41608ea09aeb?w=400',
+  },
+];

@@ -1,161 +1,246 @@
-import React from "react";
-import { Stack, Link } from "expo-router";
-import { FlatList, Pressable, StyleSheet, View, Text, Alert, Platform } from "react-native";
-import { IconSymbol } from "@/components/IconSymbol";
-import { GlassView } from "expo-glass-effect";
-import { useTheme } from "@react-navigation/native";
 
-const ICON_COLOR = "#007AFF";
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Pressable,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { colors } from '@/styles/commonStyles';
+import { menuItems, menuCategories } from '@/data/menuData';
+import { IconSymbol } from '@/components/IconSymbol';
+import * as Haptics from 'expo-haptics';
 
 export default function HomeScreen() {
-  const theme = useTheme();
-  const modalDemos = [
-    {
-      title: "Standard Modal",
-      description: "Full screen modal presentation",
-      route: "/modal",
-      color: "#007AFF",
-    },
-    {
-      title: "Form Sheet",
-      description: "Bottom sheet with detents and grabber",
-      route: "/formsheet",
-      color: "#34C759",
-    },
-    {
-      title: "Transparent Modal",
-      description: "Overlay without obscuring background",
-      route: "/transparent-modal",
-      color: "#FF9500",
-    }
-  ];
+  const router = useRouter();
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const renderModalDemo = ({ item }: { item: (typeof modalDemos)[0] }) => (
-    <GlassView style={[
-      styles.demoCard,
-      Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-    ]} glassEffectStyle="regular">
-      <View style={[styles.demoIcon, { backgroundColor: item.color }]}>
-        <IconSymbol name="square.grid.3x3" color="white" size={24} />
-      </View>
-      <View style={styles.demoContent}>
-        <Text style={[styles.demoTitle, { color: theme.colors.text }]}>{item.title}</Text>
-        <Text style={[styles.demoDescription, { color: theme.dark ? '#98989D' : '#666' }]}>{item.description}</Text>
-      </View>
-      <Link href={item.route as any} asChild>
-        <Pressable>
-          <GlassView style={[
-            styles.tryButton,
-            Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)' }
-          ]} glassEffectStyle="clear">
-            <Text style={[styles.tryButtonText, { color: theme.colors.primary }]}>Try It</Text>
-          </GlassView>
-        </Pressable>
-      </Link>
-    </GlassView>
-  );
+  const filteredItems = selectedCategory === 'All'
+    ? menuItems
+    : menuItems.filter((item) => item.category === selectedCategory);
 
-  const renderHeaderRight = () => (
-    <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
-      style={styles.headerButtonContainer}
-    >
-      <IconSymbol name="plus" color={theme.colors.primary} />
-    </Pressable>
-  );
+  const handleCategoryPress = (category: string) => {
+    console.log('Category selected:', category);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedCategory(category);
+  };
 
-  const renderHeaderLeft = () => (
-    <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
-      style={styles.headerButtonContainer}
-    >
-      <IconSymbol
-        name="gear"
-        color={theme.colors.primary}
-      />
-    </Pressable>
-  );
+  const handleItemPress = (itemId: string) => {
+    console.log('Item pressed:', itemId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push(`/item-detail?id=${itemId}`);
+  };
 
   return (
-    <>
-      {Platform.OS === 'ios' && (
-        <Stack.Screen
-          options={{
-            title: "Building the app...",
-            headerRight: renderHeaderRight,
-            headerLeft: renderHeaderLeft,
-          }}
-        />
-      )}
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <FlatList
-          data={modalDemos}
-          renderItem={renderModalDemo}
-          keyExtractor={(item) => item.route}
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.headerTitle}>Jagabans LA</Text>
+            <Text style={styles.headerSubtitle}>Authentic West African Cuisine</Text>
+          </View>
+          <IconSymbol name="bell.fill" size={24} color={colors.primary} />
+        </View>
+
+        {/* Categories */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoriesContainer}
+          contentContainerStyle={styles.categoriesContent}
+        >
+          {menuCategories.map((category) => (
+            <Pressable
+              key={category}
+              style={[
+                styles.categoryButton,
+                selectedCategory === category && styles.categoryButtonActive,
+              ]}
+              onPress={() => handleCategoryPress(category)}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  selectedCategory === category && styles.categoryTextActive,
+                ]}
+              >
+                {category}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        {/* Menu Items */}
+        <ScrollView
+          style={styles.menuContainer}
           contentContainerStyle={[
-            styles.listContainer,
-            Platform.OS !== 'ios' && styles.listContainerWithTabBar
+            styles.menuContent,
+            Platform.OS !== 'ios' && styles.menuContentWithTabBar,
           ]}
-          contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
-        />
+        >
+          {filteredItems.map((item) => (
+            <Pressable
+              key={item.id}
+              style={styles.menuItem}
+              onPress={() => handleItemPress(item.id)}
+            >
+              <Image source={{ uri: item.image }} style={styles.menuItemImage} />
+              {item.popular && (
+                <View style={styles.popularBadge}>
+                  <IconSymbol name="star.fill" size={12} color={colors.card} />
+                  <Text style={styles.popularText}>Popular</Text>
+                </View>
+              )}
+              <View style={styles.menuItemInfo}>
+                <Text style={styles.menuItemName}>{item.name}</Text>
+                <Text style={styles.menuItemDescription} numberOfLines={2}>
+                  {item.description}
+                </Text>
+                <View style={styles.menuItemFooter}>
+                  <Text style={styles.menuItemPrice}>${item.price.toFixed(2)}</Text>
+                  <View style={styles.addButton}>
+                    <IconSymbol name="plus" size={20} color={colors.card} />
+                  </View>
+                </View>
+              </View>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
-    </>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
-    // backgroundColor handled dynamically
   },
-  listContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-  },
-  listContainerWithTabBar: {
-    paddingBottom: 100, // Extra padding for floating tab bar
-  },
-  demoCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+  header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
-  demoIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.text,
   },
-  demoContent: {
+  headerSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  categoriesContainer: {
+    maxHeight: 50,
+  },
+  categoriesContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  categoryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    marginRight: 8,
+  },
+  categoryButtonActive: {
+    backgroundColor: colors.primary,
+  },
+  categoryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  categoryTextActive: {
+    color: colors.card,
+  },
+  menuContainer: {
     flex: 1,
   },
-  demoTitle: {
+  menuContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+  },
+  menuContentWithTabBar: {
+    paddingBottom: 100,
+  },
+  menuItem: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    marginBottom: 16,
+    overflow: 'hidden',
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
+  },
+  menuItemImage: {
+    width: '100%',
+    height: 200,
+    backgroundColor: colors.accent,
+  },
+  popularBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+  },
+  popularText: {
+    color: colors.card,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  menuItemInfo: {
+    padding: 16,
+  },
+  menuItemName: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    color: colors.text,
     marginBottom: 4,
-    // color handled dynamically
   },
-  demoDescription: {
+  menuItemDescription: {
     fontSize: 14,
-    lineHeight: 18,
-    // color handled dynamically
+    color: colors.textSecondary,
+    marginBottom: 12,
+    lineHeight: 20,
   },
-  headerButtonContainer: {
-    padding: 6,
+  menuItemFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  tryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
+  menuItemPrice: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.primary,
   },
-  tryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    // color handled dynamically
+  addButton: {
+    backgroundColor: colors.primary,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
