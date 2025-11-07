@@ -1,0 +1,540 @@
+
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Platform,
+  TextInput,
+  Image,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { IconSymbol } from '@/components/IconSymbol';
+import { colors } from '@/styles/commonStyles';
+import { menuItems, menuCategories } from '@/data/menuData';
+import { MenuItem } from '@/types';
+import * as Haptics from 'expo-haptics';
+
+export default function AdminMenuManagement() {
+  const router = useRouter();
+  const [items, setItems] = useState<MenuItem[]>(menuItems);
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    category: 'Main Dishes',
+    image: '',
+  });
+
+  const handleAddItem = () => {
+    console.log('Adding new menu item');
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    if (!formData.name || !formData.price) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    const newItem: MenuItem = {
+      id: Date.now().toString(),
+      name: formData.name,
+      description: formData.description,
+      price: parseFloat(formData.price),
+      category: formData.category,
+      image: formData.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+    };
+
+    setItems([...items, newItem]);
+    setIsAddingItem(false);
+    resetForm();
+    Alert.alert('Success', 'Menu item added successfully');
+  };
+
+  const handleUpdateItem = () => {
+    console.log('Updating menu item');
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    if (!editingItem) return;
+
+    const updatedItems = items.map((item) =>
+      item.id === editingItem.id
+        ? {
+            ...item,
+            name: formData.name,
+            description: formData.description,
+            price: parseFloat(formData.price),
+            category: formData.category,
+            image: formData.image,
+          }
+        : item
+    );
+
+    setItems(updatedItems);
+    setEditingItem(null);
+    resetForm();
+    Alert.alert('Success', 'Menu item updated successfully');
+  };
+
+  const handleDeleteItem = (itemId: string) => {
+    console.log('Deleting menu item:', itemId);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    Alert.alert('Confirm Delete', 'Are you sure you want to delete this item?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          setItems(items.filter((item) => item.id !== itemId));
+        },
+      },
+    ]);
+  };
+
+  const handleEditItem = (item: MenuItem) => {
+    console.log('Editing menu item:', item.id);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    setEditingItem(item);
+    setFormData({
+      name: item.name,
+      description: item.description,
+      price: item.price.toString(),
+      category: item.category,
+      image: item.image,
+    });
+    setIsAddingItem(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      price: '',
+      category: 'Main Dishes',
+      image: '',
+    });
+  };
+
+  const filteredItems =
+    selectedCategory === 'All'
+      ? items
+      : items.filter((item) => item.category === selectedCategory);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Pressable
+          style={styles.backButton}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            router.back();
+          }}
+        >
+          <IconSymbol name="arrow-back" size={24} color={colors.text} />
+        </Pressable>
+        <Text style={styles.title}>Menu Management</Text>
+        <Pressable
+          style={styles.addButton}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            setIsAddingItem(!isAddingItem);
+            setEditingItem(null);
+            resetForm();
+          }}
+        >
+          <IconSymbol
+            name={isAddingItem ? 'close' : 'add'}
+            size={24}
+            color={colors.primary}
+          />
+        </Pressable>
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {isAddingItem && (
+          <View style={styles.formContainer}>
+            <Text style={styles.formTitle}>
+              {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
+            </Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Item Name *"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
+            />
+
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Description"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.description}
+              onChangeText={(text) => setFormData({ ...formData, description: text })}
+              multiline
+              numberOfLines={3}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Price *"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.price}
+              onChangeText={(text) => setFormData({ ...formData, price: text })}
+              keyboardType="decimal-pad"
+            />
+
+            <View style={styles.categorySelector}>
+              <Text style={styles.inputLabel}>Category:</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {menuCategories.filter((cat) => cat !== 'All').map((category) => (
+                  <Pressable
+                    key={category}
+                    style={[
+                      styles.categoryChip,
+                      formData.category === category && styles.categoryChipActive,
+                    ]}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                      setFormData({ ...formData, category });
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryChipText,
+                        formData.category === category && styles.categoryChipTextActive,
+                      ]}
+                    >
+                      {category}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Image URL (optional)"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.image}
+              onChangeText={(text) => setFormData({ ...formData, image: text })}
+            />
+
+            <View style={styles.formButtons}>
+              <Pressable
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => {
+                  if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setIsAddingItem(false);
+                  setEditingItem(null);
+                  resetForm();
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.button, styles.saveButton]}
+                onPress={editingItem ? handleUpdateItem : handleAddItem}
+              >
+                <Text style={styles.saveButtonText}>
+                  {editingItem ? 'Update' : 'Add Item'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryFilter}
+          contentContainerStyle={styles.categoryFilterContent}
+        >
+          {menuCategories.map((category) => (
+            <Pressable
+              key={category}
+              style={[
+                styles.filterChip,
+                selectedCategory === category && styles.filterChipActive,
+              ]}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                setSelectedCategory(category);
+              }}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  selectedCategory === category && styles.filterChipTextActive,
+                ]}
+              >
+                {category}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        <View style={styles.itemsContainer}>
+          {filteredItems.map((item) => (
+            <View key={item.id} style={styles.menuItem}>
+              <Image source={{ uri: item.image }} style={styles.itemImage} />
+              <View style={styles.itemContent}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemDescription} numberOfLines={2}>
+                  {item.description}
+                </Text>
+                <View style={styles.itemFooter}>
+                  <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+                  <Text style={styles.itemCategory}>{item.category}</Text>
+                </View>
+              </View>
+              <View style={styles.itemActions}>
+                <Pressable
+                  style={styles.actionButton}
+                  onPress={() => handleEditItem(item)}
+                >
+                  <IconSymbol name="edit" size={20} color={colors.primary} />
+                </Pressable>
+                <Pressable
+                  style={styles.actionButton}
+                  onPress={() => handleDeleteItem(item.id)}
+                >
+                  <IconSymbol name="delete" size={20} color="#FF6B6B" />
+                </Pressable>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backButton: {
+    padding: 8,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+    flex: 1,
+    textAlign: 'center',
+  },
+  addButton: {
+    padding: 8,
+  },
+  formContainer: {
+    backgroundColor: colors.card,
+    margin: 16,
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  formTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  categorySelector: {
+    marginBottom: 12,
+  },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  categoryChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  categoryChipText: {
+    fontSize: 14,
+    color: colors.text,
+  },
+  categoryChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  formButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  saveButton: {
+    backgroundColor: colors.primary,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  categoryFilter: {
+    paddingHorizontal: 16,
+    marginVertical: 16,
+  },
+  categoryFilterContent: {
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterChipText: {
+    fontSize: 14,
+    color: colors.text,
+  },
+  filterChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  itemsContainer: {
+    padding: 16,
+    gap: 12,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  itemImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+  },
+  itemContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  itemDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  itemFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 12,
+  },
+  itemPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.primary,
+  },
+  itemCategory: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    backgroundColor: colors.background,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  itemActions: {
+    justifyContent: 'center',
+    gap: 8,
+  },
+  actionButton: {
+    padding: 8,
+  },
+});
