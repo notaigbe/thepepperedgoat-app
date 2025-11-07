@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,22 +7,131 @@ import {
   ScrollView,
   Platform,
   Pressable,
+  Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/styles/commonStyles';
 import { useApp } from '@/contexts/AppContext';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 
 export default function ProfileScreen() {
-  const { userProfile } = useApp();
+  const { userProfile, updateProfileImage } = useApp();
+  const router = useRouter();
+  const [imageLoading, setImageLoading] = useState(false);
+
+  const handleImagePick = async () => {
+    try {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setImageLoading(true);
+        updateProfileImage(result.assets[0].uri);
+        setImageLoading(false);
+        Alert.alert('Success', 'Profile image updated successfully!');
+      }
+    } catch (error) {
+      console.log('Error picking image:', error);
+      Alert.alert('Error', 'Failed to update profile image. Please try again.');
+      setImageLoading(false);
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (!permissionResult.granted) {
+        Alert.alert('Permission Required', 'Camera permission is required to take photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setImageLoading(true);
+        updateProfileImage(result.assets[0].uri);
+        setImageLoading(false);
+        Alert.alert('Success', 'Profile image updated successfully!');
+      }
+    } catch (error) {
+      console.log('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+      setImageLoading(false);
+    }
+  };
+
+  const showImageOptions = () => {
+    if (Platform.OS === 'web') {
+      handleImagePick();
+      return;
+    }
+
+    Alert.alert(
+      'Update Profile Picture',
+      'Choose an option',
+      [
+        {
+          text: 'Take Photo',
+          onPress: handleTakePhoto,
+        },
+        {
+          text: 'Choose from Library',
+          onPress: handleImagePick,
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
+  const unreadNotifications = userProfile.notifications.filter(n => !n.read).length;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
-          <Pressable>
-            <IconSymbol name="gear" size={24} color={colors.primary} />
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              router.push('/notifications');
+            }}
+          >
+            <View>
+              <IconSymbol name="bell.fill" size={24} color={colors.primary} />
+              {unreadNotifications > 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </Text>
+                </View>
+              )}
+            </View>
           </Pressable>
         </View>
 
@@ -36,9 +145,22 @@ export default function ProfileScreen() {
         >
           {/* Profile Info */}
           <View style={styles.profileCard}>
-            <View style={styles.avatarContainer}>
-              <IconSymbol name="person.circle.fill" size={80} color={colors.primary} />
-            </View>
+            <Pressable 
+              style={styles.avatarContainer}
+              onPress={showImageOptions}
+            >
+              {userProfile.profileImage ? (
+                <Image 
+                  source={{ uri: userProfile.profileImage }} 
+                  style={styles.profileImage}
+                />
+              ) : (
+                <IconSymbol name="person.circle.fill" size={80} color={colors.primary} />
+              )}
+              <View style={styles.cameraIconContainer}>
+                <IconSymbol name="camera.fill" size={20} color={colors.card} />
+              </View>
+            </Pressable>
             <Text style={styles.profileName}>{userProfile.name}</Text>
             <Text style={styles.profileEmail}>{userProfile.email}</Text>
             <Text style={styles.profilePhone}>{userProfile.phone}</Text>
@@ -70,18 +192,37 @@ export default function ProfileScreen() {
               <Text style={styles.statValue}>{userProfile.giftCards.length}</Text>
               <Text style={styles.statLabel}>Gift Cards</Text>
             </View>
+            <View style={styles.statCard}>
+              <IconSymbol name="creditcard.fill" size={24} color={colors.primary} />
+              <Text style={styles.statValue}>{userProfile.paymentMethods.length}</Text>
+              <Text style={styles.statLabel}>Cards</Text>
+            </View>
           </View>
 
           {/* Order History */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Recent Orders</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recent Orders</Text>
+              {userProfile.orders.length > 0 && (
+                <Pressable
+                  onPress={() => {
+                    if (Platform.OS !== 'web') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    router.push('/order-history');
+                  }}
+                >
+                  <Text style={styles.seeAllText}>See All</Text>
+                </Pressable>
+              )}
+            </View>
             {userProfile.orders.length === 0 ? (
               <View style={styles.emptyState}>
                 <IconSymbol name="bag" size={48} color={colors.textSecondary} />
                 <Text style={styles.emptyStateText}>No orders yet</Text>
               </View>
             ) : (
-              userProfile.orders.slice(0, 5).map((order) => (
+              userProfile.orders.slice(0, 3).map((order) => (
                 <View key={order.id} style={styles.orderCard}>
                   <View style={styles.orderHeader}>
                     <Text style={styles.orderDate}>
@@ -109,24 +250,74 @@ export default function ProfileScreen() {
           {/* Quick Actions */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Quick Actions</Text>
-            <Pressable style={styles.actionButton}>
+            <Pressable 
+              style={styles.actionButton}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                router.push('/edit-profile');
+              }}
+            >
               <IconSymbol name="person.fill" size={20} color={colors.primary} />
               <Text style={styles.actionButtonText}>Edit Profile</Text>
               <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
             </Pressable>
-            <Pressable style={styles.actionButton}>
-              <IconSymbol name="location.fill" size={20} color={colors.primary} />
-              <Text style={styles.actionButtonText}>Delivery Addresses</Text>
-              <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
-            </Pressable>
-            <Pressable style={styles.actionButton}>
+            <Pressable 
+              style={styles.actionButton}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                router.push('/payment-methods');
+              }}
+            >
               <IconSymbol name="creditcard.fill" size={20} color={colors.primary} />
               <Text style={styles.actionButtonText}>Payment Methods</Text>
               <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
             </Pressable>
-            <Pressable style={styles.actionButton}>
+            <Pressable 
+              style={styles.actionButton}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                router.push('/order-history');
+              }}
+            >
+              <IconSymbol name="clock.fill" size={20} color={colors.primary} />
+              <Text style={styles.actionButtonText}>Order History</Text>
+              <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
+            </Pressable>
+            <Pressable 
+              style={styles.actionButton}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                router.push('/events');
+              }}
+            >
+              <IconSymbol name="calendar" size={20} color={colors.primary} />
+              <Text style={styles.actionButtonText}>Private Events</Text>
+              <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
+            </Pressable>
+            <Pressable 
+              style={styles.actionButton}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                router.push('/notifications');
+              }}
+            >
               <IconSymbol name="bell.fill" size={20} color={colors.primary} />
               <Text style={styles.actionButtonText}>Notifications</Text>
+              {unreadNotifications > 0 && (
+                <View style={styles.actionBadge}>
+                  <Text style={styles.actionBadgeText}>{unreadNotifications}</Text>
+                </View>
+              )}
               <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
             </Pressable>
           </View>
@@ -156,6 +347,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.text,
   },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: colors.accent,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: colors.card,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   scrollView: {
     flex: 1,
   },
@@ -177,6 +385,25 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginBottom: 12,
+    position: 'relative',
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  cameraIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: colors.primary,
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.card,
   },
   profileName: {
     fontSize: 24,
@@ -252,11 +479,21 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: colors.text,
-    marginBottom: 12,
+  },
+  seeAllText: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
   },
   emptyState: {
     backgroundColor: colors.card,
@@ -352,5 +589,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     marginLeft: 12,
+  },
+  actionBadge: {
+    backgroundColor: colors.accent,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    marginRight: 8,
+  },
+  actionBadgeText: {
+    color: colors.card,
+    fontSize: 11,
+    fontWeight: 'bold',
   },
 });

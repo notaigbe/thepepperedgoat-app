@@ -40,6 +40,37 @@ export interface GiftCard {
   purchaseDate?: string;
 }
 
+export interface PaymentMethod {
+  id: string;
+  type: 'credit' | 'debit';
+  cardNumber: string;
+  cardholderName: string;
+  expiryDate: string;
+  isDefault: boolean;
+}
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'special' | 'event' | 'order' | 'general';
+  date: string;
+  read: boolean;
+  actionUrl?: string;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  capacity: number;
+  attendees: string[];
+  image: string;
+  isPrivate: boolean;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -48,4 +79,8 @@ export interface UserProfile {
   points: number;
   orders: Order[];
   giftCards: GiftCard[];
+  paymentMethods: PaymentMethod[];
+  profileImage?: string;
+  notifications: AppNotification[];
+  rsvpEvents: string[];
 }

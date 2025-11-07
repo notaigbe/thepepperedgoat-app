@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { CartItem, Order, UserProfile, GiftCard } from '@/types';
+import { CartItem, Order, UserProfile, GiftCard, PaymentMethod, AppNotification } from '@/types';
 
 interface AppContextType {
   cart: CartItem[];
@@ -12,6 +12,12 @@ interface AppContextType {
   placeOrder: () => void;
   purchaseGiftCard: (giftCard: GiftCard) => void;
   redeemMerch: (merchId: string, pointsCost: number) => void;
+  addPaymentMethod: (paymentMethod: PaymentMethod) => void;
+  removePaymentMethod: (paymentMethodId: string) => void;
+  setDefaultPaymentMethod: (paymentMethodId: string) => void;
+  updateProfileImage: (imageUri: string) => void;
+  markNotificationAsRead: (notificationId: string) => void;
+  addNotification: (notification: AppNotification) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -26,6 +32,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     points: 1250,
     orders: [],
     giftCards: [],
+    paymentMethods: [],
+    notifications: [
+      {
+        id: '1',
+        title: 'Welcome to Jagabans LA!',
+        message: 'Start earning points with every purchase. Check out our menu!',
+        type: 'general',
+        date: new Date().toISOString(),
+        read: false,
+      },
+    ],
+    rsvpEvents: [],
   });
 
   const addToCart = (item: CartItem) => {
@@ -86,6 +104,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       orders: [newOrder, ...prev.orders],
     }));
 
+    const orderNotification: AppNotification = {
+      id: Date.now().toString(),
+      title: 'Order Placed Successfully!',
+      message: `Your order of $${total.toFixed(2)} has been placed. You earned ${pointsEarned} points!`,
+      type: 'order',
+      date: new Date().toISOString(),
+      read: false,
+    };
+
+    addNotification(orderNotification);
     clearCart();
   };
 
@@ -107,6 +135,63 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const addPaymentMethod = (paymentMethod: PaymentMethod) => {
+    console.log('Adding payment method');
+    setUserProfile((prev) => {
+      const isFirstCard = prev.paymentMethods.length === 0;
+      const newPaymentMethod = { ...paymentMethod, isDefault: isFirstCard };
+      return {
+        ...prev,
+        paymentMethods: [...prev.paymentMethods, newPaymentMethod],
+      };
+    });
+  };
+
+  const removePaymentMethod = (paymentMethodId: string) => {
+    console.log('Removing payment method:', paymentMethodId);
+    setUserProfile((prev) => ({
+      ...prev,
+      paymentMethods: prev.paymentMethods.filter((pm) => pm.id !== paymentMethodId),
+    }));
+  };
+
+  const setDefaultPaymentMethod = (paymentMethodId: string) => {
+    console.log('Setting default payment method:', paymentMethodId);
+    setUserProfile((prev) => ({
+      ...prev,
+      paymentMethods: prev.paymentMethods.map((pm) => ({
+        ...pm,
+        isDefault: pm.id === paymentMethodId,
+      })),
+    }));
+  };
+
+  const updateProfileImage = (imageUri: string) => {
+    console.log('Updating profile image');
+    setUserProfile((prev) => ({
+      ...prev,
+      profileImage: imageUri,
+    }));
+  };
+
+  const markNotificationAsRead = (notificationId: string) => {
+    console.log('Marking notification as read:', notificationId);
+    setUserProfile((prev) => ({
+      ...prev,
+      notifications: prev.notifications.map((notif) =>
+        notif.id === notificationId ? { ...notif, read: true } : notif
+      ),
+    }));
+  };
+
+  const addNotification = (notification: AppNotification) => {
+    console.log('Adding notification:', notification.title);
+    setUserProfile((prev) => ({
+      ...prev,
+      notifications: [notification, ...prev.notifications],
+    }));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -119,6 +204,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         placeOrder,
         purchaseGiftCard,
         redeemMerch,
+        addPaymentMethod,
+        removePaymentMethod,
+        setDefaultPaymentMethod,
+        updateProfileImage,
+        markNotificationAsRead,
+        addNotification,
       }}
     >
       {children}
