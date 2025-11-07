@@ -28,6 +28,19 @@ export default function ItemDetailScreen() {
   if (!item) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => {
+              console.log('Back button pressed');
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.back();
+            }}
+          >
+            <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            <Text style={styles.backButtonText}>Back</Text>
+          </Pressable>
+        </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Item not found</Text>
         </View>
@@ -53,13 +66,29 @@ export default function ItemDetailScreen() {
     ]);
   };
 
+  const handleBackPress = () => {
+    console.log('Back button pressed');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <View style={styles.header}>
+        <Pressable
+          style={styles.backButton}
+          onPress={handleBackPress}
+        >
+          <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          <Text style={styles.backButtonText}>Back</Text>
+        </Pressable>
+      </View>
+
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Image source={{ uri: item.image }} style={styles.image} />
         
         <View style={styles.content}>
-          <View style={styles.header}>
+          <View style={styles.headerInfo}>
             <View style={styles.headerLeft}>
               <Text style={styles.name}>{item.name}</Text>
               {item.popular && (
@@ -126,6 +155,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  header: {
+    backgroundColor: colors.background,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.accent,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    marginLeft: -8,
+  },
+  backButtonText: {
+    fontSize: 17,
+    color: colors.text,
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
   },
@@ -146,7 +195,7 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
   },
-  header: {
+  headerInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
