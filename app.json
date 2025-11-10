@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Natively",
-    "slug": "Natively",
+    "name": "Jagabans LA",
+    "slug": "Jagabans LA",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -43,5 +43,6 @@
     "extra": {
       "router": {}
     }
-  }
+  },
+  "scheme": "Jagabans LA"
 }

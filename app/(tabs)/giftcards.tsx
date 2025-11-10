@@ -18,11 +18,18 @@ import * as Haptics from 'expo-haptics';
 const giftCardAmounts = [25, 50, 75, 100];
 
 export default function GiftCardsScreen() {
-  const { purchaseGiftCard, currentColors } = useApp();
+  const { purchaseGiftCard, currentColors, setTabBarVisible } = useApp();
   const [selectedAmount, setSelectedAmount] = useState(50);
   const [recipientName, setRecipientName] = useState('');
   const [recipientEmail, setRecipientEmail] = useState('');
   const [message, setMessage] = useState('');
+
+  React.useEffect(() => {
+    setTabBarVisible(true);
+    return () => {
+      setTabBarVisible(true);
+    };
+  }, []);
 
   const handleAmountSelect = (amount: number) => {
     console.log('Amount selected:', amount);
@@ -83,6 +90,9 @@ export default function GiftCardsScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={[styles.giftCardPreview, { backgroundColor: currentColors.primary }]}>
+            <View style={styles.giftCardIconContainer}>
+              <IconSymbol name="giftcard.fill" size={48} color={currentColors.card} style={styles.giftCardIcon} />
+            </View>
             <View style={styles.giftCardDesign}>
               <Text style={[styles.giftCardBrand, { color: currentColors.card }]}>Jagabans LA</Text>
               <Text style={[styles.giftCardAmount, { color: currentColors.card }]}>${selectedAmount}</Text>
@@ -204,6 +214,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
     elevation: 5,
+    position: 'relative',
+  },
+  giftCardIconContainer: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    opacity: 0.3,
+  },
+  giftCardIcon: {
+    transform: [{ rotate: '15deg' }],
   },
   giftCardDesign: {
     alignItems: 'center',

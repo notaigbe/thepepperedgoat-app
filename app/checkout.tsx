@@ -17,10 +17,17 @@ import * as Haptics from 'expo-haptics';
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const { cart, placeOrder, userProfile, currentColors } = useApp();
+  const { cart, placeOrder, userProfile, currentColors, setTabBarVisible } = useApp();
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [usePoints, setUsePoints] = useState(false);
+
+  React.useEffect(() => {
+    setTabBarVisible(false);
+    return () => {
+      setTabBarVisible(true);
+    };
+  }, []);
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.0875;

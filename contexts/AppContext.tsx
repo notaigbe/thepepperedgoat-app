@@ -23,6 +23,8 @@ interface AppContextType {
   updateThemeMode: (mode: ThemeMode) => void;
   updateColorScheme: (scheme: ColorScheme) => void;
   currentColors: any;
+  isTabBarVisible: boolean;
+  setTabBarVisible: (visible: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -30,6 +32,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const systemColorScheme = useColorScheme();
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>({
     mode: 'light',
     colorScheme: 'default',
@@ -181,6 +184,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const currentColors = getCurrentColors();
+
+  const setTabBarVisible = (visible: boolean) => {
+    console.log('Setting tab bar visibility:', visible);
+    setIsTabBarVisible(visible);
+  };
 
   const addToCart = (item: CartItem) => {
     console.log('Adding to cart:', item.name);
@@ -375,6 +383,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         updateThemeMode,
         updateColorScheme,
         currentColors,
+        isTabBarVisible,
+        setTabBarVisible,
       }}
     >
       {children}

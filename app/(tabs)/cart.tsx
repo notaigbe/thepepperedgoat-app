@@ -18,11 +18,23 @@ import { useRouter } from 'expo-router';
 
 export default function CartScreen() {
   const router = useRouter();
-  const { cart, updateCartQuantity, removeFromCart, currentColors } = useApp();
+  const { cart, updateCartQuantity, removeFromCart, currentColors, setTabBarVisible } = useApp();
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.0875;
   const total = subtotal + tax;
+
+  React.useEffect(() => {
+    if (cart.length > 0) {
+      setTabBarVisible(false);
+    } else {
+      setTabBarVisible(true);
+    }
+    
+    return () => {
+      setTabBarVisible(true);
+    };
+  }, [cart.length]);
 
   const handleQuantityChange = (itemId: string, change: number) => {
     console.log('Updating quantity:', itemId, change);
@@ -89,10 +101,7 @@ export default function CartScreen() {
 
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            Platform.OS !== 'ios' && styles.scrollContentWithTabBar,
-          ]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {cart.map((item) => (
@@ -216,9 +225,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 20,
-  },
-  scrollContentWithTabBar: {
-    paddingBottom: 100,
   },
   cartItem: {
     flexDirection: 'row',

@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Animated,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useApp } from '@/contexts/AppContext';
 
 export interface TabBarItem {
   name: string;
@@ -34,6 +36,16 @@ export default function FloatingTabBar({
 }: FloatingTabBarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { isTabBarVisible } = useApp();
+  const translateY = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.timing(translateY, {
+      toValue: isTabBarVisible ? 0 : 150,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [isTabBarVisible]);
 
   const handleTabPress = (route: string) => {
     console.log('Tab pressed:', route);
@@ -49,7 +61,15 @@ export default function FloatingTabBar({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={[styles.container, { marginBottom: bottomMargin }]}>
+      <Animated.View 
+        style={[
+          styles.container, 
+          { 
+            marginBottom: bottomMargin,
+            transform: [{ translateY }],
+          }
+        ]}
+      >
         <View
           style={[
             styles.tabBar,
@@ -85,7 +105,7 @@ export default function FloatingTabBar({
             );
           })}
         </View>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
