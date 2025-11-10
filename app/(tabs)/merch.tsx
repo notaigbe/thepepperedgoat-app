@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,27 +8,71 @@ import {
   Image,
   Pressable,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useApp } from '@/contexts/AppContext';
-import { merchItems } from '@/data/merchData';
-import * as Haptics from 'expo-haptics';
-import { IconSymbol } from '@/components/IconSymbol';
 import { useRouter } from 'expo-router';
+import { IconSymbol } from '@/components/IconSymbol';
+import { useApp } from '@/contexts/AppContext';
+import * as Haptics from 'expo-haptics';
+import { merchService } from '@/services/supabaseService';
+import { MerchItem } from '@/types';
 
 export default function MerchScreen() {
-  const { userProfile, currentColors } = useApp();
   const router = useRouter();
+  const { currentColors, userProfile } = useApp();
+  const [merchItems, setMerchItems] = useState<MerchItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleRedeem = (merchId: string, pointsCost: number, merchName: string) => {
-    console.log('Navigating to merch redemption:', merchId);
+  useEffect(() => {
+    loadMerchItems();
+  }, []);
+
+  const loadMerchItems = async () => {
+    try {
+      console.log('Loading merch items from Supabase');
+      setLoading(true);
+      const { data, error } = await merchService.getMerchItems();
+      
+      if (error) {
+        console.error('Error loading merch items:', error);
+        return;
+      }
+
+      if (data) {
+        const items: MerchItem[] = data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          pointsCost: item.points_cost,
+          image: item.image,
+          inStock: item.in_stock,
+        }));
+        setMerchItems(items);
+        console.log('Loaded', items.length, 'merch items');
+      }
+    } catch (error) {
+      console.error('Exception loading merch items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleItemPress = (item: MerchItem) => {
+    console.log('Merch item pressed:', item.name);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    
     router.push({
       pathname: '/merch-redemption',
-      params: { merchId, pointsCost: pointsCost.toString(), merchName },
+      params: {
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        pointsCost: item.pointsCost.toString(),
+        image: item.image,
+        inStock: item.inStock.toString(),
+      },
     });
   };
 
@@ -37,59 +81,83 @@ export default function MerchScreen() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Merch Store</Text>
-          <View style={[styles.pointsBadge, { backgroundColor: currentColors.primary }]}>
-            <IconSymbol name="star.fill" size={16} color={currentColors.card} />
-            <Text style={[styles.pointsText, { color: currentColors.card }]}>
-              {userProfile.points} pts
+          <Text style={[styles.title, { color: currentColors.text }]}>Merch Store</Text>
+          <View style={styles.pointsContainer}>
+            <IconSymbol name="star.fill" size={20} color={currentColors.primary} />
+            <Text style={[styles.pointsText, { color: currentColors.text }]}>
+              {userProfile?.points || 0} pts
             </Text>
           </View>
         </View>
 
-        <ScrollView
-          style={styles.merchList}
-          contentContainerStyle={styles.merchListContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={[styles.sectionTitle, { color: currentColors.textSecondary }]}>
-            Redeem your points for exclusive merchandise
-          </Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={currentColors.primary} />
+            <Text style={[styles.loadingText, { color: currentColors.textSecondary }]}>
+              Loading merch...
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={[styles.subtitle, { color: currentColors.textSecondary }]}>
+              Redeem your points for exclusive Jagabans LA merchandise
+            </Text>
 
-          {merchItems.map((item) => {
-            const canAfford = userProfile.points >= item.pointsCost;
-            return (
-              <View key={item.id} style={[styles.merchItem, { backgroundColor: currentColors.card }]}>
-                <Image source={{ uri: item.image }} style={styles.merchImage} />
-                <View style={styles.merchInfo}>
-                  <Text style={[styles.merchName, { color: currentColors.text }]}>{item.name}</Text>
-                  <Text style={[styles.merchDescription, { color: currentColors.textSecondary }]} numberOfLines={2}>
-                    {item.description}
-                  </Text>
-                  <View style={styles.merchFooter}>
-                    <View style={styles.pointsContainer}>
-                      <IconSymbol name="star.fill" size={16} color={currentColors.primary} />
-                      <Text style={[styles.pointsCost, { color: currentColors.primary }]}>
-                        {item.pointsCost} points
-                      </Text>
-                    </View>
-                    <Pressable
-                      style={[
-                        styles.redeemButton,
-                        { backgroundColor: canAfford ? currentColors.primary : currentColors.textSecondary },
-                      ]}
-                      onPress={() => handleRedeem(item.id, item.pointsCost, item.name)}
-                      disabled={!canAfford}
-                    >
-                      <Text style={[styles.redeemButtonText, { color: currentColors.card }]}>
-                        {canAfford ? 'Redeem' : 'Not Enough'}
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
+            {merchItems.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <IconSymbol name="shopping-bag" size={64} color={currentColors.textSecondary} />
+                <Text style={[styles.emptyText, { color: currentColors.textSecondary }]}>
+                  No merch items available
+                </Text>
               </View>
-            );
-          })}
-        </ScrollView>
+            ) : (
+              <View style={styles.grid}>
+                {merchItems.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    style={[styles.merchCard, { backgroundColor: currentColors.card }]}
+                    onPress={() => handleItemPress(item)}
+                    disabled={!item.inStock}
+                  >
+                    <Image source={{ uri: item.image }} style={styles.merchImage} />
+                    {!item.inStock && (
+                      <View style={styles.outOfStockBadge}>
+                        <Text style={styles.outOfStockText}>Out of Stock</Text>
+                      </View>
+                    )}
+                    <View style={styles.merchInfo}>
+                      <Text style={[styles.merchName, { color: currentColors.text }]} numberOfLines={2}>
+                        {item.name}
+                      </Text>
+                      <Text style={[styles.merchDescription, { color: currentColors.textSecondary }]} numberOfLines={2}>
+                        {item.description}
+                      </Text>
+                      <View style={styles.merchFooter}>
+                        <View style={styles.pointsCostContainer}>
+                          <IconSymbol name="star.fill" size={16} color={currentColors.primary} />
+                          <Text style={[styles.pointsCost, { color: currentColors.primary }]}>
+                            {item.pointsCost}
+                          </Text>
+                        </View>
+                        {item.inStock && (
+                          <View style={[styles.redeemButton, { backgroundColor: currentColors.primary }]}>
+                            <Text style={[styles.redeemButtonText, { color: currentColors.card }]}>
+                              Redeem
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </ScrollView>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -108,82 +176,116 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
   },
-  headerTitle: {
-    fontSize: 28,
+  title: {
+    fontSize: 32,
     fontWeight: 'bold',
-  },
-  pointsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-  },
-  pointsText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  merchList: {
-    flex: 1,
-  },
-  merchListContent: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 120,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  merchItem: {
-    borderRadius: 12,
-    marginBottom: 16,
-    overflow: 'hidden',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
-  },
-  merchImage: {
-    width: '100%',
-    height: 200,
-  },
-  merchInfo: {
-    padding: 16,
-  },
-  merchName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  merchDescription: {
-    fontSize: 14,
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  merchFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   pointsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  pointsCost: {
+  pointsText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
     fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+    gap: 16,
+  },
+  emptyText: {
+    fontSize: 16,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingBottom: 120,
+  },
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 24,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    justifyContent: 'space-between',
+  },
+  merchCard: {
+    width: '48%',
+    borderRadius: 16,
+    overflow: 'hidden',
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
+  },
+  merchImage: {
+    width: '100%',
+    height: 150,
+    backgroundColor: '#f0f0f0',
+  },
+  outOfStockBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  outOfStockText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  merchInfo: {
+    padding: 12,
+  },
+  merchName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  merchDescription: {
+    fontSize: 12,
+    marginBottom: 12,
+    lineHeight: 16,
+  },
+  merchFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  pointsCostContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  pointsCost: {
+    fontSize: 18,
     fontWeight: 'bold',
   },
   redeemButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   redeemButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
 });

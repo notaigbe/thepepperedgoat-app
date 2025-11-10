@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,19 +9,30 @@ import {
   Pressable,
   Platform,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { menuItems, menuCategories } from '@/data/menuData';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useApp } from '@/contexts/AppContext';
 import * as Haptics from 'expo-haptics';
+import { menuService } from '@/services/supabaseService';
+import { MenuItem } from '@/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+const menuCategories = [
+  'All',
+  'Appetizers',
+  'Main Dishes',
+  'Sides',
+  'Desserts',
+  'Drinks',
+];
+
 // Responsive font size calculation
 const getResponsiveFontSize = (baseSize: number) => {
-  const scale = SCREEN_WIDTH / 375; // Base width (iPhone SE/8)
+  const scale = SCREEN_WIDTH / 375;
   const newSize = baseSize * scale;
   return Math.round(newSize);
 };
@@ -30,13 +41,50 @@ const getResponsiveFontSize = (baseSize: number) => {
 const getResponsivePadding = (basePadding: number) => {
   const scale = SCREEN_WIDTH / 375;
   const newPadding = basePadding * scale;
-  return Math.max(Math.round(newPadding), basePadding * 0.8); // Minimum 80% of base
+  return Math.max(Math.round(newPadding), basePadding * 0.8);
 };
 
 export default function HomeScreen() {
   const router = useRouter();
   const { currentColors } = useApp();
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadMenuItems();
+  }, []);
+
+  const loadMenuItems = async () => {
+    try {
+      console.log('Loading menu items from Supabase');
+      setLoading(true);
+      const { data, error } = await menuService.getMenuItems();
+      
+      if (error) {
+        console.error('Error loading menu items:', error);
+        return;
+      }
+
+      if (data) {
+        const items: MenuItem[] = data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          price: parseFloat(item.price),
+          category: item.category,
+          image: item.image,
+          popular: item.popular,
+        }));
+        setMenuItems(items);
+        console.log('Loaded', items.length, 'menu items');
+      }
+    } catch (error) {
+      console.error('Exception loading menu items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredItems = selectedCategory === 'All'
     ? menuItems
@@ -112,39 +160,57 @@ export default function HomeScreen() {
         </ScrollView>
 
         {/* Menu Items */}
-        <ScrollView
-          style={styles.menuContainer}
-          contentContainerStyle={styles.menuContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {filteredItems.map((item) => (
-            <Pressable
-              key={item.id}
-              style={[styles.menuItem, { backgroundColor: currentColors.card }]}
-              onPress={() => handleItemPress(item.id)}
-            >
-              <Image source={{ uri: item.image }} style={[styles.menuItemImage, { backgroundColor: currentColors.accent }]} />
-              {item.popular && (
-                <View style={[styles.popularBadge, { backgroundColor: currentColors.primary }]}>
-                  <IconSymbol name="star.fill" size={12} color={currentColors.card} />
-                  <Text style={[styles.popularText, { color: currentColors.card }]}>Popular</Text>
-                </View>
-              )}
-              <View style={styles.menuItemInfo}>
-                <Text style={[styles.menuItemName, { color: currentColors.text }]}>{item.name}</Text>
-                <Text style={[styles.menuItemDescription, { color: currentColors.textSecondary }]} numberOfLines={2}>
-                  {item.description}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={currentColors.primary} />
+            <Text style={[styles.loadingText, { color: currentColors.textSecondary }]}>
+              Loading menu...
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.menuContainer}
+            contentContainerStyle={styles.menuContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {filteredItems.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <IconSymbol name="restaurant" size={64} color={currentColors.textSecondary} />
+                <Text style={[styles.emptyText, { color: currentColors.textSecondary }]}>
+                  No items in this category
                 </Text>
-                <View style={styles.menuItemFooter}>
-                  <Text style={[styles.menuItemPrice, { color: currentColors.primary }]}>${item.price.toFixed(2)}</Text>
-                  <View style={[styles.addButton, { backgroundColor: currentColors.primary }]}>
-                    <IconSymbol name="plus" size={20} color={currentColors.card} />
-                  </View>
-                </View>
               </View>
-            </Pressable>
-          ))}
-        </ScrollView>
+            ) : (
+              filteredItems.map((item) => (
+                <Pressable
+                  key={item.id}
+                  style={[styles.menuItem, { backgroundColor: currentColors.card }]}
+                  onPress={() => handleItemPress(item.id)}
+                >
+                  <Image source={{ uri: item.image }} style={[styles.menuItemImage, { backgroundColor: currentColors.accent }]} />
+                  {item.popular && (
+                    <View style={[styles.popularBadge, { backgroundColor: currentColors.primary }]}>
+                      <IconSymbol name="star.fill" size={12} color={currentColors.card} />
+                      <Text style={[styles.popularText, { color: currentColors.card }]}>Popular</Text>
+                    </View>
+                  )}
+                  <View style={styles.menuItemInfo}>
+                    <Text style={[styles.menuItemName, { color: currentColors.text }]}>{item.name}</Text>
+                    <Text style={[styles.menuItemDescription, { color: currentColors.textSecondary }]} numberOfLines={2}>
+                      {item.description}
+                    </Text>
+                    <View style={styles.menuItemFooter}>
+                      <Text style={[styles.menuItemPrice, { color: currentColors.primary }]}>${item.price.toFixed(2)}</Text>
+                      <View style={[styles.addButton, { backgroundColor: currentColors.primary }]}>
+                        <IconSymbol name="plus" size={20} color={currentColors.card} />
+                      </View>
+                    </View>
+                  </View>
+                </Pressable>
+              ))
+            )}
+          </ScrollView>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -196,6 +262,25 @@ const styles = StyleSheet.create({
   categoryText: {
     fontWeight: '600',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+    gap: 16,
+  },
+  emptyText: {
+    fontSize: 16,
   },
   menuContainer: {
     flex: 1,

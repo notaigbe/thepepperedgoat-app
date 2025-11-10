@@ -7,7 +7,7 @@ export const merchItems: MerchItem[] = [
     name: 'Jagabans LA T-Shirt',
     description: 'Premium cotton t-shirt with Jagabans LA logo',
     pointsCost: 500,
-    image: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=800',
+    image: 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fHQlMjBzaGlydHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&q=60&w=800',
     inStock: true,
   },
   {
@@ -47,7 +47,7 @@ export const merchItems: MerchItem[] = [
     name: 'Jagabans LA Apron',
     description: 'Professional kitchen apron with pockets',
     pointsCost: 450,
-    image: 'https://images.unsplash.com/photo-1607631568010-a87852c7e21e?w=800',
+    image: 'https://plus.unsplash.com/premium_photo-1661510828764-79c0be81b69b?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8YXByb258ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=800',
     inStock: true,
   },
 ];

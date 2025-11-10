@@ -1,7 +1,20 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { CartItem, Order, UserProfile, GiftCard, PaymentMethod, AppNotification, ThemeSettings, ThemeMode, ColorScheme, MerchRedemption } from '@/types';
+import { useColorScheme } from 'react-native';
+import { useAuth } from './AuthContext';
+import { supabase } from '@/app/integrations/supabase/client';
+import { 
+  userService, 
+  menuService, 
+  orderService, 
+  merchService, 
+  giftCardService,
+  notificationService,
+  themeService,
+  paymentMethodService
+} from '@/services/supabaseService';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface ToastConfig {
   visible: boolean;
@@ -15,20 +28,21 @@ interface AppContextType {
   removeFromCart: (itemId: string) => void;
   updateCartQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
-  userProfile: UserProfile;
-  placeOrder: (deliveryAddress?: string, pickupNotes?: string) => void;
+  userProfile: UserProfile | null;
+  loadUserProfile: () => Promise<void>;
+  placeOrder: (deliveryAddress?: string, pickupNotes?: string) => Promise<void>;
   purchaseGiftCard: (giftCard: GiftCard) => void;
-  sendPointsGiftCard: (recipientId: string, recipientName: string, points: number, message?: string) => void;
-  redeemMerch: (merchId: string, merchName: string, pointsCost: number, deliveryAddress: string, pickupNotes?: string) => void;
-  addPaymentMethod: (paymentMethod: PaymentMethod) => void;
-  removePaymentMethod: (paymentMethodId: string) => void;
-  setDefaultPaymentMethod: (paymentMethodId: string) => void;
+  sendPointsGiftCard: (recipientId: string, recipientName: string, points: number, message?: string) => Promise<void>;
+  redeemMerch: (merchId: string, merchName: string, pointsCost: number, deliveryAddress: string, pickupNotes?: string) => Promise<void>;
+  addPaymentMethod: (paymentMethod: PaymentMethod) => Promise<void>;
+  removePaymentMethod: (paymentMethodId: string) => Promise<void>;
+  setDefaultPaymentMethod: (paymentMethodId: string) => Promise<void>;
   updateProfileImage: (imageUri: string) => void;
-  markNotificationAsRead: (notificationId: string) => void;
+  markNotificationAsRead: (notificationId: string) => Promise<void>;
   addNotification: (notification: AppNotification) => void;
   themeSettings: ThemeSettings;
-  updateThemeMode: (mode: ThemeMode) => void;
-  updateColorScheme: (scheme: ColorScheme) => void;
+  updateThemeMode: (mode: ThemeMode) => Promise<void>;
+  updateColorScheme: (scheme: ColorScheme) => Promise<void>;
   currentColors: any;
   isTabBarVisible: boolean;
   setTabBarVisible: (visible: boolean) => void;
@@ -42,8 +56,11 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const systemColorScheme = useColorScheme();
+  const { user, isAuthenticated } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const orderChannelRef = useRef<RealtimeChannel | null>(null);
   const [toast, setToast] = useState<ToastConfig>({
     visible: false,
     message: '',
@@ -54,32 +71,202 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     colorScheme: 'default',
   });
 
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    id: '1',
-    name: 'Guest User',
-    email: 'guest@jagabansla.com',
-    phone: '+1 (555) 123-4567',
-    points: 1250,
-    orders: [],
-    giftCards: [],
-    paymentMethods: [],
-    notifications: [
-      {
-        id: '1',
-        title: 'Welcome to Jagabans LA!',
-        message: 'Start earning points with every purchase. Check out our menu!',
-        type: 'general',
-        date: new Date().toISOString(),
-        read: false,
-      },
-    ],
-    rsvpEvents: [],
-    themeSettings: {
-      mode: 'light',
-      colorScheme: 'default',
-    },
-    merchRedemptions: [],
-  });
+  // Load user profile when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadUserProfile();
+    } else {
+      setUserProfile(null);
+    }
+  }, [isAuthenticated, user]);
+
+  // Setup real-time order updates
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      // Clean up existing subscription
+      if (orderChannelRef.current) {
+        supabase.removeChannel(orderChannelRef.current);
+        orderChannelRef.current = null;
+      }
+      return;
+    }
+
+    // Check if already subscribed
+    if (orderChannelRef.current?.state === 'subscribed') {
+      console.log('Already subscribed to order updates');
+      return;
+    }
+
+    const setupRealtimeSubscription = async () => {
+      console.log('Setting up real-time order subscription for user:', user.id);
+      
+      const channel = supabase.channel(`order:${user.id}`, {
+        config: { private: true }
+      });
+      
+      orderChannelRef.current = channel;
+
+      // Set auth before subscribing
+      await supabase.realtime.setAuth(supabase.auth.session()?.access_token);
+
+      channel
+        .on('broadcast', { event: 'INSERT' }, (payload) => {
+          console.log('New order created:', payload);
+          showToast('New order placed!', 'success');
+          loadUserProfile(); // Reload profile to get updated orders
+        })
+        .on('broadcast', { event: 'UPDATE' }, (payload) => {
+          console.log('Order updated:', payload);
+          const order = payload.new as any;
+          showToast(`Order status updated to: ${order.status}`, 'info');
+          loadUserProfile(); // Reload profile to get updated orders
+        })
+        .on('broadcast', { event: 'DELETE' }, (payload) => {
+          console.log('Order deleted:', payload);
+          loadUserProfile(); // Reload profile to get updated orders
+        })
+        .subscribe((status, err) => {
+          console.log('Order subscription status:', status);
+          if (err) {
+            console.error('Order subscription error:', err);
+          }
+        });
+    };
+
+    setupRealtimeSubscription();
+
+    return () => {
+      if (orderChannelRef.current) {
+        console.log('Cleaning up order subscription');
+        supabase.removeChannel(orderChannelRef.current);
+        orderChannelRef.current = null;
+      }
+    };
+  }, [isAuthenticated, user]);
+
+  const loadUserProfile = async () => {
+    if (!user) return;
+
+    try {
+      console.log('Loading user profile for:', user.id);
+      const { data: profile, error } = await userService.getUserProfile(user.id);
+      
+      if (error) {
+        console.error('Error loading user profile:', error);
+        return;
+      }
+
+      if (!profile) {
+        console.log('No profile found, creating default profile');
+        // Create default profile if it doesn't exist
+        await supabase.from('user_profiles').insert({
+          id: user.id,
+          name: user.user_metadata?.name || 'User',
+          email: user.email || '',
+          phone: user.user_metadata?.phone || '',
+          points: 0,
+        });
+        return loadUserProfile();
+      }
+
+      // Load orders
+      const { data: orders } = await orderService.getOrderHistory(user.id);
+      
+      // Load gift cards
+      const { data: receivedGiftCards } = await giftCardService.getReceivedGiftCards(user.id);
+      const { data: sentGiftCards } = await giftCardService.getSentGiftCards(user.id);
+      
+      // Load payment methods
+      const { data: paymentMethods } = await paymentMethodService.getPaymentMethods(user.id);
+      
+      // Load notifications
+      const { data: notifications } = await notificationService.getNotifications(user.id);
+      
+      // Load theme settings
+      const { data: theme } = await themeService.getThemeSettings(user.id);
+      
+      // Load merch redemptions
+      const { data: merchRedemptions } = await merchService.getMerchRedemptions(user.id);
+
+      const fullProfile: UserProfile = {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone || '',
+        points: profile.points || 0,
+        profileImage: profile.profile_image,
+        orders: orders?.map((o: any) => ({
+          id: o.id,
+          items: o.order_items?.map((oi: any) => ({
+            id: oi.menu_item_id || oi.id,
+            name: oi.name,
+            price: parseFloat(oi.price),
+            quantity: oi.quantity,
+            description: '',
+            category: '',
+            image: '',
+          })) || [],
+          total: parseFloat(o.total),
+          pointsEarned: o.points_earned,
+          date: o.created_at,
+          status: o.status,
+          deliveryAddress: o.delivery_address,
+          pickupNotes: o.pickup_notes,
+        })) || [],
+        giftCards: [...(receivedGiftCards || []), ...(sentGiftCards || [])].map((gc: any) => ({
+          id: gc.id,
+          points: gc.points,
+          recipientId: gc.recipient_id,
+          recipientName: gc.recipient_name,
+          recipientEmail: gc.recipient_email,
+          message: gc.message,
+          purchaseDate: gc.created_at,
+          senderId: gc.sender_id,
+          type: 'points',
+        })),
+        paymentMethods: paymentMethods?.map((pm: any) => ({
+          id: pm.id,
+          type: pm.type,
+          cardNumber: pm.card_number,
+          cardholderName: pm.cardholder_name,
+          expiryDate: pm.expiry_date,
+          isDefault: pm.is_default,
+        })) || [],
+        notifications: notifications?.map((n: any) => ({
+          id: n.id,
+          title: n.title,
+          message: n.message,
+          type: n.type,
+          date: n.created_at,
+          read: n.read,
+          actionUrl: n.action_url,
+        })) || [],
+        rsvpEvents: [],
+        themeSettings: theme ? {
+          mode: theme.mode as ThemeMode,
+          colorScheme: theme.color_scheme as ColorScheme,
+        } : { mode: 'auto', colorScheme: 'default' },
+        merchRedemptions: merchRedemptions?.map((mr: any) => ({
+          id: mr.id,
+          merchId: mr.merch_item_id,
+          merchName: mr.merch_name,
+          pointsCost: mr.points_cost,
+          deliveryAddress: mr.delivery_address,
+          pickupNotes: mr.pickup_notes,
+          date: mr.created_at,
+          status: mr.status,
+        })) || [],
+      };
+
+      setUserProfile(fullProfile);
+      if (fullProfile.themeSettings) {
+        setThemeSettings(fullProfile.themeSettings);
+      }
+      console.log('User profile loaded successfully');
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
 
   // Get current colors based on theme settings
   const getCurrentColors = () => {
@@ -94,6 +281,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           accent: '#4DB6AC',
           card: '#FFFFFF',
           highlight: '#80CBC4',
+          border: '#B2DFDB',
         },
         dark: {
           background: '#0A1F1C',
@@ -104,6 +292,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           accent: '#80CBC4',
           card: '#1A2F2C',
           highlight: '#4DB6AC',
+          border: '#1A2F2C',
         },
       },
       warm: {
@@ -116,6 +305,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           accent: '#4DB6AC',
           card: '#FFFFFF',
           highlight: '#80CBC4',
+          border: '#FFE082',
         },
         dark: {
           background: '#1C1410',
@@ -126,6 +316,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           accent: '#80CBC4',
           card: '#2C2018',
           highlight: '#80CBC4',
+          border: '#2C2018',
         },
       },
       cool: {
@@ -138,6 +329,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           accent: '#4DB6AC',
           card: '#FFFFFF',
           highlight: '#80CBC4',
+          border: '#90CAF9',
         },
         dark: {
           background: '#0A1929',
@@ -148,6 +340,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           accent: '#80CBC4',
           card: '#132F4C',
           highlight: '#80CBC4',
+          border: '#132F4C',
         },
       },
       vibrant: {
@@ -160,6 +353,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           accent: '#4DB6AC',
           card: '#FFFFFF',
           highlight: '#80CBC4',
+          border: '#CE93D8',
         },
         dark: {
           background: '#1A0A1F',
@@ -170,6 +364,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           accent: '#80CBC4',
           card: '#2A1A2F',
           highlight: '#80CBC4',
+          border: '#2A1A2F',
         },
       },
       minimal: {
@@ -182,6 +377,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           accent: '#4DB6AC',
           card: '#FFFFFF',
           highlight: '#80CBC4',
+          border: '#E0E0E0',
         },
         dark: {
           background: '#121212',
@@ -192,6 +388,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           accent: '#80CBC4',
           card: '#1E1E1E',
           highlight: '#80CBC4',
+          border: '#1E1E1E',
         },
       },
     };
@@ -264,220 +461,252 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart([]);
   };
 
-  const placeOrder = (deliveryAddress?: string, pickupNotes?: string) => {
-    console.log('Placing order');
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const pointsEarned = Math.floor(total);
-    
-    const newOrder: Order = {
-      id: Date.now().toString(),
-      items: [...cart],
-      total,
-      pointsEarned,
-      date: new Date().toISOString(),
-      status: 'pending',
-      deliveryAddress,
-      pickupNotes,
-    };
+  const placeOrder = async (deliveryAddress?: string, pickupNotes?: string) => {
+    if (!user || !userProfile) {
+      showToast('Please sign in to place an order', 'error');
+      return;
+    }
 
-    setUserProfile((prev) => ({
-      ...prev,
-      points: prev.points + pointsEarned,
-      orders: [newOrder, ...prev.orders],
-    }));
+    try {
+      console.log('Placing order');
+      const { data, error } = await orderService.placeOrder(
+        user.id,
+        cart,
+        deliveryAddress,
+        pickupNotes
+      );
 
-    const orderNotification: AppNotification = {
-      id: Date.now().toString(),
-      title: 'Order Placed Successfully!',
-      message: `Your order of $${total.toFixed(2)} has been placed. You earned ${pointsEarned} points!`,
-      type: 'order',
-      date: new Date().toISOString(),
-      read: false,
-    };
+      if (error) {
+        showToast('Failed to place order', 'error');
+        return;
+      }
 
-    addNotification(orderNotification);
-    clearCart();
+      showToast('Order placed successfully!', 'success');
+      clearCart();
+      await loadUserProfile();
+    } catch (error) {
+      console.error('Error placing order:', error);
+      showToast('Failed to place order', 'error');
+    }
   };
 
   const purchaseGiftCard = (giftCard: GiftCard) => {
     console.log('Purchasing gift card:', giftCard);
-    setUserProfile((prev) => ({
-      ...prev,
-      giftCards: [...prev.giftCards, { ...giftCard, purchaseDate: new Date().toISOString() }],
-    }));
+    // This is for money-based gift cards (not implemented in backend yet)
+    showToast('Gift card feature coming soon!', 'info');
   };
 
-  const sendPointsGiftCard = (recipientId: string, recipientName: string, points: number, message?: string) => {
-    console.log('Sending points gift card:', recipientId, points);
-    
-    if (userProfile.points < points) {
-      console.log('Insufficient points');
+  const sendPointsGiftCard = async (recipientId: string, recipientName: string, points: number, message?: string) => {
+    if (!user || !userProfile) {
+      showToast('Please sign in to send gift cards', 'error');
       return;
     }
 
-    const giftCard: GiftCard = {
-      id: Date.now().toString(),
-      points,
-      recipientId,
-      recipientName,
-      message,
-      purchaseDate: new Date().toISOString(),
-      senderId: userProfile.id,
-      type: 'points',
-    };
+    if (userProfile.points < points) {
+      showToast('Insufficient points', 'error');
+      return;
+    }
 
-    setUserProfile((prev) => ({
-      ...prev,
-      points: prev.points - points,
-      giftCards: [...prev.giftCards, giftCard],
-    }));
+    try {
+      console.log('Sending points gift card:', recipientId, points);
+      const { error } = await giftCardService.sendGiftCard(
+        user.id,
+        recipientId,
+        recipientName,
+        points,
+        message
+      );
 
-    const notification: AppNotification = {
-      id: Date.now().toString(),
-      title: 'Points Gift Card Sent!',
-      message: `You sent ${points} points to ${recipientName}`,
-      type: 'giftcard',
-      date: new Date().toISOString(),
-      read: false,
-    };
+      if (error) {
+        showToast('Failed to send gift card', 'error');
+        return;
+      }
 
-    addNotification(notification);
+      showToast(`Sent ${points} points to ${recipientName}!`, 'success');
+      await loadUserProfile();
+    } catch (error) {
+      console.error('Error sending gift card:', error);
+      showToast('Failed to send gift card', 'error');
+    }
   };
 
   const receivePointsGiftCard = (senderId: string, senderName: string, points: number, message?: string) => {
     console.log('Receiving points gift card:', senderId, points);
-
-    setUserProfile((prev) => ({
-      ...prev,
-      points: prev.points + points,
-    }));
-
-    const notification: AppNotification = {
-      id: Date.now().toString(),
-      title: 'Points Gift Card Received!',
-      message: `${senderName} sent you ${points} points! ${message ? `Message: "${message}"` : ''}`,
-      type: 'giftcard',
-      date: new Date().toISOString(),
-      read: false,
-    };
-
-    addNotification(notification);
+    showToast(`Received ${points} points from ${senderName}!`, 'success');
+    loadUserProfile();
   };
 
-  const redeemMerch = (merchId: string, merchName: string, pointsCost: number, deliveryAddress: string, pickupNotes?: string) => {
-    console.log('Redeeming merch:', merchId, pointsCost);
-    if (userProfile.points >= pointsCost) {
-      const redemption: MerchRedemption = {
-        id: Date.now().toString(),
+  const redeemMerch = async (merchId: string, merchName: string, pointsCost: number, deliveryAddress: string, pickupNotes?: string) => {
+    if (!user || !userProfile) {
+      showToast('Please sign in to redeem merch', 'error');
+      return;
+    }
+
+    if (userProfile.points < pointsCost) {
+      showToast('Insufficient points', 'error');
+      return;
+    }
+
+    try {
+      console.log('Redeeming merch:', merchId, pointsCost);
+      const { error } = await merchService.redeemMerch(
+        user.id,
         merchId,
         merchName,
         pointsCost,
         deliveryAddress,
-        pickupNotes,
-        date: new Date().toISOString(),
-        status: 'pending',
-      };
+        pickupNotes
+      );
 
-      setUserProfile((prev) => ({
-        ...prev,
-        points: prev.points - pointsCost,
-        merchRedemptions: [...(prev.merchRedemptions || []), redemption],
-      }));
+      if (error) {
+        showToast('Failed to redeem merch', 'error');
+        return;
+      }
 
-      const notification: AppNotification = {
-        id: Date.now().toString(),
-        title: 'Merch Redeemed!',
-        message: `You've redeemed ${merchName} for ${pointsCost} points. We'll process your order soon!`,
-        type: 'order',
-        date: new Date().toISOString(),
-        read: false,
-      };
-
-      addNotification(notification);
+      showToast(`Redeemed ${merchName} for ${pointsCost} points!`, 'success');
+      await loadUserProfile();
+    } catch (error) {
+      console.error('Error redeeming merch:', error);
+      showToast('Failed to redeem merch', 'error');
     }
   };
 
-  const addPaymentMethod = (paymentMethod: PaymentMethod) => {
-    console.log('Adding payment method');
-    setUserProfile((prev) => {
-      const isFirstCard = prev.paymentMethods.length === 0;
-      const newPaymentMethod = { ...paymentMethod, isDefault: isFirstCard };
-      return {
-        ...prev,
-        paymentMethods: [...prev.paymentMethods, newPaymentMethod],
-      };
-    });
+  const addPaymentMethod = async (paymentMethod: PaymentMethod) => {
+    if (!user) {
+      showToast('Please sign in to add payment methods', 'error');
+      return;
+    }
+
+    try {
+      console.log('Adding payment method');
+      const { error } = await paymentMethodService.addPaymentMethod(user.id, paymentMethod);
+
+      if (error) {
+        showToast('Failed to add payment method', 'error');
+        return;
+      }
+
+      showToast('Payment method added successfully!', 'success');
+      await loadUserProfile();
+    } catch (error) {
+      console.error('Error adding payment method:', error);
+      showToast('Failed to add payment method', 'error');
+    }
   };
 
-  const removePaymentMethod = (paymentMethodId: string) => {
-    console.log('Removing payment method:', paymentMethodId);
-    setUserProfile((prev) => ({
-      ...prev,
-      paymentMethods: prev.paymentMethods.filter((pm) => pm.id !== paymentMethodId),
-    }));
+  const removePaymentMethod = async (paymentMethodId: string) => {
+    try {
+      console.log('Removing payment method:', paymentMethodId);
+      const { error } = await paymentMethodService.removePaymentMethod(paymentMethodId);
+
+      if (error) {
+        showToast('Failed to remove payment method', 'error');
+        return;
+      }
+
+      showToast('Payment method removed successfully!', 'success');
+      await loadUserProfile();
+    } catch (error) {
+      console.error('Error removing payment method:', error);
+      showToast('Failed to remove payment method', 'error');
+    }
   };
 
-  const setDefaultPaymentMethod = (paymentMethodId: string) => {
-    console.log('Setting default payment method:', paymentMethodId);
-    setUserProfile((prev) => ({
-      ...prev,
-      paymentMethods: prev.paymentMethods.map((pm) => ({
-        ...pm,
-        isDefault: pm.id === paymentMethodId,
-      })),
-    }));
+  const setDefaultPaymentMethod = async (paymentMethodId: string) => {
+    if (!user) return;
+
+    try {
+      console.log('Setting default payment method:', paymentMethodId);
+      const { error } = await paymentMethodService.setDefaultPaymentMethod(user.id, paymentMethodId);
+
+      if (error) {
+        showToast('Failed to set default payment method', 'error');
+        return;
+      }
+
+      showToast('Default payment method updated!', 'success');
+      await loadUserProfile();
+    } catch (error) {
+      console.error('Error setting default payment method:', error);
+      showToast('Failed to set default payment method', 'error');
+    }
   };
 
   const updateProfileImage = (imageUri: string) => {
     console.log('Updating profile image');
-    setUserProfile((prev) => ({
-      ...prev,
-      profileImage: imageUri,
-    }));
+    if (userProfile) {
+      setUserProfile({
+        ...userProfile,
+        profileImage: imageUri,
+      });
+    }
   };
 
-  const markNotificationAsRead = (notificationId: string) => {
-    console.log('Marking notification as read:', notificationId);
-    setUserProfile((prev) => ({
-      ...prev,
-      notifications: prev.notifications.map((notif) =>
-        notif.id === notificationId ? { ...notif, read: true } : notif
-      ),
-    }));
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      console.log('Marking notification as read:', notificationId);
+      const { error } = await notificationService.markAsRead(notificationId);
+
+      if (error) {
+        console.error('Error marking notification as read:', error);
+        return;
+      }
+
+      await loadUserProfile();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
   const addNotification = (notification: AppNotification) => {
     console.log('Adding notification:', notification.title);
-    setUserProfile((prev) => ({
-      ...prev,
-      notifications: [notification, ...prev.notifications],
-    }));
-  };
-
-  const updateThemeMode = (mode: ThemeMode) => {
-    console.log('Updating theme mode:', mode);
-    setThemeSettings((prev) => ({ ...prev, mode }));
-    setUserProfile((prev) => ({
-      ...prev,
-      themeSettings: { ...prev.themeSettings!, mode },
-    }));
-  };
-
-  const updateColorScheme = (scheme: ColorScheme) => {
-    console.log('Updating color scheme:', scheme);
-    setThemeSettings((prev) => ({ ...prev, colorScheme: scheme }));
-    setUserProfile((prev) => ({
-      ...prev,
-      themeSettings: { ...prev.themeSettings!, colorScheme: scheme },
-    }));
-  };
-
-  // Sync theme settings from user profile
-  useEffect(() => {
-    if (userProfile.themeSettings) {
-      setThemeSettings(userProfile.themeSettings);
+    if (userProfile) {
+      setUserProfile({
+        ...userProfile,
+        notifications: [notification, ...userProfile.notifications],
+      });
     }
-  }, [userProfile.themeSettings]);
+  };
+
+  const updateThemeMode = async (mode: ThemeMode) => {
+    if (!user) return;
+
+    try {
+      console.log('Updating theme mode:', mode);
+      setThemeSettings((prev) => ({ ...prev, mode }));
+      
+      const { error } = await themeService.updateThemeSettings(user.id, {
+        ...themeSettings,
+        mode,
+      });
+
+      if (error) {
+        console.error('Error updating theme mode:', error);
+      }
+    } catch (error) {
+      console.error('Error updating theme mode:', error);
+    }
+  };
+
+  const updateColorScheme = async (scheme: ColorScheme) => {
+    if (!user) return;
+
+    try {
+      console.log('Updating color scheme:', scheme);
+      setThemeSettings((prev) => ({ ...prev, colorScheme: scheme }));
+      
+      const { error } = await themeService.updateThemeSettings(user.id, {
+        ...themeSettings,
+        colorScheme: scheme,
+      });
+
+      if (error) {
+        console.error('Error updating color scheme:', error);
+      }
+    } catch (error) {
+      console.error('Error updating color scheme:', error);
+    }
+  };
 
   return (
     <AppContext.Provider
@@ -488,6 +717,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         updateCartQuantity,
         clearCart,
         userProfile,
+        loadUserProfile,
         placeOrder,
         purchaseGiftCard,
         sendPointsGiftCard,

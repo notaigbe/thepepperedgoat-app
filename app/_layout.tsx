@@ -6,120 +6,15 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { AppProvider, useApp } from '@/contexts/AppContext';
+import { useColorScheme } from 'react-native';
+import { AppProvider } from '@/contexts/AppContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import Toast from '@/components/Toast';
-import { View } from 'react-native';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-function RootLayoutContent() {
-  const { currentColors, toast, hideToast } = useApp();
-
-  return (
-    <>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="admin" options={{ headerShown: false }} />
-        <Stack.Screen name="website" options={{ headerShown: false }} />
-        <Stack.Screen 
-          name="item-detail" 
-          options={{ 
-            headerShown: false,
-            presentation: 'card',
-          }} 
-        />
-        <Stack.Screen 
-          name="checkout" 
-          options={{ 
-            headerShown: false,
-            presentation: 'card',
-          }} 
-        />
-        <Stack.Screen 
-          name="order-history" 
-          options={{ 
-            headerShown: false,
-            presentation: 'card',
-          }} 
-        />
-        <Stack.Screen 
-          name="payment-methods" 
-          options={{ 
-            headerShown: false,
-            presentation: 'card',
-          }} 
-        />
-        <Stack.Screen 
-          name="edit-profile" 
-          options={{ 
-            headerShown: false,
-            presentation: 'card',
-          }} 
-        />
-        <Stack.Screen 
-          name="notifications" 
-          options={{ 
-            headerShown: false,
-            presentation: 'card',
-          }} 
-        />
-        <Stack.Screen 
-          name="events" 
-          options={{ 
-            headerShown: false,
-            presentation: 'card',
-          }} 
-        />
-        <Stack.Screen 
-          name="merch-redemption" 
-          options={{ 
-            headerShown: false,
-            presentation: 'card',
-          }} 
-        />
-        <Stack.Screen 
-          name="theme-settings" 
-          options={{ 
-            headerShown: false,
-            presentation: 'card',
-          }} 
-        />
-        <Stack.Screen
-          name="modal"
-          options={{
-            presentation: 'modal',
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="transparent-modal"
-          options={{
-            presentation: 'transparentModal',
-            headerShown: false,
-            animation: 'fade',
-          }}
-        />
-        <Stack.Screen
-          name="formsheet"
-          options={{
-            presentation: 'formSheet',
-            headerShown: false,
-          }}
-        />
-      </Stack>
-      <Toast 
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onHide={hideToast}
-        currentColors={currentColors}
-      />
-    </>
-  );
-}
-
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -135,9 +30,102 @@ export default function RootLayout() {
   }
 
   return (
-    <AppProvider>
-      <StatusBar style="auto" />
-      <RootLayoutContent />
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="admin" options={{ headerShown: false }} />
+            <Stack.Screen name="website" options={{ headerShown: false }} />
+            <Stack.Screen 
+              name="item-detail" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="checkout" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="merch-redemption" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="order-history" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="edit-profile" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="payment-methods" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="notifications" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="events" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="theme-settings" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="modal" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="formsheet" 
+              options={{ 
+                presentation: 'formSheet',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="transparent-modal" 
+              options={{ 
+                presentation: 'transparentModal',
+                headerShown: false,
+              }} 
+            />
+          </Stack>
+          <StatusBar style="auto" />
+          <Toast />
+        </ThemeProvider>
+      </AppProvider>
+    </AuthProvider>
   );
 }

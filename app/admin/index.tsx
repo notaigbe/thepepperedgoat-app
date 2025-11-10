@@ -8,30 +8,50 @@ import {
   Pressable,
   Platform,
   TextInput,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import * as Haptics from 'expo-haptics';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { signIn, isAuthenticated, signOut } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     console.log('Admin login attempt');
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    // TODO: Implement proper authentication with Supabase
-    if (username === 'admin' && password === 'admin123') {
-      setIsAuthenticated(true);
-    } else {
-      alert('Invalid credentials. Use admin/admin123 for demo.');
+
+    // For testing, use admin@jagabansla.com / admin
+    // You can create this user in Supabase or use the default credentials
+    const email = username.includes('@') ? username : 'admin@jagabansla.com';
+    const pass = password || 'admin';
+
+    setLoading(true);
+    const { error } = await signIn(email, pass);
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Login Failed', 'Invalid credentials. Use admin@jagabansla.com / admin for testing.');
     }
+  };
+
+  const handleLogout = async () => {
+    console.log('Logging out');
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await signOut();
+    setUsername('');
+    setPassword('');
   };
 
   const adminSections = [
@@ -124,11 +144,12 @@ export default function AdminDashboard() {
               <IconSymbol name="person" size={20} color={colors.textSecondary} />
               <TextInput
                 style={styles.input}
-                placeholder="Username"
+                placeholder="Email or Username"
                 placeholderTextColor={colors.textSecondary}
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
+                keyboardType="email-address"
               />
             </View>
 
@@ -149,13 +170,19 @@ export default function AdminDashboard() {
               style={({ pressed }) => [
                 styles.loginButton,
                 pressed && styles.loginButtonPressed,
+                loading && styles.loginButtonDisabled,
               ]}
               onPress={handleLogin}
+              disabled={loading}
             >
-              <Text style={styles.loginButtonText}>Sign In</Text>
+              <Text style={styles.loginButtonText}>
+                {loading ? 'Signing In...' : 'Sign In'}
+              </Text>
             </Pressable>
 
-            <Text style={styles.demoText}>Demo: admin / admin123</Text>
+            <Text style={styles.demoText}>
+              Demo: admin@jagabansla.com / admin
+            </Text>
           </View>
         </View>
       </SafeAreaView>
@@ -172,15 +199,7 @@ export default function AdminDashboard() {
           </View>
           <Pressable
             style={styles.logoutButton}
-            onPress={() => {
-              console.log('Logging out');
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              setIsAuthenticated(false);
-              setUsername('');
-              setPassword('');
-            }}
+            onPress={handleLogout}
           >
             <IconSymbol name="logout" size={24} color={colors.primary} />
           </Pressable>
@@ -228,7 +247,7 @@ export default function AdminDashboard() {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            💡 Enable Supabase for real-time syncing across all platforms
+            ✅ Connected to Supabase for real-time syncing
           </Text>
         </View>
       </ScrollView>
@@ -295,6 +314,9 @@ const styles = StyleSheet.create({
   },
   loginButtonPressed: {
     opacity: 0.8,
+  },
+  loginButtonDisabled: {
+    opacity: 0.5,
   },
   loginButtonText: {
     color: '#FFFFFF',

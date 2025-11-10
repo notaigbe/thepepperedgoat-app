@@ -1,174 +1,301 @@
 
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  Platform,
   Pressable,
   Image,
+  Platform,
+  TextInput,
   Alert,
 } from 'react-native';
-import React, { useState } from 'react';
-import { useApp } from '@/contexts/AppContext';
-import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
+import * as Haptics from 'expo-haptics';
 
 export default function ProfileScreen() {
-  const { userProfile, updateProfileImage, currentColors } = useApp();
   const router = useRouter();
-  const [imageLoading, setImageLoading] = useState(false);
+  const { currentColors, userProfile } = useApp();
+  const { isAuthenticated, signIn, signUp, signOut } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleImagePick = async () => {
-    console.log('Picking image from library');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      Alert.alert('Permission Required', 'Permission to access camera roll is required!');
+  const handleAuth = async () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      updateProfileImage(result.assets[0].uri);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setLoading(true);
+    if (isSignUp) {
+      if (!name) {
+        Alert.alert('Error', 'Please enter your name');
+        setLoading(false);
+        return;
+      }
+      await signUp(email, password, name, phone);
+    } else {
+      await signIn(email, password);
     }
+    setLoading(false);
   };
 
-  const handleTakePhoto = async () => {
-    console.log('Taking photo with camera');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      Alert.alert('Permission Required', 'Permission to access camera is required!');
-      return;
+  const handleSignOut = async () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      updateProfileImage(result.assets[0].uri);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-  };
-
-  const showImageOptions = () => {
-    console.log('Showing image options');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
-      'Profile Picture',
-      'Choose an option',
+      'Sign Out',
+      'Are you sure you want to sign out?',
       [
-        { text: 'Take Photo', onPress: handleTakePhoto },
-        { text: 'Choose from Library', onPress: handleImagePick },
         { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Sign Out', 
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+          }
+        },
       ]
     );
   };
 
-  const menuItems = [
-    { icon: 'person.circle', label: 'Edit Profile', route: '/edit-profile' },
-    { icon: 'clock', label: 'Order History', route: '/order-history' },
-    { icon: 'creditcard', label: 'Payment Methods', route: '/payment-methods' },
-    { icon: 'bell', label: 'Notifications', route: '/notifications' },
-    { icon: 'calendar', label: 'Events', route: '/events' },
-    { icon: 'paintbrush', label: 'Theme Settings', route: '/theme-settings' },
-  ];
+  const handleMenuPress = (route: string) => {
+    console.log('Navigating to:', route);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    router.push(route as any);
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.authContent}>
+          <View style={styles.authHeader}>
+            <IconSymbol name="person.circle.fill" size={80} color={currentColors.primary} />
+            <Text style={[styles.authTitle, { color: currentColors.text }]}>
+              {isSignUp ? 'Create Account' : 'Welcome Back'}
+            </Text>
+            <Text style={[styles.authSubtitle, { color: currentColors.textSecondary }]}>
+              {isSignUp ? 'Sign up to start earning points' : 'Sign in to your account'}
+            </Text>
+          </View>
+
+          <View style={styles.authForm}>
+            {isSignUp && (
+              <View style={[styles.inputContainer, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}>
+                <IconSymbol name="person" size={20} color={currentColors.textSecondary} />
+                <TextInput
+                  style={[styles.input, { color: currentColors.text }]}
+                  placeholder="Full Name"
+                  placeholderTextColor={currentColors.textSecondary}
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                />
+              </View>
+            )}
+
+            <View style={[styles.inputContainer, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}>
+              <IconSymbol name="envelope" size={20} color={currentColors.textSecondary} />
+              <TextInput
+                style={[styles.input, { color: currentColors.text }]}
+                placeholder="Email"
+                placeholderTextColor={currentColors.textSecondary}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+            </View>
+
+            <View style={[styles.inputContainer, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}>
+              <IconSymbol name="lock" size={20} color={currentColors.textSecondary} />
+              <TextInput
+                style={[styles.input, { color: currentColors.text }]}
+                placeholder="Password"
+                placeholderTextColor={currentColors.textSecondary}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+            </View>
+
+            {isSignUp && (
+              <View style={[styles.inputContainer, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}>
+                <IconSymbol name="phone" size={20} color={currentColors.textSecondary} />
+                <TextInput
+                  style={[styles.input, { color: currentColors.text }]}
+                  placeholder="Phone (optional)"
+                  placeholderTextColor={currentColors.textSecondary}
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                />
+              </View>
+            )}
+
+            <Pressable
+              style={[styles.authButton, { backgroundColor: currentColors.primary }]}
+              onPress={handleAuth}
+              disabled={loading}
+            >
+              <Text style={[styles.authButtonText, { color: currentColors.card }]}>
+                {loading ? 'Please wait...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.switchButton}
+              onPress={() => setIsSignUp(!isSignUp)}
+            >
+              <Text style={[styles.switchButtonText, { color: currentColors.textSecondary }]}>
+                {isSignUp ? 'Already have an account? ' : 'Don&apos;t have an account? '}
+                <Text style={{ color: currentColors.primary, fontWeight: '600' }}>
+                  {isSignUp ? 'Sign In' : 'Sign Up'}
+                </Text>
+              </Text>
+            </Pressable>
+
+            <View style={styles.demoContainer}>
+              <Text style={[styles.demoText, { color: currentColors.textSecondary }]}>
+                Demo credentials: admin@jagabansla.com / admin
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Profile Header */}
         <View style={[styles.profileHeader, { backgroundColor: currentColors.card }]}>
-          <Pressable onPress={showImageOptions} style={styles.imageContainer}>
-            {userProfile.profileImage ? (
+          <View style={styles.profileImageContainer}>
+            {userProfile?.profileImage ? (
               <Image source={{ uri: userProfile.profileImage }} style={styles.profileImage} />
             ) : (
-              <View style={[styles.profileImagePlaceholder, { backgroundColor: currentColors.accent }]}>
-                <IconSymbol name="person.fill" size={50} color={currentColors.primary} />
+              <View style={[styles.profileImagePlaceholder, { backgroundColor: currentColors.primary }]}>
+                <IconSymbol name="person" size={48} color={currentColors.card} />
               </View>
             )}
-            <View style={[styles.editBadge, { backgroundColor: currentColors.primary }]}>
-              <IconSymbol name="camera.fill" size={16} color={currentColors.card} />
-            </View>
-          </Pressable>
-          <Text style={[styles.profileName, { color: currentColors.text }]}>{userProfile.name}</Text>
-          <Text style={[styles.profileEmail, { color: currentColors.textSecondary }]}>{userProfile.email}</Text>
-        </View>
-
-        {/* Points Card */}
-        <View style={[styles.pointsCard, { backgroundColor: currentColors.primary }]}>
-          <View style={styles.pointsContent}>
-            <IconSymbol name="star.fill" size={32} color={currentColors.card} />
-            <View style={styles.pointsInfo}>
-              <Text style={[styles.pointsLabel, { color: currentColors.card }]}>Reward Points</Text>
-              <Text style={[styles.pointsValue, { color: currentColors.card }]}>{userProfile.points}</Text>
-            </View>
-          </View>
-          <Text style={[styles.pointsSubtext, { color: currentColors.card }]}>
-            Earn 1 point for every dollar spent
-          </Text>
-        </View>
-
-        {/* Stats */}
-        <View style={styles.statsContainer}>
-          <View style={[styles.statCard, { backgroundColor: currentColors.card }]}>
-            <IconSymbol name="bag.fill" size={24} color={currentColors.primary} />
-            <Text style={[styles.statValue, { color: currentColors.text }]}>{userProfile.orders.length}</Text>
-            <Text style={[styles.statLabel, { color: currentColors.textSecondary }]}>Orders</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: currentColors.card }]}>
-            <IconSymbol name="giftcard.fill" size={24} color={currentColors.primary} />
-            <Text style={[styles.statValue, { color: currentColors.text }]}>{userProfile.giftCards.length}</Text>
-            <Text style={[styles.statLabel, { color: currentColors.textSecondary }]}>Gift Cards</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: currentColors.card }]}>
-            <IconSymbol name="calendar" size={24} color={currentColors.primary} />
-            <Text style={[styles.statValue, { color: currentColors.text }]}>{userProfile.rsvpEvents.length}</Text>
-            <Text style={[styles.statLabel, { color: currentColors.textSecondary }]}>Events</Text>
-          </View>
-        </View>
-
-        {/* Menu Items */}
-        <View style={styles.menuContainer}>
-          {menuItems.map((item, index) => (
             <Pressable
-              key={index}
-              style={[styles.menuItem, { backgroundColor: currentColors.card }]}
-              onPress={() => {
-                console.log('Menu item pressed:', item.label);
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push(item.route);
-              }}
+              style={[styles.editImageButton, { backgroundColor: currentColors.primary }]}
+              onPress={() => handleMenuPress('/edit-profile')}
             >
-              <View style={styles.menuItemLeft}>
-                <IconSymbol name={item.icon as any} size={24} color={currentColors.primary} />
-                <Text style={[styles.menuItemLabel, { color: currentColors.text }]}>{item.label}</Text>
-              </View>
-              <IconSymbol name="chevron.right" size={20} color={currentColors.textSecondary} />
+              <IconSymbol name="camera" size={16} color={currentColors.card} />
             </Pressable>
-          ))}
+          </View>
+          <Text style={[styles.profileName, { color: currentColors.text }]}>{userProfile?.name}</Text>
+          <Text style={[styles.profileEmail, { color: currentColors.textSecondary }]}>{userProfile?.email}</Text>
+          
+          <View style={styles.pointsCard}>
+            <IconSymbol name="star.fill" size={32} color={currentColors.primary} />
+            <View style={styles.pointsInfo}>
+              <Text style={[styles.pointsValue, { color: currentColors.text }]}>{userProfile?.points || 0}</Text>
+              <Text style={[styles.pointsLabel, { color: currentColors.textSecondary }]}>Points Available</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Menu Options */}
+        <View style={styles.menuSection}>
+          <Pressable
+            style={[styles.menuItem, { backgroundColor: currentColors.card }]}
+            onPress={() => handleMenuPress('/order-history')}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: currentColors.primary + '20' }]}>
+              <IconSymbol name="receipt-long" size={24} color={currentColors.primary} />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={[styles.menuTitle, { color: currentColors.text }]}>Order History</Text>
+              <Text style={[styles.menuSubtitle, { color: currentColors.textSecondary }]}>
+                {userProfile?.orders?.length || 0} orders
+              </Text>
+            </View>
+            <IconSymbol name="chevron-right" size={24} color={currentColors.textSecondary} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.menuItem, { backgroundColor: currentColors.card }]}
+            onPress={() => handleMenuPress('/payment-methods')}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: '#4ECDC4' + '20' }]}>
+              <IconSymbol name="credit-card" size={24} color="#4ECDC4" />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={[styles.menuTitle, { color: currentColors.text }]}>Payment Methods</Text>
+              <Text style={[styles.menuSubtitle, { color: currentColors.textSecondary }]}>
+                {userProfile?.paymentMethods?.length || 0} cards
+              </Text>
+            </View>
+            <IconSymbol name="chevron-right" size={24} color={currentColors.textSecondary} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.menuItem, { backgroundColor: currentColors.card }]}
+            onPress={() => handleMenuPress('/events')}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: '#95E1D3' + '20' }]}>
+              <IconSymbol name="event" size={24} color="#95E1D3" />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={[styles.menuTitle, { color: currentColors.text }]}>Events</Text>
+              <Text style={[styles.menuSubtitle, { color: currentColors.textSecondary }]}>
+                View upcoming events
+              </Text>
+            </View>
+            <IconSymbol name="chevron-right" size={24} color={currentColors.textSecondary} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.menuItem, { backgroundColor: currentColors.card }]}
+            onPress={() => handleMenuPress('/theme-settings')}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: '#F38181' + '20' }]}>
+              <IconSymbol name="palette" size={24} color="#F38181" />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={[styles.menuTitle, { color: currentColors.text }]}>Theme Settings</Text>
+              <Text style={[styles.menuSubtitle, { color: currentColors.textSecondary }]}>
+                Customize appearance
+              </Text>
+            </View>
+            <IconSymbol name="chevron-right" size={24} color={currentColors.textSecondary} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.menuItem, { backgroundColor: currentColors.card }]}
+            onPress={handleSignOut}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: '#FF6B6B' + '20' }]}>
+              <IconSymbol name="logout" size={24} color="#FF6B6B" />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={[styles.menuTitle, { color: '#FF6B6B' }]}>Sign Out</Text>
+              <Text style={[styles.menuSubtitle, { color: currentColors.textSecondary }]}>
+                Sign out of your account
+              </Text>
+            </View>
+            <IconSymbol name="chevron-right" size={24} color={currentColors.textSecondary} />
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -182,15 +309,78 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  contentContainer: {
+  content: {
     paddingBottom: 120,
+  },
+  authContent: {
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 120,
+  },
+  authHeader: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  authTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginTop: 16,
+  },
+  authSubtitle: {
+    fontSize: 16,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  authForm: {
+    width: '100%',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  input: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 16,
+  },
+  authButton: {
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  authButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  switchButton: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  switchButtonText: {
+    fontSize: 14,
+  },
+  demoContainer: {
+    marginTop: 32,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  demoText: {
+    fontSize: 12,
+    textAlign: 'center',
   },
   profileHeader: {
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 20,
+    padding: 24,
+    marginBottom: 16,
   },
-  imageContainer: {
+  profileImageContainer: {
     position: 'relative',
     marginBottom: 16,
   },
@@ -206,7 +396,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  editBadge: {
+  editImageButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
@@ -215,8 +405,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
   },
   profileName: {
     fontSize: 24,
@@ -224,81 +412,53 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   profileEmail: {
-    fontSize: 14,
+    fontSize: 16,
+    marginBottom: 24,
   },
   pointsCard: {
-    marginHorizontal: 20,
-    marginTop: 20,
-    padding: 20,
-    borderRadius: 16,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
-    elevation: 5,
-  },
-  pointsContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 16,
   },
   pointsInfo: {
-    marginLeft: 16,
-  },
-  pointsLabel: {
-    fontSize: 14,
-    marginBottom: 4,
-    opacity: 0.9,
+    alignItems: 'flex-start',
   },
   pointsValue: {
     fontSize: 32,
     fontWeight: 'bold',
   },
-  pointsSubtext: {
-    fontSize: 12,
-    opacity: 0.8,
+  pointsLabel: {
+    fontSize: 14,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginTop: 20,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-  },
-  menuContainer: {
-    paddingHorizontal: 20,
-    marginTop: 20,
+  menuSection: {
+    paddingHorizontal: 16,
     gap: 12,
   },
   menuItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 12,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    borderRadius: 16,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.05)',
     elevation: 2,
   },
-  menuItemLeft: {
-    flexDirection: 'row',
+  menuIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
+    marginRight: 16,
   },
-  menuItemLabel: {
+  menuContent: {
+    flex: 1,
+  },
+  menuTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  menuSubtitle: {
+    fontSize: 14,
   },
 });
