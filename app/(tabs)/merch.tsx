@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   merchCard: {
-    width: '48%',
+    width: '100%',
     borderRadius: 16,
     overflow: 'hidden',
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',

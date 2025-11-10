@@ -28,6 +28,8 @@ export default function GiftCardsScreen() {
   const [recipientId, setRecipientId] = useState('');
   const [message, setMessage] = useState('');
 
+  const userPoints = userProfile?.points || 0;
+
   const handleAmountSelect = (amount: number) => {
     console.log('Amount selected:', amount);
     if (Platform.OS !== 'web') {
@@ -50,7 +52,7 @@ export default function GiftCardsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    if (!recipientEmail || !recipientName) {
+    if (!recipientEmail && !recipientName) {
       Alert.alert('Missing Information', 'Please fill in all required fields.');
       return;
     }
@@ -80,10 +82,10 @@ export default function GiftCardsScreen() {
         return;
       }
 
-      if (userProfile.points < selectedPoints) {
+      if (userPoints < selectedPoints) {
         Alert.alert(
           'Insufficient Points',
-          `You need ${selectedPoints - userProfile.points} more points to send this gift.`
+          `You need ${selectedPoints - userPoints} more points to send this gift.`
         );
         return;
       }
@@ -116,7 +118,7 @@ export default function GiftCardsScreen() {
             <View style={[styles.pointsBadge, { backgroundColor: currentColors.primary }]}>
               <IconSymbol name="star.fill" size={14} color={currentColors.card} />
               <Text style={[styles.pointsText, { color: currentColors.card }]}>
-                {userProfile.points}
+                {userPoints}
               </Text>
             </View>
           </View>
@@ -308,7 +310,7 @@ export default function GiftCardsScreen() {
                     Your Points
                   </Text>
                   <Text style={[styles.summaryValue, { color: currentColors.text }]}>
-                    {userProfile.points} pts
+                    {userPoints} pts
                   </Text>
                 </View>
                 <View style={styles.summaryRow}>
@@ -322,7 +324,7 @@ export default function GiftCardsScreen() {
                 <View style={[styles.summaryRow, styles.totalRow]}>
                   <Text style={[styles.totalLabel, { color: currentColors.text }]}>Remaining Points</Text>
                   <Text style={[styles.totalValue, { color: currentColors.primary }]}>
-                    {userProfile.points - selectedPoints} pts
+                    {userPoints - selectedPoints} pts
                   </Text>
                 </View>
               </>
