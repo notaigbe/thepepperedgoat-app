@@ -7,7 +7,6 @@ import {
   Image,
   Pressable,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -60,9 +59,7 @@ export default function ItemDetailScreen() {
     console.log('Adding to cart:', item.name, quantity);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     addToCart({ ...item, quantity });
-    Alert.alert('Added to Cart', `${quantity}x ${item.name} added to your cart!`, [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+    router.back();
   };
 
   const handleBackPress = () => {

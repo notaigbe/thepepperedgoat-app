@@ -112,14 +112,16 @@ const MAPPING = {
   "lock.fill": "lock",
   "lock.open.fill": "lock-open",
 
-  // Shopping & Commerce
-  "cart.fill": "shopping-cart",
-  "cart": "shopping-cart-outlined",
-  "creditcard.fill": "credit-card",
-  "creditcard": "credit-card",
-  "dollarsign.circle.fill": "monetization-on",
-  "bag.fill": "shopping-bag",
-  "bag": "shopping-bag",
+// Shopping & Commerce
+"cart.fill": "shopping-cart",
+"cart": "shopping-cart-outlined",
+"creditcard.fill": "credit-card",
+"creditcard": "credit-card",
+"dollarsign.circle.fill": "monetization-on",
+"bag.fill": "shopping-bag",
+"bag": "shopping-bag",
+"gift.fill": "card-giftcard",
+"gift": "card-giftcard",
 
   // Location & Maps
   "location.fill": "location-on",

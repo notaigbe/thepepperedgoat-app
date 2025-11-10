@@ -3,6 +3,12 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { useColorScheme } from 'react-native';
 import { CartItem, Order, UserProfile, GiftCard, PaymentMethod, AppNotification, ThemeSettings, ThemeMode, ColorScheme, MerchRedemption } from '@/types';
 
+interface ToastConfig {
+  visible: boolean;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
 interface AppContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
@@ -27,6 +33,9 @@ interface AppContextType {
   isTabBarVisible: boolean;
   setTabBarVisible: (visible: boolean) => void;
   receivePointsGiftCard: (senderId: string, senderName: string, points: number, message?: string) => void;
+  toast: ToastConfig;
+  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  hideToast: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -35,6 +44,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const systemColorScheme = useColorScheme();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
+  const [toast, setToast] = useState<ToastConfig>({
+    visible: false,
+    message: '',
+    type: 'success',
+  });
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>({
     mode: 'light',
     colorScheme: 'default',
@@ -193,17 +207,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setIsTabBarVisible(visible);
   };
 
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    console.log('Showing toast:', message, type);
+    setToast({
+      visible: true,
+      message,
+      type,
+    });
+  };
+
+  const hideToast = () => {
+    console.log('Hiding toast');
+    setToast((prev) => ({
+      ...prev,
+      visible: false,
+    }));
+  };
+
   const addToCart = (item: CartItem) => {
     console.log('Adding to cart:', item.name);
     setCart((prevCart) => {
       const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
       if (existingItem) {
+        showToast(`Updated ${item.name} quantity in cart`, 'success');
         return prevCart.map((cartItem) =>
           cartItem.id === item.id
             ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
             : cartItem
         );
       }
+      showToast(`${item.name} added to cart!`, 'success');
       return [...prevCart, item];
     });
   };
@@ -472,6 +505,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         currentColors,
         isTabBarVisible,
         setTabBarVisible,
+        toast,
+        showToast,
+        hideToast,
       }}
     >
       {children}
