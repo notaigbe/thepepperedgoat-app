@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/app/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -64,67 +63,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signUp = async (email: string, password: string, name: string, phone?: string) => {
-    try {
-      console.log('Signing up:', email);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: 'https://natively.dev/email-confirmed',
-          data: {
-            name,
-            phone,
-          }
-        }
-      });
+const signUp = async (email: string, password: string, name: string, phone?: string) => {
+  try {
+    console.log('Signing up:', email);
 
-      if (error) {
-        console.error('Sign up error:', error);
-        Alert.alert('Sign Up Error', error.message);
-        return { error };
-      }
+    // Sign up user
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name, phone },
+        // Comment out for auto-confirm in dev (email testing mode)
+        emailRedirectTo: 'https://natively.dev/email-confirmed',
+      },
+    });
 
-      // Create user profile
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: data.user.id,
-            name,
-            email,
-            phone: phone || '',
-            points: 0,
-          });
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-        }
-
-        // Create default theme settings
-        await supabase
-          .from('theme_settings')
-          .insert({
-            user_id: data.user.id,
-            mode: 'auto',
-            color_scheme: 'default',
-          });
-
-        Alert.alert(
-          'Registration Successful',
-          'Please check your email to verify your account before signing in.',
-          [{ text: 'OK' }]
-        );
-      }
-
-      console.log('Sign up successful:', data.user?.email);
-      return { error: null };
-    } catch (error: any) {
-      console.error('Sign up exception:', error);
+    if (error) {
+      console.error('Sign-up error:', error);
       Alert.alert('Sign Up Error', error.message);
       return { error };
     }
-  };
+
+    // Handle confirmation or auto-signin
+    if (data.user) {
+      if (data.session) {
+        // Auto-confirmed (dev mode)
+        console.log('User auto-confirmed:', data.user.email);
+        Alert.alert('Welcome!', 'Your account has been created successfully.');
+      } else {
+        // Confirmation required (production mode)
+        console.log('Confirmation email sent to:', data.user.email);
+        Alert.alert(
+          'Registration Successful',
+          'Please check your email to verify your account before signing in.'
+        );
+      }
+    }
+
+    console.log('Sign-up complete for:', data.user?.email);
+    return { error: null };
+  } catch (error: any) {
+    console.error('Sign-up exception:', error);
+    Alert.alert('Sign Up Error', error.message);
+    return { error };
+  }
+};
 
   const signOut = async () => {
     try {
@@ -133,10 +116,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('Sign out error:', error);
         Alert.alert('Sign Out Error', error.message);
+        throw error;
       }
+      console.log('Sign out successful');
     } catch (error: any) {
       console.error('Sign out exception:', error);
       Alert.alert('Sign Out Error', error.message);
+      throw error;
     }
   };
 

@@ -42,6 +42,11 @@ const MAPPING = {
   "bell": "notifications-none",
   "heart.fill": "favorite",
   "heart": "favorite-border",
+	"receipt-long":"receipt-long",
+	"credit-card":"credit-card",
+	"event":"event",
+	"palette":"palette",
+	"logout":"logout",
 
   // Actions & Controls
   "plus": "add",
@@ -86,7 +91,7 @@ const MAPPING = {
   "gearshape.fill": "settings",
   "slider.horizontal.3": "tune",
   "info.circle.fill": "info",
-  "info.circle": "info-outlined",
+  "info.circle": "info-circle",
   "exclamationmark.triangle.fill": "warning",
   "exclamationmark.triangle": "warning-amber",
   "questionmark.circle.fill": "help",
@@ -145,6 +150,8 @@ const MAPPING = {
   "person.circle": "account-circle",
   "person.crop.circle.fill": "account-circle",
   "person.crop.circle": "account-circle",
+	"lock":"lock",
+	"phone":"phone",
 
   // Sharing & Export
   "square.and.arrow.up": "share",
@@ -163,6 +170,7 @@ const MAPPING = {
   "lightbulb.fill": "lightbulb",
   "moon.fill": "dark-mode",
   "sun.max.fill": "light-mode",
+	"auto-mode":"auto-mode",
 } as Partial<
   Record<
     import("expo-symbols").SymbolViewProps["name"],

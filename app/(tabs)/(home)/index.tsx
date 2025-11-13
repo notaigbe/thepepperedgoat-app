@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -16,8 +15,8 @@ import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useApp } from '@/contexts/AppContext';
 import * as Haptics from 'expo-haptics';
-import { menuService } from '@/services/supabaseService';
-import { MenuItem } from '@/types';
+import { imageService } from '@/services/supabaseService';
+import Toast from '@/components/Toast';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -46,45 +45,41 @@ const getResponsivePadding = (basePadding: number) => {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { currentColors } = useApp();
+  const { currentColors, menuItems, loadMenuItems, addToCart } = useApp(); // Added addToCart from context
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [headerImage, setHeaderImage] = useState<string | null>(null);
+ // Toast state
+const [toastVisible, setToastVisible] = useState(false);
+const [toastMessage, setToastMessage] = useState('');
+const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
+	const showToast = (type: 'success' | 'error' | 'info', message: string) => {
+  setToastType(type);
+  setToastMessage(message);
+  setToastVisible(true);
+};
+	
   useEffect(() => {
-    loadMenuItems();
+    async function fetchHeaderImage() {
+      try {
+        const imageUrl = imageService.getPublicUrl('assets', 'logos/jagaban_web_logo_dark.png');
+        setHeaderImage(imageUrl);
+      } catch (error) {
+        console.error('Failed to load header image:', error);
+      }
+    }
+
+    fetchHeaderImage();
   }, []);
 
-  const loadMenuItems = async () => {
-    try {
-      console.log('Loading menu items from Supabase');
+  useEffect(() => {
+    // Only load if menuItems is empty
+    if (menuItems.length === 0) {
       setLoading(true);
-      const { data, error } = await menuService.getMenuItems();
-      
-      if (error) {
-        console.error('Error loading menu items:', error);
-        return;
-      }
-
-      if (data) {
-        const items: MenuItem[] = data.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          price: parseFloat(item.price),
-          category: item.category,
-          image: item.image,
-          popular: item.popular,
-        }));
-        setMenuItems(items);
-        console.log('Loaded', items.length, 'menu items');
-      }
-    } catch (error) {
-      console.error('Exception loading menu items:', error);
-    } finally {
-      setLoading(false);
+      loadMenuItems().finally(() => setLoading(false));
     }
-  };
+  }, [menuItems.length, loadMenuItems]);
 
   const filteredItems = selectedCategory === 'All'
     ? menuItems
@@ -102,17 +97,32 @@ export default function HomeScreen() {
     router.push(`/item-detail?id=${itemId}`);
   };
 
+  const handleAddToCart = (item: any) => {
+    console.log('Adding to cart:', item.name, 1);
+    
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    addToCart({ ...item, quantity: 1 });
+		showToast('success', `1 ${item.name} Added to cart`)
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <Image 
-              source={require('@/assets/images/32297f18-8c85-4435-9bd9-0ac1fa24076e.png')}
-              style={styles.logo}
-            />
-            <Text style={[styles.headerSubtitle, { color: currentColors.textSecondary }]}>Authentic West African Cuisine</Text>
+            {headerImage ? (
+              <Image 
+                source={{ uri: headerImage }}
+                style={styles.logo}
+              />
+            ) : (
+              <ActivityIndicator size="small" color={currentColors.primary} />
+            )}
+
+            <Text style={[styles.headerSubtitle, { color: currentColors.textSecondary }]}>
+              Authentic West African Cuisine
+            </Text>
           </View>
           <Pressable onPress={() => router.push('/notifications')}>
             <IconSymbol name="bell.fill" size={24} color={currentColors.primary} />
@@ -160,7 +170,7 @@ export default function HomeScreen() {
         </ScrollView>
 
         {/* Menu Items */}
-        {loading ? (
+        {loading || menuItems.length === 0 ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={currentColors.primary} />
             <Text style={[styles.loadingText, { color: currentColors.textSecondary }]}>
@@ -187,7 +197,10 @@ export default function HomeScreen() {
                   style={[styles.menuItem, { backgroundColor: currentColors.card }]}
                   onPress={() => handleItemPress(item.id)}
                 >
-                  <Image source={{ uri: item.image }} style={[styles.menuItemImage, { backgroundColor: currentColors.accent }]} />
+                  <Image 
+                    source={{ uri: item.image }} 
+                    style={[styles.menuItemImage, { backgroundColor: currentColors.accent }]} 
+                  />
                   {item.popular && (
                     <View style={[styles.popularBadge, { backgroundColor: currentColors.primary }]}>
                       <IconSymbol name="star.fill" size={12} color={currentColors.card} />
@@ -195,15 +208,28 @@ export default function HomeScreen() {
                     </View>
                   )}
                   <View style={styles.menuItemInfo}>
-                    <Text style={[styles.menuItemName, { color: currentColors.text }]}>{item.name}</Text>
-                    <Text style={[styles.menuItemDescription, { color: currentColors.textSecondary }]} numberOfLines={2}>
+                    <Text style={[styles.menuItemName, { color: currentColors.text }]}>
+                      {item.name}
+                    </Text>
+                    <Text 
+                      style={[styles.menuItemDescription, { color: currentColors.textSecondary }]} 
+                      numberOfLines={2}
+                    >
                       {item.description}
                     </Text>
                     <View style={styles.menuItemFooter}>
-                      <Text style={[styles.menuItemPrice, { color: currentColors.primary }]}>${item.price.toFixed(2)}</Text>
-                      <View style={[styles.addButton, { backgroundColor: currentColors.primary }]}>
+                      <Text style={[styles.menuItemPrice, { color: currentColors.primary }]}>
+                        ${item.price.toFixed(2)}
+                      </Text>
+                      <Pressable 
+                        style={[styles.addButton, { backgroundColor: currentColors.primary }]} 
+                        onPress={(e) => {
+                          e.stopPropagation(); // Prevent triggering the parent Pressable
+                          handleAddToCart(item);
+                        }}
+                      >
                         <IconSymbol name="plus" size={20} color={currentColors.card} />
-                      </View>
+                      </Pressable>
                     </View>
                   </View>
                 </Pressable>
@@ -212,6 +238,13 @@ export default function HomeScreen() {
           </ScrollView>
         )}
       </View>
+			<Toast
+  visible={toastVisible}
+  message={toastMessage}
+  type={toastType}
+  onHide={() => setToastVisible(false)}
+  currentColors={currentColors}
+/>
     </SafeAreaView>
   );
 }

@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +6,7 @@ import {
   ScrollView,
   Pressable,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -14,15 +14,17 @@ import { useApp } from '@/contexts/AppContext';
 import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import { ThemeMode, ColorScheme } from '@/types';
+import { themeService } from '@/services/supabaseService';
 
 export default function ThemeSettingsScreen() {
   const router = useRouter();
-  const { themeSettings, updateThemeMode, updateColorScheme, currentColors } = useApp();
+  const { themeSettings, updateThemeMode, updateColorScheme, currentColors, user } = useApp();
+  const [isSaving, setIsSaving] = useState(false);
 
   const themeModes: { value: ThemeMode; label: string; icon: string; description: string }[] = [
     { value: 'light', label: 'Light', icon: 'sun.max.fill', description: 'Bright and clean interface' },
     { value: 'dark', label: 'Dark', icon: 'moon.fill', description: 'Easy on the eyes at night' },
-    { value: 'auto', label: 'Auto', icon: 'circle.lefthalf.filled', description: 'Follows system settings' },
+    { value: 'auto', label: 'Auto', icon: 'auto-mode', description: 'Follows system settings' },
   ];
 
   const colorSchemes: { value: ColorScheme; label: string; description: string; colors: string[] }[] = [
@@ -58,18 +60,22 @@ export default function ThemeSettingsScreen() {
     },
   ];
 
-  const handleThemeModeChange = (mode: ThemeMode) => {
+  const handleThemeModeChange = async (mode: ThemeMode) => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    updateThemeMode(mode);
+    
+    // AppContext handles both local update and Supabase save
+    await updateThemeMode(mode);
   };
 
-  const handleColorSchemeChange = (scheme: ColorScheme) => {
+  const handleColorSchemeChange = async (scheme: ColorScheme) => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    updateColorScheme(scheme);
+    
+    // AppContext handles both local update and Supabase save
+    await updateColorScheme(scheme);
   };
 
   const styles = StyleSheet.create({
@@ -102,6 +108,15 @@ export default function ThemeSettingsScreen() {
       fontWeight: 'bold',
       color: currentColors.text,
       flex: 1,
+    },
+    savingIndicator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    savingText: {
+      fontSize: 12,
+      color: currentColors.textSecondary,
     },
     scrollView: {
       flex: 1,
@@ -259,6 +274,12 @@ export default function ThemeSettingsScreen() {
             <IconSymbol name="chevron.left" size={20} color={currentColors.primary} />
           </Pressable>
           <Text style={styles.headerTitle}>Theme Settings</Text>
+          {isSaving && (
+            <View style={styles.savingIndicator}>
+              <ActivityIndicator size="small" color={currentColors.primary} />
+              <Text style={styles.savingText}>Saving...</Text>
+            </View>
+          )}
         </View>
 
         <ScrollView
@@ -280,6 +301,7 @@ export default function ThemeSettingsScreen() {
                   themeSettings.mode === mode.value && styles.optionCardSelected,
                 ]}
                 onPress={() => handleThemeModeChange(mode.value)}
+                disabled={isSaving}
               >
                 <View style={styles.optionIcon}>
                   <IconSymbol 
@@ -315,6 +337,7 @@ export default function ThemeSettingsScreen() {
                   themeSettings.colorScheme === scheme.value && styles.colorSchemeCardSelected,
                 ]}
                 onPress={() => handleColorSchemeChange(scheme.value)}
+                disabled={isSaving}
               >
                 <View style={styles.colorSchemeHeader}>
                   <View style={styles.colorSchemeInfo}>

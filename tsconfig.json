@@ -5,9 +5,24 @@
     "baseUrl": ".",
     "jsx": "react-jsx",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"],
+      "@": ["./"],
+      "@components": ["./components"],
+      "@components/*": ["./components/*"],
+      "@style": ["./style"],
+      "@hooks": ["./hooks"],
+      "@types": ["./types"],
+      "@types/*": ["./types/*"],
+      "@contexts": ["./contexts"],
+      "@contexts/*": ["./contexts/*"],
+      "@services": ["./services"],
+      "@services/*": ["./services/*"],
+      "@utils": ["./utils"],
+      "@utils/*": ["./utils/*"],
+      "@data": ["./data"],
+      "@data/*": ["./data/*"],
+      "@app": ["./app"],
+      "@app/*": ["./app/*"]
     }
   },
   "include": [

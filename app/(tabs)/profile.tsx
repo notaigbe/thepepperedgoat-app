@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,6 +16,8 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import * as Haptics from 'expo-haptics';
+import Toast from '@/components/Toast';
+import { ActivityIndicator } from 'react-native';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -28,35 +29,98 @@ export default function ProfileScreen() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
+	const [showPassword, setShowPassword] = useState(false);
+ // Toast state
+const [toastVisible, setToastVisible] = useState(false);
+const [toastMessage, setToastMessage] = useState('');
+const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+const [imageLoading, setImageLoading] = useState(false);
 
+useEffect(() => {
+  const fetchProfileImage = async () => {
+    if (userProfile?.profileImage) {
+      setImageLoading(true);
+      try {
+        // Check if it's already a full URL
+        if (userProfile.profileImage.startsWith('http')) {
+          setProfileImageUrl(userProfile.profileImage);
+        } else {
+          // Fetch from Supabase storage
+          const imageUrl = imageService.getPublicUrl('profile/avatars', userProfile.profileImage);
+          if (imageUrl) {
+            setProfileImageUrl(imageUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load profile image:', error);
+        showToast('error', 'Could not load profile picture');
+      } finally {
+        setImageLoading(false);
+      }
+    }
+  };
+
+  if (isAuthenticated) {
+    fetchProfileImage();
+  }
+}, [userProfile?.profileImage, isAuthenticated]);
+const showToast = (type: 'success' | 'error' | 'info', message: string) => {
+  setToastType(type);
+  setToastMessage(message);
+  setToastVisible(true);
+};
+	
   const handleAuth = async () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      showToast('error', 'Please fill in all required fields');
       return;
     }
 
     setLoading(true);
-    if (isSignUp) {
-      if (!name) {
-        Alert.alert('Error', 'Please enter your name');
-        setLoading(false);
-        return;
+    try {
+      if (isSignUp) {
+        if (!name) {
+          showToast('error', 'Please enter your name');
+          setLoading(false);
+          return;
+        }
+        const { error } = await signUp(email, password, name, phone);
+        if (!error) {
+          // Clear form after successful signup
+          setEmail('');
+          setPassword('');
+          setName('');
+          setPhone('');
+          // Switch to sign in mode
+          setIsSignUp(false);
+					setShowPassword(false);
+        }
+      } else {
+        const { error } = await signIn(email, password);
+        if (!error) {
+          // Clear form after successful sign in
+          setEmail('');
+          setPassword('');
+					setShowPassword(false);
+        }
       }
-      await signUp(email, password, name, phone);
-    } else {
-      await signIn(email, password);
+    } catch (error) {
+      console.error('Auth error:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSignOut = async () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
@@ -66,7 +130,19 @@ export default function ProfileScreen() {
           text: 'Sign Out', 
           style: 'destructive',
           onPress: async () => {
-            await signOut();
+            try {
+              await signOut();
+              // Clear any form data
+              setEmail('');
+              setPassword('');
+              setName('');
+              setPhone('');
+              setIsSignUp(false);
+							setShowPassword(false);
+            } catch (error) {
+              console.error('Sign out error:', error);
+              showToast('error', 'Failed to sign out. Please try again.');
+            }
           }
         },
       ]
@@ -124,17 +200,32 @@ export default function ProfileScreen() {
             </View>
 
             <View style={[styles.inputContainer, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}>
-              <IconSymbol name="lock" size={20} color={currentColors.textSecondary} />
-              <TextInput
-                style={[styles.input, { color: currentColors.text }]}
-                placeholder="Password"
-                placeholderTextColor={currentColors.textSecondary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-              />
-            </View>
+  <IconSymbol name="lock" size={20} color={currentColors.textSecondary} />
+  <TextInput
+    style={[styles.input, { color: currentColors.text }]}
+    placeholder="Password"
+    placeholderTextColor={currentColors.textSecondary}
+    value={password}
+    onChangeText={setPassword}
+    secureTextEntry={!showPassword}
+    autoCapitalize="none"
+  />
+  <Pressable
+    onPress={() => {
+      setShowPassword(!showPassword);
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    }}
+    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+  >
+    <IconSymbol 
+      name={showPassword ? "eye.slash.fill" : "eye.fill"} 
+      size={20} 
+      color={currentColors.textSecondary} 
+    />
+  </Pressable>
+</View>
 
             {isSignUp && (
               <View style={[styles.inputContainer, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}>
@@ -151,7 +242,7 @@ export default function ProfileScreen() {
             )}
 
             <Pressable
-              style={[styles.authButton, { backgroundColor: currentColors.primary }]}
+              style={[styles.authButton, { backgroundColor: currentColors.primary, opacity: loading ? 0.6 : 1 }]}
               onPress={handleAuth}
               disabled={loading}
             >
@@ -162,23 +253,34 @@ export default function ProfileScreen() {
 
             <Pressable
               style={styles.switchButton}
-              onPress={() => setIsSignUp(!isSignUp)}
+              onPress={() => {
+                setIsSignUp(!isSignUp);
+                // Clear form when switching
+                setEmail('');
+                setPassword('');
+                setName('');
+                setPhone('');
+								setShowPassword(false);
+              }}
+              disabled={loading}
             >
               <Text style={[styles.switchButtonText, { color: currentColors.textSecondary }]}>
-                {isSignUp ? 'Already have an account? ' : 'Don&apos;t have an account? '}
+                {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
                 <Text style={{ color: currentColors.primary, fontWeight: '600' }}>
                   {isSignUp ? 'Sign In' : 'Sign Up'}
                 </Text>
               </Text>
             </Pressable>
-
-            <View style={styles.demoContainer}>
-              <Text style={[styles.demoText, { color: currentColors.textSecondary }]}>
-                Demo credentials: admin@jagabansla.com / admin
-              </Text>
-            </View>
+						
           </View>
         </ScrollView>
+<Toast
+  visible={toastVisible}
+  message={toastMessage}
+  type={toastType}
+  onHide={() => setToastVisible(false)}
+  currentColors={currentColors}
+/>
       </SafeAreaView>
     );
   }
@@ -189,13 +291,25 @@ export default function ProfileScreen() {
         {/* Profile Header */}
         <View style={[styles.profileHeader, { backgroundColor: currentColors.card }]}>
           <View style={styles.profileImageContainer}>
-            {userProfile?.profileImage ? (
-              <Image source={{ uri: userProfile.profileImage }} style={styles.profileImage} />
-            ) : (
-              <View style={[styles.profileImagePlaceholder, { backgroundColor: currentColors.primary }]}>
-                <IconSymbol name="person" size={48} color={currentColors.card} />
-              </View>
-            )}
+
+						{imageLoading ? (
+  <View style={[styles.profileImagePlaceholder, { backgroundColor: currentColors.primary + '20' }]}>
+    <ActivityIndicator size="large" color={currentColors.primary} />
+  </View>
+) : profileImageUrl ? (
+  <Image 
+    source={{ uri: profileImageUrl }} 
+    style={styles.profileImage}
+    onError={(error) => {
+      console.error('Image load error:', error);
+      setProfileImageUrl(null);
+    }}
+  />
+) : (
+  <View style={[styles.profileImagePlaceholder, { backgroundColor: currentColors.primary }]}>
+    <IconSymbol name="person" size={48} color={currentColors.card} />
+  </View>
+)}
             <Pressable
               style={[styles.editImageButton, { backgroundColor: currentColors.primary }]}
               onPress={() => handleMenuPress('/edit-profile')}
@@ -298,6 +412,13 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
       </ScrollView>
+<Toast
+  visible={toastVisible}
+  message={toastMessage}
+  type={toastType}
+  onHide={() => setToastVisible(false)}
+  currentColors={currentColors}
+/>
     </SafeAreaView>
   );
 }

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,22 +6,111 @@ import {
   Image,
   Pressable,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { menuItems } from '@/data/menuData';
 import { useApp } from '@/contexts/AppContext';
 import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
+import { MenuItem } from '@/types';
 
 export default function ItemDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { addToCart, currentColors } = useApp();
+  const { addToCart, currentColors, menuItems } = useApp();
   const [quantity, setQuantity] = useState(1);
+  const [item, setItem] = useState<MenuItem | null>(null);
+	const [lastAddedQuantity, setLastAddedQuantity] = useState(1);
 
-  const item = menuItems.find((i) => i.id === id);
+  
+  // Notification state
+  const [showNotification, setShowNotification] = useState(false);
+  // Use useRef to maintain the same Animated.Value instances
+  const notificationOpacity = useRef(new Animated.Value(0)).current;
+  const notificationTranslateY = useRef(new Animated.Value(-100)).current;
 
+  // Convert name to string for comparison
+  const itemId = Array.isArray(id) ? id[0] : id;
+
+  // Find item when menuItems changes or component mounts
+  useEffect(() => {
+    if (menuItems && menuItems.length > 0 && itemId) {
+      console.log('Looking for item id:', itemId);
+      console.log('Available item ids:', menuItems.map(i => i.id));
+      
+      const foundItem = menuItems.find((i) =>String( i.id )=== String(itemId));
+      console.log('Item found:', !!foundItem);
+      setItem(foundItem || null);
+    }
+  }, [menuItems, itemId]);
+
+ const showNotificationToast = (addedQuantity: number) => {
+  setShowNotification(true);
+  
+  // Animate in
+  Animated.parallel([
+    Animated.timing(notificationOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }),
+    Animated.spring(notificationTranslateY, {
+      toValue: 0,
+      tension: 50,
+      friction: 7,
+      useNativeDriver: true,
+    }),
+  ]).start();
+
+  // Animate out after 3 seconds
+  setTimeout(() => {
+    Animated.parallel([
+      Animated.timing(notificationOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(notificationTranslateY, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowNotification(false);
+      notificationTranslateY.setValue(-100);
+    });
+  }, 3000);
+
+  // Save the last added quantity to display correctly
+  setLastAddedQuantity(addedQuantity);
+};
+
+  
+  // Show loading state while menu items are being fetched
+  if (!menuItems || menuItems.length === 0) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]}>
+        <View style={styles.header}>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => {
+              console.log('Back button pressed');
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.back();
+            }}
+          >
+            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
+            <Text style={[styles.backButtonText, { color: currentColors.text }]}>Back</Text>
+          </Pressable>
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={[styles.errorText, { color: currentColors.textSecondary }]}>Loading menu items...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  
   if (!item) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]}>
@@ -40,7 +128,9 @@ export default function ItemDetailScreen() {
           </Pressable>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={[styles.errorText, { color: currentColors.textSecondary }]}>Item not found</Text>
+          <Text style={[styles.errorText, { color: currentColors.textSecondary }]}>
+            Item not found
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -55,12 +145,19 @@ export default function ItemDetailScreen() {
     }
   };
 
-  const handleAddToCart = () => {
-    console.log('Adding to cart:', item.name, quantity);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    addToCart({ ...item, quantity });
-    setQuantity(1);
-  };
+const handleAddToCart = () => {
+  const addedQuantity = quantity; // capture current quantity
+  console.log('Adding to cart:', item.name, addedQuantity);
+  
+  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  addToCart({ ...item, quantity: addedQuantity });
+
+  // Pass the correct quantity to toast
+  showNotificationToast(addedQuantity);
+  
+  setQuantity(1);
+};
+
 
   const handleBackPress = () => {
     console.log('Back button pressed');
@@ -79,6 +176,35 @@ export default function ItemDetailScreen() {
           <Text style={[styles.backButtonText, { color: currentColors.text }]}>Back</Text>
         </Pressable>
       </View>
+
+      {/* Notification Toast */}
+      {showNotification && (
+        <Animated.View
+          style={[
+            styles.notification,
+            {
+              backgroundColor: currentColors.primary,
+              opacity: notificationOpacity,
+              transform: [{ translateY: notificationTranslateY }],
+            },
+          ]}
+        >
+          <View style={styles.notificationContent}>
+            <View style={[styles.notificationIcon, { backgroundColor: currentColors.card }]}>
+              <IconSymbol name="checkmark.circle.fill" size={24} color={currentColors.primary} />
+            </View>
+            <View style={styles.notificationText}>
+              <Text style={[styles.notificationTitle, { color: currentColors.card }]}>
+                Added to Cart!
+              </Text>
+              <Text style={[styles.notificationSubtitle, { color: currentColors.card }]}>
+								  {lastAddedQuantity} {item.name}
+								</Text>
+
+            </View>
+          </View>
+        </Animated.View>
+      )}
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Image source={{ uri: item.image }} style={[styles.image, { backgroundColor: currentColors.accent }]} />
@@ -174,9 +300,50 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   errorText: {
     fontSize: 18,
+    textAlign: 'center',
+  },
+  // Notification styles
+  notification: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    right: 20,
+    zIndex: 1000,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  notificationContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  notificationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationText: {
+    flex: 1,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  notificationSubtitle: {
+    fontSize: 14,
+    opacity: 0.9,
   },
   image: {
     width: '100%',

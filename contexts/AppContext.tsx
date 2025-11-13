@@ -50,6 +50,9 @@ interface AppContextType {
   toast: ToastConfig;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   hideToast: () => void;
+	menuItems: MenuItem[];
+  setMenuItems: (items: MenuItem[]) => void;
+  loadMenuItems: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -70,7 +73,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     mode: 'light',
     colorScheme: 'default',
   });
+	const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
+	// Load menu items when the app starts (in useEffect):
+	useEffect(() => {
+  loadMenuItems();
+}, []);
+	
   // Load user profile when authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -107,7 +116,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       orderChannelRef.current = channel;
 
       // Set auth before subscribing
-      await supabase.realtime.setAuth(supabase.auth.session()?.access_token);
+     const { data: { session } } = await supabase.auth.getSession();
+if (session) {
+  await supabase.realtime.setAuth(session.access_token);
+}
+
 
       channel
         .on('broadcast', { event: 'INSERT' }, (payload) => {
@@ -668,46 +681,85 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateThemeMode = async (mode: ThemeMode) => {
-    if (!user) return;
+ // Replace your updateThemeMode and updateColorScheme functions with these corrected versions:
 
-    try {
-      console.log('Updating theme mode:', mode);
-      setThemeSettings((prev) => ({ ...prev, mode }));
-      
-      const { error } = await themeService.updateThemeSettings(user.id, {
-        ...themeSettings,
-        mode,
-      });
+const updateThemeMode = async (mode: ThemeMode) => {
+  console.log('Updating theme mode:', mode);
+  
+  // Update local state first for immediate UI response
+  setThemeSettings((prev) => ({ ...prev, mode }));
+  
+  // Save to Supabase if user is authenticated
+  if (!user?.id) return; // Early return if no user
+  
+  try {
+    const { error } = await themeService.updateThemeSettings(user.id, {
+      mode,
+      colorScheme: themeSettings.colorScheme, // Use current colorScheme
+    });
 
-      if (error) {
-        console.error('Error updating theme mode:', error);
-      }
-    } catch (error) {
+    if (error) {
       console.error('Error updating theme mode:', error);
+      showToast('Failed to save theme settings', 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error updating theme mode:', error);
+    showToast('Failed to save theme settings', 'error');
+  }
+};
 
-  const updateColorScheme = async (scheme: ColorScheme) => {
-    if (!user) return;
+const updateColorScheme = async (scheme: ColorScheme) => {
+  console.log('Updating color scheme:', scheme);
+  
+  // Update local state first for immediate UI response
+  setThemeSettings((prev) => ({ ...prev, colorScheme: scheme }));
+  
+  // Save to Supabase if user is authenticated
+  if (!user?.id) return; // Early return if no user
+  
+  try {
+    const { error } = await themeService.updateThemeSettings(user.id, {
+      mode: themeSettings.mode, // Use current mode
+      colorScheme: scheme,
+    });
 
-    try {
-      console.log('Updating color scheme:', scheme);
-      setThemeSettings((prev) => ({ ...prev, colorScheme: scheme }));
-      
-      const { error } = await themeService.updateThemeSettings(user.id, {
-        ...themeSettings,
-        colorScheme: scheme,
-      });
-
-      if (error) {
-        console.error('Error updating color scheme:', error);
-      }
-    } catch (error) {
+    if (error) {
       console.error('Error updating color scheme:', error);
+      showToast('Failed to save theme settings', 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error updating color scheme:', error);
+    showToast('Failed to save theme settings', 'error');
+  }
+};
+	const loadMenuItems = async () => {
+  try {
+    console.log('Loading menu items from Supabase (AppContext)');
+    const { data, error } = await menuService.getMenuItems();
+    
+    if (error) {
+      console.error('Error loading menu items:', error);
+      return;
+    }
 
+    if (data) {
+      const items: MenuItem[] = data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: parseFloat(item.price),
+        category: item.category,
+        image: item.image,
+        popular: item.popular,
+				serial: item.serial,
+      }));
+      setMenuItems(items);
+      console.log('Loaded', items.length, 'menu items in context');
+    }
+  } catch (error) {
+    console.error('Exception loading menu items:', error);
+  }
+};
   return (
     <AppContext.Provider
       value={{
@@ -738,6 +790,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         toast,
         showToast,
         hideToast,
+				menuItems,
+  			setMenuItems,
+  			loadMenuItems,
       }}
     >
       {children}

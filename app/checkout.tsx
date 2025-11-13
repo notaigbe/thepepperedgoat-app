@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   View,
@@ -14,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '@/contexts/AppContext';
 import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
+import Toast from '@/components/Toast'
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -29,9 +29,12 @@ export default function CheckoutScreen() {
     };
   }, []);
 
+  // Use 0 points if userProfile is null
+  const availablePoints = userProfile?.points || 0;
+
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.0875;
-  const pointsDiscount = usePoints ? Math.min(userProfile.points * 0.01, subtotal * 0.2) : 0;
+  const pointsDiscount = usePoints ? Math.min(availablePoints * 0.01, subtotal * 0.2) : 0;
   const total = subtotal + tax - pointsDiscount;
   const pointsToEarn = Math.floor(total);
 
@@ -62,6 +65,19 @@ export default function CheckoutScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['bottom']}>
+			<View style={styles.header}>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => {
+              console.log('Back button pressed');
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.back();
+            }}
+          >
+            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
+            <Text style={[styles.backButtonText, { color: currentColors.text }]}>Back</Text>
+          </Pressable>
+        </View>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={[styles.infoBanner, { backgroundColor: currentColors.highlight + '20' }]}>
@@ -121,7 +137,7 @@ export default function CheckoutScreen() {
                 <View style={styles.pointsToggleInfo}>
                   <Text style={[styles.pointsToggleTitle, { color: currentColors.text }]}>Use Reward Points</Text>
                   <Text style={[styles.pointsToggleSubtitle, { color: currentColors.textSecondary }]}>
-                    You have {userProfile.points} points available
+                    You have {availablePoints} points available
                   </Text>
                 </View>
               </View>

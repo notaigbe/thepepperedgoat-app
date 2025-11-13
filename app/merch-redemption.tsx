@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   View,
@@ -9,6 +8,7 @@ import {
   TextInput,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '@/contexts/AppContext';
@@ -30,6 +30,11 @@ export default function MerchRedemptionScreen() {
     };
   }, []);
 
+  // Use 0 points if userProfile is null
+  const currentPoints = userProfile?.points || 0;
+  const requiredPoints = parseInt(pointsCost as string);
+  const hasEnoughPoints = currentPoints >= requiredPoints;
+
   const handleRedeem = () => {
     console.log('Redeeming merch with address');
     if (Platform.OS !== 'web') {
@@ -43,10 +48,10 @@ export default function MerchRedemptionScreen() {
 
     const points = parseInt(pointsCost as string);
     
-    if (userProfile.points < points) {
+    if (currentPoints < points) {
       Alert.alert(
         'Insufficient Points',
-        `You need ${points - userProfile.points} more points to redeem this item.`
+        `You need ${points - currentPoints} more points to redeem this item.`
       );
       return;
     }
@@ -156,7 +161,7 @@ export default function MerchRedemptionScreen() {
                 Your Points
               </Text>
               <Text style={[styles.summaryValue, { color: currentColors.text }]}>
-                {userProfile.points} pts
+                {currentPoints} pts
               </Text>
             </View>
             <View style={styles.summaryRow}>
@@ -172,7 +177,7 @@ export default function MerchRedemptionScreen() {
                 Remaining Points
               </Text>
               <Text style={[styles.totalValue, { color: currentColors.primary }]}>
-                {userProfile.points - parseInt(pointsCost as string)} pts
+                {currentPoints - parseInt(pointsCost as string)} pts
               </Text>
             </View>
           </View>
@@ -181,11 +186,18 @@ export default function MerchRedemptionScreen() {
         {/* Footer */}
         <View style={[styles.footer, { backgroundColor: currentColors.card, borderTopColor: currentColors.background }]}>
           <Pressable
-            style={[styles.redeemButton, { backgroundColor: currentColors.primary }]}
+            style={[
+              styles.redeemButton, 
+              { backgroundColor: hasEnoughPoints ? currentColors.primary : currentColors.textSecondary }
+            ]}
             onPress={handleRedeem}
+            disabled={!hasEnoughPoints}
           >
             <Text style={[styles.redeemButtonText, { color: currentColors.card }]}>
-              Redeem for {pointsCost} Points
+              {hasEnoughPoints 
+                ? `Redeem for ${pointsCost} Points` 
+                : `Need ${requiredPoints - currentPoints} More Points`
+              }
             </Text>
           </Pressable>
         </View>
@@ -200,6 +212,14 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
   header: {
     flexDirection: 'row',

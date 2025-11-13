@@ -1158,7 +1158,7 @@ export const themeService = {
         .from('theme_settings')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return { data, error: null };
@@ -1180,7 +1180,7 @@ export const themeService = {
           mode: settings.mode,
           color_scheme: settings.colorScheme,
           updated_at: new Date().toISOString(),
-        })
+        }, {onConflict: ['user_id']})
         .select()
         .single();
 
@@ -1189,6 +1189,102 @@ export const themeService = {
     } catch (error) {
       console.error('Update theme settings error:', error);
       return { data: null, error };
+    }
+  },
+};
+
+// ============================================
+// IMAGE STORAGE SERVICES
+// ============================================
+
+export const imageService = {
+  /**
+   * Upload an image to Supabase Storage
+   * @param bucket - bucket name
+   * @param path - path including filename (e.g., 'avatars/user123.png')
+   * @param file - File or Blob object
+   */
+// Updated imageService.uploadImage method:
+async uploadImage(
+  bucket: string, 
+  path: string, 
+  file: ArrayBuffer | Blob | File,
+  options?: { contentType?: string; upsert?: boolean }
+) {
+  try {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, { 
+        cacheControl: '3600', 
+        upsert: options?.upsert ?? true,
+        contentType: options?.contentType
+      });
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Upload image error:', error);
+    return { data: null, error };
+  }
+},
+
+  /**
+   * Get public URL for a public bucket
+   * @param bucket - bucket name
+   * @param path - path to the file
+   */
+  getPublicUrl(bucket: string, path: string): string | null {
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data?.publicUrl || null;
+  },
+
+  /**
+   * Get signed URL for private bucket
+   * @param bucket - bucket name
+   * @param path - path to the file
+   * @param expiresIn - expiration in seconds (default 1 hour)
+   */
+  async getSignedUrl(bucket: string, path: string, expiresIn = 3600): Promise<string | null> {
+    try {
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn);
+      if (error) throw error;
+      return data?.signedUrl || null;
+    } catch (error) {
+      console.error('Get signed URL error:', error);
+      return null;
+    }
+  },
+
+  /**
+   * List files in a folder
+   * @param bucket - bucket name
+   * @param folder - folder path
+   */
+  async listFiles(bucket: string, folder: string) {
+    try {
+      const { data, error } = await supabase.storage.from(bucket).list(folder, {
+        sortBy: { column: 'name', order: 'asc' },
+      });
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('List files error:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Download file as blob (for caching or offline usage)
+   * @param bucket - bucket name
+   * @param path - file path
+   */
+  async downloadFile(bucket: string, path: string): Promise<Blob | null> {
+    try {
+      const { data, error } = await supabase.storage.from(bucket).download(path);
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Download file error:', error);
+      return null;
     }
   },
 };
