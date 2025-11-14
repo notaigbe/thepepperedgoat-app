@@ -67,7 +67,7 @@ export default function EditProfileScreen() {
         name,
         email,
         phone,
-        profile_image,
+        profileImage: profileImage || undefined,
       });
 
       if (error) {
@@ -214,21 +214,125 @@ const uploadImage = async (asset: ImagePicker.ImagePickerAsset) => {
   }
 };
 
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+   backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: currentColors.card,
+      justifyContent: 'center',
+      alignItems: 'center',
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  saveButton: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  inputGroup: {
+    marginBottom: 24,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  input: {
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    borderWidth: 1,
+  },
+  imageSection: {
+    alignItems: 'center',
+    marginBottom: 32,
+    paddingTop: 20,
+  },
+  imageContainer: {
+    marginBottom: 20,
+  },
+  profileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  imagePlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  imageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  imageButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+    marginTop: 8,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+});
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <Pressable
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              router.back();
-            }}
-            style={styles.backButton}
-          >
-            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
-          </Pressable>
+                                onPress={() => {
+                                  if (Platform.OS !== 'web') {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  }
+                                  router.back();
+                                }}
+                                style={styles.backButton}
+                              >
+                                <IconSymbol name="chevron.left" size={24} color={currentColors.primary} />
+                              </Pressable>
           <Text style={[styles.headerTitle, { color: currentColors.text }]}>Edit Profile</Text>
           <Pressable 
             onPress={handleSave}
@@ -381,99 +485,3 @@ const uploadImage = async (asset: ImagePicker.ImagePickerAsset) => {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  saveButton: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    borderWidth: 1,
-  },
-  imageSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-    paddingTop: 20,
-  },
-  imageContainer: {
-    marginBottom: 20,
-  },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-  imagePlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imageButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  imageButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 8,
-  },
-  imageButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-    marginTop: 8,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-});

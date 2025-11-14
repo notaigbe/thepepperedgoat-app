@@ -97,17 +97,17 @@ export default function EventsScreen() {
       }
 
       const transformedEvent: Event = {
-        id: event.id,
-        title: event.title,
-        description: event.description,
-        date: event.date,
-        location: event.location,
-        capacity: event.capacity,
+        id: (event as any)?.id || '',
+        title: (event as any)?.title || '',
+        description: (event as any)?.description || '',
+        date: (event as any)?.date || '',
+        location: (event as any)?.location || '',
+        capacity: (event as any)?.capacity || 0,
         attendees: [],
-        image: event.image,
-        isPrivate: event.is_private,
-        isInviteOnly: event.is_invite_only,
-        shareableLink: event.shareable_link,
+        image: (event as any)?.image || '',
+        isPrivate: (event as any)?.is_private || false,
+        isInviteOnly: (event as any)?.is_invite_only || false,
+        shareableLink: (event as any)?.shareable_link || null,
       };
 
       // Add to accessed invite events if not already there
@@ -126,7 +126,7 @@ export default function EventsScreen() {
   const handleRSVP = async (event: Event) => {
     if (!isAuthenticated || !user) {
       Alert.alert('Sign In Required', 'Please sign in to RSVP to events.');
-      router.push('/auth/sign-in');
+      router.push('/(auth)/sign-in' as any);
       return;
     }
 
@@ -225,21 +225,176 @@ export default function EventsScreen() {
     ...accessedInviteEvents,
   ];
 
+  const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: currentColors.card,
+      justifyContent: 'center',
+      alignItems: 'center',
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  infoCard: {
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 20,
+  },
+  infoTextContainer: {
+    flex: 1,
+    gap: 4,
+  },
+  infoText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  emptyState: {
+    padding: 40,
+    borderRadius: 16,
+    alignItems: 'center',
+    gap: 12,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  eventCard: {
+    borderRadius: 16,
+    marginBottom: 20,
+    overflow: 'hidden',
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
+  },
+  eventImage: {
+    width: '100%',
+    height: 200,
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  eventContent: {
+    padding: 20,
+  },
+  eventTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  eventDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  eventDetails: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  eventDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  eventDetailText: {
+    fontSize: 14,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  rsvpButton: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
+  },
+  rsvpButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  shareButton: {
+    borderRadius: 12,
+    padding: 16,
+    width: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <Pressable
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              router.back();
-            }}
-            style={styles.backButton}
-          >
-            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
-          </Pressable>
+                      onPress={() => {
+                        if (Platform.OS !== 'web') {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                        router.back();
+                      }}
+                      style={styles.backButton}
+                    >
+                      <IconSymbol name="chevron.left" size={24} color={currentColors.primary} />
+                    </Pressable>
           <Text style={[styles.headerTitle, { color: currentColors.text }]}>Events</Text>
           <View style={{ width: 24 }} />
         </View>
@@ -378,150 +533,3 @@ export default function EventsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  infoCard: {
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 20,
-  },
-  infoTextContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  infoText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  emptyState: {
-    padding: 40,
-    borderRadius: 16,
-    alignItems: 'center',
-    gap: 12,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  eventCard: {
-    borderRadius: 16,
-    marginBottom: 20,
-    overflow: 'hidden',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
-  },
-  eventImage: {
-    width: '100%',
-    height: 200,
-  },
-  badgeContainer: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  eventContent: {
-    padding: 20,
-  },
-  eventTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  eventDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  eventDetails: {
-    gap: 12,
-    marginBottom: 20,
-  },
-  eventDetail: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  eventDetailText: {
-    fontSize: 14,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  rsvpButton: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 52,
-  },
-  rsvpButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  shareButton: {
-    borderRadius: 12,
-    padding: 16,
-    width: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

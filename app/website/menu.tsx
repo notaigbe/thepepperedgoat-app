@@ -13,17 +13,29 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
-import { menuItems, menuCategories } from '@/data/menuData';
+import { menuItems as staticMenuItems } from '@/data/menuData';
+import { menuService } from '@/services/supabaseService';
 import * as Haptics from 'expo-haptics';
 
 export default function WebsiteMenu() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [items, setItems] = React.useState(staticMenuItems);
 
-  const filteredItems =
-    selectedCategory === 'All'
-      ? menuItems
-      : menuItems.filter((item) => item.category === selectedCategory);
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const res = await menuService.getMenuItems();
+        if (res.error) throw res.error;
+        setItems(res.data || []);
+      } catch (err) {
+        console.error('Failed to load menu items', err);
+      }
+    })();
+  }, []);
+
+  const categories = ['All', ...Array.from(new Set(items.map((i) => i.category)))]
+  const filteredItems = selectedCategory === 'All' ? items : items.filter((item) => item.category === selectedCategory);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -56,7 +68,7 @@ export default function WebsiteMenu() {
           style={styles.categoryFilter}
           contentContainerStyle={styles.categoryFilterContent}
         >
-          {menuCategories.map((category) => (
+          {categories.map((category) => (
             <Pressable
               key={category}
               style={[

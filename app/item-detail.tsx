@@ -175,6 +175,7 @@ const handleAddToCart = () => {
           <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
           <Text style={[styles.backButtonText, { color: currentColors.text }]}>Back</Text>
         </Pressable>
+        
       </View>
 
       {/* Notification Toast */}

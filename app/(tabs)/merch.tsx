@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useApp } from '@/contexts/AppContext';
+import Toast from '@/components/Toast';
 import * as Haptics from 'expo-haptics';
 import { merchService } from '@/services/supabaseService';
 import { MerchItem } from '@/types';
@@ -23,6 +24,16 @@ export default function MerchScreen() {
   const { currentColors, userProfile } = useApp();
   const [merchItems, setMerchItems] = useState<MerchItem[]>([]);
   const [loading, setLoading] = useState(true);
+ // Toast state
+const [toastVisible, setToastVisible] = useState(false);
+const [toastMessage, setToastMessage] = useState('');
+const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+
+	const showToast = (type: 'success' | 'error' | 'info', message: string) => {
+  setToastType(type);
+  setToastMessage(message);
+  setToastVisible(true);
+};
 
   useEffect(() => {
     loadMerchItems();
@@ -74,6 +85,24 @@ export default function MerchScreen() {
         inStock: item.inStock.toString(),
       },
     });
+  };
+
+  const handleRedeemPress = (item: MerchItem, event: any) => {
+    event.stopPropagation();
+    
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    const userPoints = userProfile?.points || 0;
+    if (userPoints < item.pointsCost) {
+      showToast('error', `Insufficient points. You need ${item.pointsCost - userPoints} more points.`);
+      // setToastVisible(true);
+      return;
+    }
+
+    // Proceed to redemption screen
+    handleItemPress(item);
   };
 
   return (
@@ -144,11 +173,14 @@ export default function MerchScreen() {
                           </Text>
                         </View>
                         {item.inStock && (
-                          <View style={[styles.redeemButton, { backgroundColor: currentColors.primary }]}>
+                          <Pressable
+                            style={[styles.redeemButton, { backgroundColor: currentColors.primary }]}
+                            onPress={(e) => handleRedeemPress(item, e)}
+                          >
                             <Text style={[styles.redeemButtonText, { color: currentColors.card }]}>
                               Redeem
                             </Text>
-                          </View>
+                          </Pressable>
                         )}
                       </View>
                     </View>
@@ -159,6 +191,13 @@ export default function MerchScreen() {
           </ScrollView>
         )}
       </View>
+      <Toast
+        message={toastMessage}
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+        type={toastType}
+        currentColors={currentColors}
+      />
     </SafeAreaView>
   );
 }

@@ -5,21 +5,21 @@ import { IconSymbol } from './IconSymbol';
 import { BlurView } from 'expo-blur';
 
 interface ToastProps {
-  visible: boolean;
-  message: string;
+  visible?: boolean;
+  message?: string;
   duration?: number;
-  onHide: () => void;
+  onHide?: () => void;
   type?: 'success' | 'error' | 'info';
-  currentColors: any;
+  currentColors?: any;
 }
 
 export default function Toast({ 
-  visible, 
-  message, 
+  visible = false, 
+  message = '', 
   duration = 2000, 
-  onHide, 
+  onHide = () => {}, 
   type = 'success',
-  currentColors 
+  currentColors = {}
 }: ToastProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-100)).current;
@@ -69,7 +69,7 @@ export default function Toast({
     });
   };
 
-  if (!visible && fadeAnim._value === 0) {
+  if (!visible && (fadeAnim as any)._value === 0) {
     return null;
   }
 

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Platform,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,6 +17,8 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/contexts/AuthContext';
+import { orderService } from '@/services/supabaseService';
+import { supabase } from '@/app/integrations/supabase/client';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -23,6 +26,12 @@ export default function AdminDashboard() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    activeUsers: 0,
+    revenue: 0,
+  });
 
   const handleLogin = async () => {
     console.log('Admin login attempt');
@@ -53,6 +62,44 @@ export default function AdminDashboard() {
     setUsername('');
     setPassword('');
   };
+
+  const fetchStats = async () => {
+    try {
+      setStatsLoading(true);
+      const [ordersResponse, usersResponse] = await Promise.all([
+        orderService.getAllOrders(),
+        (supabase as any).from('user_profiles').select('*'),
+      ]);
+
+      const orders = ordersResponse.data || [];
+      const users = usersResponse.data || [];
+
+      const totalOrders = orders.length;
+      const activeUsers = users.length;
+      const revenue = orders.reduce((sum: number, order: any) => sum + (order.total || 0), 0);
+
+      setStats({
+        totalOrders,
+        activeUsers,
+        revenue,
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      setStats({
+        totalOrders: 0,
+        activeUsers: 0,
+        revenue: 0,
+      });
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchStats();
+    }
+  }, [isAuthenticated]);
 
   const adminSections = [
     {
@@ -208,17 +255,29 @@ export default function AdminDashboard() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <IconSymbol name="shopping-cart" size={32} color={colors.primary} />
-            <Text style={styles.statValue}>127</Text>
+            {statsLoading ? (
+              <ActivityIndicator color={colors.primary} style={{ marginVertical: 8 }} />
+            ) : (
+              <Text style={styles.statValue}>{stats.totalOrders}</Text>
+            )}
             <Text style={styles.statLabel}>Total Orders</Text>
           </View>
           <View style={styles.statCard}>
             <IconSymbol name="people" size={32} color="#4ECDC4" />
-            <Text style={styles.statValue}>1,234</Text>
+            {statsLoading ? (
+              <ActivityIndicator color="#4ECDC4" style={{ marginVertical: 8 }} />
+            ) : (
+              <Text style={styles.statValue}>{stats.activeUsers}</Text>
+            )}
             <Text style={styles.statLabel}>Active Users</Text>
           </View>
           <View style={styles.statCard}>
             <IconSymbol name="attach-money" size={32} color="#95E1D3" />
-            <Text style={styles.statValue}>$12.5K</Text>
+            {statsLoading ? (
+              <ActivityIndicator color="#95E1D3" style={{ marginVertical: 8 }} />
+            ) : (
+              <Text style={styles.statValue}>${(stats.revenue / 1000).toFixed(1)}K</Text>
+            )}
             <Text style={styles.statLabel}>Revenue</Text>
           </View>
         </View>

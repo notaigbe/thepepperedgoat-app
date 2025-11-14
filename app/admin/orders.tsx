@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,85 +7,66 @@ import {
   ScrollView,
   Pressable,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
-import { Order } from '@/types';
+import { Order, CartItem } from '@/types';
+import { orderService } from '@/services/supabaseService';
 import * as Haptics from 'expo-haptics';
+
+interface OrderWithItems extends Order {
+  items: CartItem[];
+}
 
 export default function AdminOrderManagement() {
   const router = useRouter();
   
-  // Mock orders data
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: '1001',
-      items: [
-        {
-          id: '1',
-          name: 'Jollof Rice',
-          description: 'Traditional West African rice dish',
-          price: 14.99,
-          category: 'Main Dishes',
-          image: '',
-          quantity: 2,
-        },
-        {
-          id: '2',
-          name: 'Suya Skewers',
-          description: 'Spicy grilled meat skewers',
-          price: 12.99,
-          category: 'Appetizers',
-          image: '',
-          quantity: 1,
-        },
-      ],
-      total: 42.97,
-      pointsEarned: 43,
-      date: new Date().toISOString(),
-      status: 'pending',
-    },
-    {
-      id: '1002',
-      items: [
-        {
-          id: '3',
-          name: 'Egusi Soup',
-          description: 'Melon seed soup',
-          price: 16.99,
-          category: 'Main Dishes',
-          image: '',
-          quantity: 1,
-        },
-      ],
-      total: 16.99,
-      pointsEarned: 17,
-      date: new Date(Date.now() - 3600000).toISOString(),
-      status: 'preparing',
-    },
-    {
-      id: '1003',
-      items: [
-        {
-          id: '8',
-          name: 'Zobo Drink',
-          description: 'Refreshing hibiscus tea',
-          price: 3.99,
-          category: 'Drinks',
-          image: '',
-          quantity: 3,
-        },
-      ],
-      total: 11.97,
-      pointsEarned: 12,
-      date: new Date(Date.now() - 7200000).toISOString(),
-      status: 'ready',
-    },
-  ]);
-
+  const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await orderService.getAllOrders();
+      if (res.error) throw res.error;
+      
+      // Transform backend data to match Order interface
+      const transformedOrders = (res.data || []).map((order: any) => ({
+        id: order.id,
+        items: (order.order_items || []).map((item: any) => ({
+          id: item.id || item.item_id || '',
+          name: item.item_name || item.name || '',
+          description: item.description || '',
+          price: item.price || 0,
+          quantity: item.quantity || 1,
+          category: item.category || '',
+          image: item.image || '',
+        })),
+        total: order.total || 0,
+        pointsEarned: order.points_earned || 0,
+        date: order.created_at || new Date().toISOString(),
+        status: order.status || 'pending',
+        deliveryAddress: order.delivery_address,
+        pickupNotes: order.pickup_notes,
+      }));
+
+      setOrders(transformedOrders);
+    } catch (err) {
+      console.error('Failed to load orders', err);
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statusOptions = [
     { value: 'all', label: 'All Orders', color: colors.text },
@@ -97,15 +78,38 @@ export default function AdminOrderManagement() {
 
   const handleStatusChange = (orderId: string, newStatus: Order['status']) => {
     console.log('Changing order status:', orderId, newStatus);
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    (async () => {
+      try {
+        const res = await orderService.updateOrderStatus(orderId, newStatus);
+        if (res.error || !res.data) throw res.error || new Error('Update failed');
+        
+        // Transform the updated order
+        const updatedOrder = res.data as any;
+        const transformedOrder: OrderWithItems = {
+          id: updatedOrder.id,
+          items: (updatedOrder.order_items || []).map((item: any) => ({
+            id: item.id || item.item_id || '',
+            name: item.item_name || item.name || '',
+            description: item.description || '',
+            price: item.price || 0,
+            quantity: item.quantity || 1,
+            category: item.category || '',
+            image: item.image || '',
+          })),
+          total: updatedOrder.total || 0,
+          pointsEarned: updatedOrder.points_earned || 0,
+          date: updatedOrder.created_at || new Date().toISOString(),
+          status: updatedOrder.status || 'pending',
+          deliveryAddress: updatedOrder.delivery_address,
+          pickupNotes: updatedOrder.pickup_notes,
+        };
 
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
+        setOrders((prev) => prev.map((o) => (o.id === orderId ? transformedOrder : o)));
+      } catch (err) {
+        console.error('Update order status failed', err);
+        Alert.alert('Error', 'Unable to update order status');
+      }
+    })();
   };
 
   const getStatusColor = (status: Order['status']) => {
@@ -180,85 +184,94 @@ export default function AdminOrderManagement() {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.ordersContainer}>
-          {filteredOrders.map((order) => (
-            <View key={order.id} style={styles.orderCard}>
-              <View style={styles.orderHeader}>
-                <View>
-                  <Text style={styles.orderId}>Order #{order.id}</Text>
-                  <Text style={styles.orderDate}>
-                    {new Date(order.date).toLocaleString()}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: getStatusColor(order.status) + '20' },
-                  ]}
-                >
-                  <Text
-                    style={[styles.statusText, { color: getStatusColor(order.status) }]}
-                  >
-                    {order.status.toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.orderItems}>
-                {order.items.map((item, index) => (
-                  <View key={index} style={styles.orderItem}>
-                    <Text style={styles.itemQuantity}>{item.quantity}x</Text>
-                    <Text style={styles.itemName}>{item.name}</Text>
-                    <Text style={styles.itemPrice}>
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.orderFooter}>
-                <View style={styles.orderTotal}>
-                  <Text style={styles.totalLabel}>Total:</Text>
-                  <Text style={styles.totalAmount}>${order.total.toFixed(2)}</Text>
-                </View>
-              </View>
-
-              <View style={styles.statusActions}>
-                <Text style={styles.actionsLabel}>Update Status:</Text>
-                <View style={styles.actionButtons}>
-                  {(['pending', 'preparing', 'ready', 'completed'] as const).map(
-                    (status) => (
-                      <Pressable
-                        key={status}
-                        style={[
-                          styles.actionButton,
-                          order.status === status && styles.actionButtonActive,
-                          { borderColor: getStatusColor(status) },
-                        ]}
-                        onPress={() => handleStatusChange(order.id, status)}
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.loadingText}>Loading orders...</Text>
+            </View>
+          ) : (
+            <>
+              {filteredOrders.map((order) => (
+                <View key={order.id} style={styles.orderCard}>
+                  <View style={styles.orderHeader}>
+                    <View>
+                      <Text style={styles.orderId}>Order #{order.id}</Text>
+                      <Text style={styles.orderDate}>
+                        {new Date(order.date).toLocaleString()}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        { backgroundColor: getStatusColor(order.status) + '20' },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.statusText, { color: getStatusColor(order.status) }]}
                       >
-                        <Text
-                          style={[
-                            styles.actionButtonText,
-                            order.status === status && {
-                              color: getStatusColor(status),
-                            },
-                          ]}
-                        >
-                          {status}
-                        </Text>
-                      </Pressable>
-                    )
-                  )}
-                </View>
-              </View>
-            </View>
-          ))}
+                        {order.status.toUpperCase()}
+                      </Text>
+                    </View>
+                  </View>
 
-          {filteredOrders.length === 0 && (
-            <View style={styles.emptyState}>
-              <IconSymbol name="receipt-long" size={64} color={colors.textSecondary} />
-              <Text style={styles.emptyText}>No orders found</Text>
-            </View>
+                  <View style={styles.orderItems}>
+                    {order.items.map((item: CartItem, index: number) => (
+                      <View key={index} style={styles.orderItem}>
+                        <Text style={styles.itemQuantity}>{item.quantity}x</Text>
+                        <Text style={styles.itemName}>{item.name}</Text>
+                        <Text style={styles.itemPrice}>
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={styles.orderFooter}>
+                    <View style={styles.orderTotal}>
+                      <Text style={styles.totalLabel}>Total:</Text>
+                      <Text style={styles.totalAmount}>${order.total.toFixed(2)}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.statusActions}>
+                    <Text style={styles.actionsLabel}>Update Status:</Text>
+                    <View style={styles.actionButtons}>
+                      {(['pending', 'preparing', 'ready', 'completed'] as const).map(
+                        (status) => (
+                          <Pressable
+                            key={status}
+                            style={[
+                              styles.actionButton,
+                              order.status === status && styles.actionButtonActive,
+                              { borderColor: getStatusColor(status) },
+                            ]}
+                            onPress={() => handleStatusChange(order.id, status)}
+                          >
+                            <Text
+                              style={[
+                                styles.actionButtonText,
+                                order.status === status && {
+                                  color: getStatusColor(status),
+                                },
+                              ]}
+                            >
+                              {status}
+                            </Text>
+                          </Pressable>
+                        )
+                      )}
+                    </View>
+                  </View>
+                </View>
+              ))}
+
+              {filteredOrders.length === 0 && (
+                <View style={styles.emptyState}>
+                  <IconSymbol name="receipt-long" size={64} color={colors.textSecondary} />
+                  <Text style={styles.emptyText}>No orders found</Text>
+                </View>
+              )}
+            </>
           )}
         </View>
       </ScrollView>
@@ -293,15 +306,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   statusFilter: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    maxHeight: 60,
   },
   statusFilterContent: {
     gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   statusChip: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
     borderRadius: 20,
     backgroundColor: colors.card,
     borderWidth: 1,
@@ -312,7 +328,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   statusChipText: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.text,
   },
   statusChipTextActive: {
@@ -439,6 +455,16 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
+    color: colors.textSecondary,
+    marginTop: 16,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 64,
+  },
+  loadingText: {
+    fontSize: 14,
     color: colors.textSecondary,
     marginTop: 16,
   },

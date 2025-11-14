@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
 import { ActivityIndicator } from 'react-native';
+import { supabase } from '@/app/integrations/supabase/client';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -47,9 +48,12 @@ useEffect(() => {
           setProfileImageUrl(userProfile.profileImage);
         } else {
           // Fetch from Supabase storage
-          const imageUrl = imageService.getPublicUrl('profile/avatars', userProfile.profileImage);
-          if (imageUrl) {
-            setProfileImageUrl(imageUrl);
+          const { data } = supabase
+            .storage
+            .from('profile/avatars')
+            .getPublicUrl(userProfile.profileImage);
+          if (data?.publicUrl) {
+            setProfileImageUrl(data.publicUrl);
           }
         }
       } catch (error) {

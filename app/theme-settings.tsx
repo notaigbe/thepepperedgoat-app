@@ -18,7 +18,7 @@ import { themeService } from '@/services/supabaseService';
 
 export default function ThemeSettingsScreen() {
   const router = useRouter();
-  const { themeSettings, updateThemeMode, updateColorScheme, currentColors, user } = useApp();
+  const { themeSettings, updateThemeMode, updateColorScheme, currentColors } = useApp();
   const [isSaving, setIsSaving] = useState(false);
 
   const themeModes: { value: ThemeMode; label: string; icon: string; description: string }[] = [

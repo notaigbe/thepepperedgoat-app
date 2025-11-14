@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/app/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 import { Alert } from 'react-native';

@@ -15,13 +15,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
-import { menuItems, menuCategories } from '@/data/menuData';
+import { menuItems as staticMenuItems } from '@/data/menuData';
+import { menuService } from '@/services/supabaseService';
 import { MenuItem } from '@/types';
 import * as Haptics from 'expo-haptics';
 
 export default function AdminMenuManagement() {
   const router = useRouter();
-  const [items, setItems] = useState<MenuItem[]>(menuItems);
+  const [items, setItems] = useState<MenuItem[]>(staticMenuItems);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -33,73 +34,86 @@ export default function AdminMenuManagement() {
     category: 'Main Dishes',
     image: '',
   });
+  
+  const categories: string[] = ['All', ...Array.from(new Set(items.map((i) => i.category)))];
 
   const handleAddItem = () => {
     console.log('Adding new menu item');
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    (async () => {
+      if (!formData.name || !formData.price) {
+        Alert.alert('Error', 'Please fill in all required fields');
+        return;
+      }
 
-    if (!formData.name || !formData.price) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
+      const payload: Omit<MenuItem, 'id'> = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        category: formData.category,
+        image: formData.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+        popular: false,
+        available: true,
+      };
 
-    const newItem: MenuItem = {
-      id: Date.now().toString(),
-      name: formData.name,
-      description: formData.description,
-      price: parseFloat(formData.price),
-      category: formData.category,
-      image: formData.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
-    };
-
-    setItems([...items, newItem]);
-    setIsAddingItem(false);
-    resetForm();
-    Alert.alert('Success', 'Menu item added successfully');
+      try {
+        const res = await menuService.addMenuItem(payload);
+        if (res.error || !res.data) throw res.error || new Error('Add failed');
+        const added = res.data as MenuItem | null;
+        if (added) setItems((s) => [added, ...s]);
+        setIsAddingItem(false);
+        resetForm();
+        Alert.alert('Success', 'Menu item added successfully');
+      } catch (err) {
+        console.error('Add menu item failed', err);
+        Alert.alert('Error', 'Unable to add menu item');
+      }
+    })();
   };
 
   const handleUpdateItem = () => {
     console.log('Updating menu item');
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    (async () => {
+      if (!editingItem) return;
 
-    if (!editingItem) return;
+      const updates: Partial<MenuItem> = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        category: formData.category,
+        image: formData.image,
+      };
 
-    const updatedItems = items.map((item) =>
-      item.id === editingItem.id
-        ? {
-            ...item,
-            name: formData.name,
-            description: formData.description,
-            price: parseFloat(formData.price),
-            category: formData.category,
-            image: formData.image,
-          }
-        : item
-    );
-
-    setItems(updatedItems);
-    setEditingItem(null);
-    resetForm();
-    Alert.alert('Success', 'Menu item updated successfully');
+      try {
+        const res = await menuService.updateMenuItem(editingItem.id, updates);
+        if (res.error || !res.data) throw res.error || new Error('Update failed');
+        setItems((prev) => prev.map((it) => (it.id === editingItem.id ? (res.data as MenuItem) : it)));
+        setEditingItem(null);
+        resetForm();
+        Alert.alert('Success', 'Menu item updated successfully');
+      } catch (err) {
+        console.error('Update menu item failed', err);
+        Alert.alert('Error', 'Unable to update menu item');
+      }
+    })();
   };
 
   const handleDeleteItem = (itemId: string) => {
     console.log('Deleting menu item:', itemId);
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
     Alert.alert('Confirm Delete', 'Are you sure you want to delete this item?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setItems(items.filter((item) => item.id !== itemId));
+        onPress: async () => {
+          try {
+            const res = await menuService.deleteMenuItem(itemId);
+            if (res.error) throw res.error;
+            setItems((prev) => prev.filter((item) => item.id !== itemId));
+            Alert.alert('Deleted', 'Menu item deleted');
+          } catch (err) {
+            console.error('Delete failed', err);
+            Alert.alert('Error', 'Unable to delete menu item');
+          }
         },
       },
     ]);
@@ -132,10 +146,19 @@ export default function AdminMenuManagement() {
     });
   };
 
-  const filteredItems =
-    selectedCategory === 'All'
-      ? items
-      : items.filter((item) => item.category === selectedCategory);
+  const filteredItems = selectedCategory === 'All' ? items : items.filter((item) => item.category === selectedCategory);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const res = await menuService.getMenuItems();
+        if (res.error) throw res.error;
+        setItems(res.data || []);
+      } catch (err) {
+        console.error('Failed to load menu items', err);
+      }
+    })();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -208,7 +231,7 @@ export default function AdminMenuManagement() {
             <View style={styles.categorySelector}>
               <Text style={styles.inputLabel}>Category:</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {menuCategories.filter((cat) => cat !== 'All').map((category) => (
+                {categories.filter((cat) => cat !== 'All').map((category) => (
                   <Pressable
                     key={category}
                     style={[
@@ -275,7 +298,7 @@ export default function AdminMenuManagement() {
           style={styles.categoryFilter}
           contentContainerStyle={styles.categoryFilterContent}
         >
-          {menuCategories.map((category) => (
+          {categories.map((category) => (
             <Pressable
               key={category}
               style={[

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -114,7 +114,7 @@ export default function GiftCardsScreen() {
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: currentColors.text }]}>Gift Cards</Text>
           <View style={styles.headerRight}>
-            <IconSymbol name="giftcard.fill" size={28} color={currentColors.primary} />
+            <IconSymbol name="gift.fill" size={28} color={currentColors.primary} />
             <View style={[styles.pointsBadge, { backgroundColor: currentColors.primary }]}>
               <IconSymbol name="star.fill" size={14} color={currentColors.card} />
               <Text style={[styles.pointsText, { color: currentColors.card }]}>
@@ -336,7 +336,7 @@ export default function GiftCardsScreen() {
             onPress={handlePurchase}
           >
             <IconSymbol
-              name={giftType === 'money' ? 'giftcard.fill' : 'star.fill'}
+              name={giftType === 'money' ? 'gift.fill' : 'star.fill'}
               size={20}
               color={currentColors.card}
             />

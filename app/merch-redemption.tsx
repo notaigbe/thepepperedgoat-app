@@ -80,133 +80,7 @@ export default function MerchRedemptionScreen() {
     );
   };
 
-  return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              router.back();
-            }}
-            style={styles.backButton}
-          >
-            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
-          </Pressable>
-          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Redeem Merch</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        <ScrollView
-          style={styles.content}
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Item Info */}
-          <View style={[styles.itemCard, { backgroundColor: currentColors.card }]}>
-            <Text style={[styles.itemName, { color: currentColors.text }]}>{merchName}</Text>
-            <View style={styles.pointsRow}>
-              <IconSymbol name="star.fill" size={20} color={currentColors.primary} />
-              <Text style={[styles.pointsCost, { color: currentColors.primary }]}>
-                {pointsCost} points
-              </Text>
-            </View>
-          </View>
-
-          {/* Info Banner */}
-          <View style={[styles.infoBanner, { backgroundColor: currentColors.highlight + '20' }]}>
-            <IconSymbol name="info.circle.fill" size={20} color={currentColors.primary} />
-            <Text style={[styles.infoText, { color: currentColors.text }]}>
-              Customers primarily pick up orders. Please provide your address for delivery and any pickup notes below.
-            </Text>
-          </View>
-
-          {/* Delivery Address */}
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: currentColors.text }]}>Delivery Address *</Text>
-            <TextInput
-              style={[styles.textArea, { backgroundColor: currentColors.card, color: currentColors.text }]}
-              placeholder="Enter your delivery address"
-              placeholderTextColor={currentColors.textSecondary}
-              value={deliveryAddress}
-              onChangeText={setDeliveryAddress}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-          </View>
-
-          {/* Pickup Notes */}
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: currentColors.text }]}>Pickup Notes (Optional)</Text>
-            <TextInput
-              style={[styles.textArea, { backgroundColor: currentColors.card, color: currentColors.text }]}
-              placeholder="Add any special instructions for pickup..."
-              placeholderTextColor={currentColors.textSecondary}
-              value={pickupNotes}
-              onChangeText={setPickupNotes}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-          </View>
-
-          {/* Summary */}
-          <View style={[styles.summary, { backgroundColor: currentColors.card }]}>
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>
-                Your Points
-              </Text>
-              <Text style={[styles.summaryValue, { color: currentColors.text }]}>
-                {currentPoints} pts
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>
-                Points Required
-              </Text>
-              <Text style={[styles.summaryValue, { color: currentColors.primary }]}>
-                {pointsCost} pts
-              </Text>
-            </View>
-            <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: currentColors.background }]}>
-              <Text style={[styles.totalLabel, { color: currentColors.text }]}>
-                Remaining Points
-              </Text>
-              <Text style={[styles.totalValue, { color: currentColors.primary }]}>
-                {currentPoints - parseInt(pointsCost as string)} pts
-              </Text>
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Footer */}
-        <View style={[styles.footer, { backgroundColor: currentColors.card, borderTopColor: currentColors.background }]}>
-          <Pressable
-            style={[
-              styles.redeemButton, 
-              { backgroundColor: hasEnoughPoints ? currentColors.primary : currentColors.textSecondary }
-            ]}
-            onPress={handleRedeem}
-            disabled={!hasEnoughPoints}
-          >
-            <Text style={[styles.redeemButtonText, { color: currentColors.card }]}>
-              {hasEnoughPoints 
-                ? `Redeem for ${pointsCost} Points` 
-                : `Need ${requiredPoints - currentPoints} More Points`
-              }
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-    </SafeAreaView>
-  );
-}
-
-const styles = StyleSheet.create({
+  const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
@@ -229,8 +103,15 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   backButton: {
-    padding: 4,
-  },
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: currentColors.card,
+      justifyContent: 'center',
+      alignItems: 'center',
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -341,3 +222,130 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Pressable
+                      onPress={() => {
+                        if (Platform.OS !== 'web') {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                        router.back();
+                      }}
+                      style={styles.backButton}
+                    >
+                      <IconSymbol name="chevron.left" size={24} color={currentColors.primary} />
+                    </Pressable>
+          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Redeem Merch</Text>
+          <View style={{ width: 24 }} />
+        </View>
+
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Item Info */}
+          <View style={[styles.itemCard, { backgroundColor: currentColors.card }]}>
+            <Text style={[styles.itemName, { color: currentColors.text }]}>{merchName}</Text>
+            <View style={styles.pointsRow}>
+              <IconSymbol name="star.fill" size={20} color={currentColors.primary} />
+              <Text style={[styles.pointsCost, { color: currentColors.primary }]}>
+                {pointsCost} points
+              </Text>
+            </View>
+          </View>
+
+          {/* Info Banner */}
+          <View style={[styles.infoBanner, { backgroundColor: currentColors.highlight + '20' }]}>
+            <IconSymbol name="info.circle.fill" size={20} color={currentColors.primary} />
+            <Text style={[styles.infoText, { color: currentColors.text }]}>
+              Customers primarily pick up orders. Please provide your address for delivery and any pickup notes below.
+            </Text>
+          </View>
+
+          {/* Delivery Address */}
+          <View style={styles.section}>
+            <Text style={[styles.label, { color: currentColors.text }]}>Delivery Address *</Text>
+            <TextInput
+              style={[styles.textArea, { backgroundColor: currentColors.card, color: currentColors.text }]}
+              placeholder="Enter your delivery address"
+              placeholderTextColor={currentColors.textSecondary}
+              value={deliveryAddress}
+              onChangeText={setDeliveryAddress}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+          </View>
+
+          {/* Pickup Notes */}
+          <View style={styles.section}>
+            <Text style={[styles.label, { color: currentColors.text }]}>Pickup Notes (Optional)</Text>
+            <TextInput
+              style={[styles.textArea, { backgroundColor: currentColors.card, color: currentColors.text }]}
+              placeholder="Add any special instructions for pickup..."
+              placeholderTextColor={currentColors.textSecondary}
+              value={pickupNotes}
+              onChangeText={setPickupNotes}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+          </View>
+
+          {/* Summary */}
+          <View style={[styles.summary, { backgroundColor: currentColors.card }]}>
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>
+                Your Points
+              </Text>
+              <Text style={[styles.summaryValue, { color: currentColors.text }]}>
+                {currentPoints} pts
+              </Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>
+                Points Required
+              </Text>
+              <Text style={[styles.summaryValue, { color: currentColors.primary }]}>
+                {pointsCost} pts
+              </Text>
+            </View>
+            <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: currentColors.background }]}>
+              <Text style={[styles.totalLabel, { color: currentColors.text }]}>
+                Remaining Points
+              </Text>
+              <Text style={[styles.totalValue, { color: currentColors.primary }]}>
+                {currentPoints - parseInt(pointsCost as string)} pts
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Footer */}
+        <View style={[styles.footer, { backgroundColor: currentColors.card, borderTopColor: currentColors.background }]}>
+          <Pressable
+            style={[
+              styles.redeemButton, 
+              { backgroundColor: hasEnoughPoints ? currentColors.primary : currentColors.textSecondary }
+            ]}
+            onPress={handleRedeem}
+            disabled={!hasEnoughPoints}
+          >
+            <Text style={[styles.redeemButtonText, { color: currentColors.card }]}>
+              {hasEnoughPoints 
+                ? `Redeem for ${pointsCost} Points` 
+                : `Need ${requiredPoints - currentPoints} More Points`
+              }
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+

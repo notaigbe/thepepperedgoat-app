@@ -1,9 +1,10 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
-import { CartItem, Order, UserProfile, GiftCard, PaymentMethod, AppNotification, ThemeSettings, ThemeMode, ColorScheme, MerchRedemption } from '@/types';
+import { MenuItem, CartItem, Order, UserProfile, GiftCard, PaymentMethod, AppNotification, ThemeSettings, ThemeMode, ColorScheme, MerchRedemption } from '@/types';
 import { useColorScheme } from 'react-native';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/app/integrations/supabase/client';
+import type { Database } from '@/app/integrations/supabase/types';
 import { 
   userService, 
   menuService, 
@@ -101,7 +102,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Check if already subscribed
-    if (orderChannelRef.current?.state === 'subscribed') {
+    if ((orderChannelRef.current?.state as any) === 'subscribed') {
       console.log('Already subscribed to order updates');
       return;
     }
@@ -172,13 +173,16 @@ if (session) {
       if (!profile) {
         console.log('No profile found, creating default profile');
         // Create default profile if it doesn't exist
-        await supabase.from('user_profiles').insert({
-          id: user.id,
-          name: user.user_metadata?.name || 'User',
-          email: user.email || '',
-          phone: user.user_metadata?.phone || '',
-          points: 0,
-        });
+        // Cast the result to the DB Row shape to satisfy TypeScript
+        await (supabase
+          .from('user_profiles')
+          .insert({
+            id: user.id,
+            name: user.user_metadata?.name || 'User',
+            email: user.email || '',
+            phone: user.user_metadata?.phone || '',
+            points: 0,
+          } as any) as unknown) as { data: Database['public']['Tables']['user_profiles']['Row'][] | null; error: any };
         return loadUserProfile();
       }
 
@@ -207,7 +211,7 @@ if (session) {
         email: profile.email,
         phone: profile.phone || '',
         points: profile.points || 0,
-        profileImage: profile.profile_image,
+        profileImage: profile.profile_image ?? undefined,
         orders: orders?.map((o: any) => ({
           id: o.id,
           items: o.order_items?.map((oi: any) => ({
@@ -256,8 +260,8 @@ if (session) {
         })) || [],
         rsvpEvents: [],
         themeSettings: theme ? {
-          mode: theme.mode as ThemeMode,
-          colorScheme: theme.color_scheme as ColorScheme,
+          mode: (theme as any).mode as ThemeMode,
+          colorScheme: (((theme as any).color_scheme ?? (theme as any).colorScheme) as ColorScheme),
         } : { mode: 'auto', colorScheme: 'default' },
         merchRedemptions: merchRedemptions?.map((mr: any) => ({
           id: mr.id,
@@ -494,6 +498,7 @@ if (session) {
         return;
       }
 
+      // Points are updated by the edge function, just reload profile
       showToast('Order placed successfully!', 'success');
       clearCart();
       await loadUserProfile();
@@ -807,3 +812,5 @@ export const useApp = () => {
   }
   return context;
 };
+
+export type { CartItem } from '@/types';

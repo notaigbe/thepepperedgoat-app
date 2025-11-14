@@ -1,5 +1,6 @@
 
 import { useApp } from '@/contexts/AppContext';
+import type { CartItem } from '@/contexts/AppContext';
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -86,7 +87,7 @@ export default function CartScreen() {
             </Text>
             <Pressable
               style={[styles.browseButton, { backgroundColor: currentColors.primary }]}
-              onPress={() => router.push('/(tabs)/(home)/')}
+              onPress={() => router.push('/')}
             >
               <Text style={[styles.browseButtonText, { color: currentColors.card }]}>
                 Browse Menu

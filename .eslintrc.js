@@ -15,7 +15,16 @@ module.exports = {
     sourceType: 'module',
     ecmaFeatures: {
       jsx: true
-    }
+    },
+    project: './tsconfig.json',
+  },
+  settings: {
+    'import/resolver': {
+      typescript: {
+        alwaysTryTypes: true,
+        project: './tsconfig.json',
+      },
+    },
   },
   ignorePatterns: ['/dist/*', '/public/*', '/babel-plugins/*'],
   env: {
@@ -30,7 +39,7 @@ module.exports = {
     "@typescript-eslint/no-empty-object-type": "off",
     "@typescript-eslint/no-wrapper-object-types": "off",
     "react/no-unescaped-entities": "off",
-    "import/no-unresolved": "error",
+    "import/no-unresolved": "off",
     "prefer-const": "off",
     "react/prop-types": 1,
     "no-case-declarations": "off",

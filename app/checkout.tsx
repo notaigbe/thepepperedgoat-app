@@ -7,6 +7,7 @@ import {
   Pressable,
   Alert,
   TextInput,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -56,141 +57,14 @@ export default function CheckoutScreen() {
         {
           text: 'OK',
           onPress: () => {
-            router.replace('/(tabs)/(home)/');
+            router.replace('/(tabs)/(home)');
           },
         },
       ]
     );
   };
 
-  return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['bottom']}>
-			<View style={styles.header}>
-          <Pressable
-            style={styles.backButton}
-            onPress={() => {
-              console.log('Back button pressed');
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.back();
-            }}
-          >
-            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
-            <Text style={[styles.backButtonText, { color: currentColors.text }]}>Back</Text>
-          </Pressable>
-        </View>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          <View style={[styles.infoBanner, { backgroundColor: currentColors.highlight + '20' }]}>
-            <IconSymbol name="info.circle.fill" size={20} color={currentColors.primary} />
-            <Text style={[styles.infoText, { color: currentColors.text }]}>
-              Customers primarily pick up orders. Please provide your address and any pickup notes below.
-            </Text>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Delivery Address *</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: currentColors.card, color: currentColors.text }]}
-              placeholder="Enter your delivery address"
-              placeholderTextColor={currentColors.textSecondary}
-              value={deliveryAddress}
-              onChangeText={setDeliveryAddress}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Pickup Notes (Optional)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: currentColors.card, color: currentColors.text }]}
-              placeholder="Add any special instructions for pickup..."
-              placeholderTextColor={currentColors.textSecondary}
-              value={pickupNotes}
-              onChangeText={setPickupNotes}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Payment Method</Text>
-            <Pressable style={[styles.paymentOption, { backgroundColor: currentColors.card }]}>
-              <IconSymbol name="creditcard.fill" size={24} color={currentColors.primary} />
-              <Text style={[styles.paymentText, { color: currentColors.text }]}>Credit Card</Text>
-              <IconSymbol name="chevron.right" size={20} color={currentColors.textSecondary} />
-            </Pressable>
-          </View>
-
-          <View style={styles.section}>
-            <Pressable
-              style={[styles.pointsToggle, { backgroundColor: currentColors.card }]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setUsePoints(!usePoints);
-              }}
-            >
-              <View style={styles.pointsToggleLeft}>
-                <IconSymbol name="star.fill" size={24} color={currentColors.highlight} />
-                <View style={styles.pointsToggleInfo}>
-                  <Text style={[styles.pointsToggleTitle, { color: currentColors.text }]}>Use Reward Points</Text>
-                  <Text style={[styles.pointsToggleSubtitle, { color: currentColors.textSecondary }]}>
-                    You have {availablePoints} points available
-                  </Text>
-                </View>
-              </View>
-              <View style={[styles.checkbox, { borderColor: currentColors.textSecondary }, usePoints && { backgroundColor: currentColors.primary, borderColor: currentColors.primary }]}>
-                {usePoints && <IconSymbol name="checkmark" size={16} color={currentColors.card} />}
-              </View>
-            </Pressable>
-          </View>
-
-          <View style={[styles.summaryCard, { backgroundColor: currentColors.card }]}>
-            <Text style={[styles.summaryTitle, { color: currentColors.text }]}>Order Summary</Text>
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>Subtotal</Text>
-              <Text style={[styles.summaryValue, { color: currentColors.text }]}>${subtotal.toFixed(2)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>Tax (8.75%)</Text>
-              <Text style={[styles.summaryValue, { color: currentColors.text }]}>${tax.toFixed(2)}</Text>
-            </View>
-            {usePoints && pointsDiscount > 0 && (
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: currentColors.primary }]}>
-                  Points Discount
-                </Text>
-                <Text style={[styles.summaryValue, { color: currentColors.primary }]}>
-                  -${pointsDiscount.toFixed(2)}
-                </Text>
-              </View>
-            )}
-            <View style={[styles.summaryRow, styles.summaryRowTotal, { borderTopColor: currentColors.background }]}>
-              <Text style={[styles.summaryLabelTotal, { color: currentColors.text }]}>Total</Text>
-              <Text style={[styles.summaryValueTotal, { color: currentColors.primary }]}>${total.toFixed(2)}</Text>
-            </View>
-            <View style={[styles.pointsEarnCard, { backgroundColor: currentColors.background }]}>
-              <IconSymbol name="star.fill" size={20} color={currentColors.highlight} />
-              <Text style={[styles.pointsEarnText, { color: currentColors.text }]}>
-                You&apos;ll earn {pointsToEarn} points with this order!
-              </Text>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
-
-      <View style={[styles.footer, { backgroundColor: currentColors.card, borderTopColor: currentColors.background }]}>
-        <Pressable style={[styles.placeOrderButton, { backgroundColor: currentColors.primary }]} onPress={handlePlaceOrder}>
-          <Text style={[styles.placeOrderButtonText, { color: currentColors.card }]}>Place Order - ${total.toFixed(2)}</Text>
-        </Pressable>
-      </View>
-    </SafeAreaView>
-  );
-}
-
-const styles = StyleSheet.create({
+  const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
@@ -199,6 +73,25 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+   backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: currentColors.card,
+      justifyContent: 'center',
+      alignItems: 'center',
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+  backButtonText: {
+    fontSize: 16,
   },
   infoBanner: {
     flexDirection: 'row',
@@ -339,3 +232,136 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['bottom']}>
+			<View style={styles.header}>
+          <Pressable
+                                onPress={() => {
+                                  if (Platform.OS !== 'web') {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  }
+                                  router.back();
+                                }}
+                                style={styles.backButton}
+                              >
+                                <IconSymbol name="chevron.left" size={24} color={currentColors.primary} />
+                              </Pressable>
+        </View>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <View style={[styles.infoBanner, { backgroundColor: currentColors.highlight + '20' }]}>
+            <IconSymbol name="info.circle.fill" size={20} color={currentColors.primary} />
+            <Text style={[styles.infoText, { color: currentColors.text }]}>
+              Customers primarily pick up orders. Please provide your address and any pickup notes below.
+            </Text>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Delivery Address *</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: currentColors.card, color: currentColors.text }]}
+              placeholder="Enter your delivery address"
+              placeholderTextColor={currentColors.textSecondary}
+              value={deliveryAddress}
+              onChangeText={setDeliveryAddress}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Pickup Notes (Optional)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: currentColors.card, color: currentColors.text }]}
+              placeholder="Add any special instructions for pickup..."
+              placeholderTextColor={currentColors.textSecondary}
+              value={pickupNotes}
+              onChangeText={setPickupNotes}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Payment Method</Text>
+            <Pressable 
+              style={[styles.paymentOption, { backgroundColor: currentColors.card }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/payment-methods');
+              }}
+            >
+              <IconSymbol name="creditcard.fill" size={24} color={currentColors.primary} />
+              <Text style={[styles.paymentText, { color: currentColors.text }]}>Credit Card</Text>
+              <IconSymbol name="chevron.right" size={20} color={currentColors.textSecondary} />
+            </Pressable>
+          </View>
+
+          <View style={styles.section}>
+            <Pressable
+              style={[styles.pointsToggle, { backgroundColor: currentColors.card }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setUsePoints(!usePoints);
+              }}
+            >
+              <View style={styles.pointsToggleLeft}>
+                <IconSymbol name="star.fill" size={24} color={currentColors.highlight} />
+                <View style={styles.pointsToggleInfo}>
+                  <Text style={[styles.pointsToggleTitle, { color: currentColors.text }]}>Use Reward Points</Text>
+                  <Text style={[styles.pointsToggleSubtitle, { color: currentColors.textSecondary }]}>
+                    You have {availablePoints} points available
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.checkbox, { borderColor: currentColors.textSecondary }, usePoints && { backgroundColor: currentColors.primary, borderColor: currentColors.primary }]}>
+                {usePoints && <IconSymbol name="checkmark" size={16} color={currentColors.card} />}
+              </View>
+            </Pressable>
+          </View>
+
+          <View style={[styles.summaryCard, { backgroundColor: currentColors.card }]}>
+            <Text style={[styles.summaryTitle, { color: currentColors.text }]}>Order Summary</Text>
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>Subtotal</Text>
+              <Text style={[styles.summaryValue, { color: currentColors.text }]}>${subtotal.toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>Tax (8.75%)</Text>
+              <Text style={[styles.summaryValue, { color: currentColors.text }]}>${tax.toFixed(2)}</Text>
+            </View>
+            {usePoints && pointsDiscount > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: currentColors.primary }]}>
+                  Points Discount
+                </Text>
+                <Text style={[styles.summaryValue, { color: currentColors.primary }]}>
+                  -${pointsDiscount.toFixed(2)}
+                </Text>
+              </View>
+            )}
+            <View style={[styles.summaryRow, styles.summaryRowTotal, { borderTopColor: currentColors.background }]}>
+              <Text style={[styles.summaryLabelTotal, { color: currentColors.text }]}>Total</Text>
+              <Text style={[styles.summaryValueTotal, { color: currentColors.primary }]}>${total.toFixed(2)}</Text>
+            </View>
+            <View style={[styles.pointsEarnCard, { backgroundColor: currentColors.background }]}>
+              <IconSymbol name="star.fill" size={20} color={currentColors.highlight} />
+              <Text style={[styles.pointsEarnText, { color: currentColors.text }]}>
+                You&apos;ll earn {pointsToEarn} points with this order!
+              </Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      <View style={[styles.footer, { backgroundColor: currentColors.card, borderTopColor: currentColors.background }]}>
+        <Pressable style={[styles.placeOrderButton, { backgroundColor: currentColors.primary }]} onPress={handlePlaceOrder}>
+          <Text style={[styles.placeOrderButtonText, { color: currentColors.card }]}>Place Order - ${total.toFixed(2)}</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
+

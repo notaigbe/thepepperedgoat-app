@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,14 @@ import {
   Pressable,
   Platform,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import * as Haptics from 'expo-haptics';
+import { supabase } from '@/app/integrations/supabase/client';
 
 interface User {
   id: string;
@@ -30,43 +32,56 @@ interface User {
 export default function AdminUserManagement() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Mock users data
-  const [users] = useState<User[]>([
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '+1 (555) 123-4567',
-      points: 1250,
-      totalOrders: 15,
-      totalSpent: 425.50,
-      joinDate: '2024-01-15',
-      active: true,
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+1 (555) 234-5678',
-      points: 850,
-      totalOrders: 8,
-      totalSpent: 280.00,
-      joinDate: '2024-02-20',
-      active: true,
-    },
-    {
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike@example.com',
-      phone: '+1 (555) 345-6789',
-      points: 2100,
-      totalOrders: 25,
-      totalSpent: 750.25,
-      joinDate: '2023-12-10',
-      active: true,
-    },
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      // Get all users
+      const { data: userProfiles, error: usersError } = await (supabase as any)
+        .from('user_profiles')
+        .select('*');
+
+      if (usersError) throw usersError;
+
+      // Get all orders to calculate stats
+      const { data: orders, error: ordersError } = await (supabase as any)
+        .from('orders')
+        .select('user_id, total, created_at');
+
+      if (ordersError) throw ordersError;
+
+      // Combine data
+      const formattedUsers: User[] = (userProfiles || []).map((profile: any) => {
+        const userOrders = (orders || []).filter((o: any) => o.user_id === profile.id);
+        const totalSpent = userOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+
+        return {
+          id: profile.id,
+          name: profile.name || 'Unknown',
+          email: profile.email || '',
+          phone: profile.phone || 'N/A',
+          points: profile.points || 0,
+          totalOrders: userOrders.length,
+          totalSpent,
+          joinDate: profile.created_at || new Date().toISOString(),
+          active: true,
+        };
+      });
+
+      setUsers(formattedUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredUsers = users.filter(
     (user) =>
@@ -83,7 +98,11 @@ export default function AdminUserManagement() {
             if (Platform.OS !== 'web') {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
-            router.back();
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(admin)' as any);
+            }
           }}
         >
           <IconSymbol name="arrow-back" size={24} color={colors.text} />
@@ -123,7 +142,13 @@ export default function AdminUserManagement() {
           </View>
         </View>
 
-        <View style={styles.usersContainer}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Loading users...</Text>
+          </View>
+        ) : (
+          <View style={styles.usersContainer}>
           {filteredUsers.map((user) => (
             <View key={user.id} style={styles.userCard}>
               <View style={styles.userHeader}>
@@ -198,7 +223,8 @@ export default function AdminUserManagement() {
               <Text style={styles.emptyText}>No users found</Text>
             </View>
           )}
-        </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -374,6 +400,16 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
+    color: colors.textSecondary,
+    marginTop: 16,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 64,
+  },
+  loadingText: {
+    fontSize: 14,
     color: colors.textSecondary,
     marginTop: 16,
   },

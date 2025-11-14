@@ -14,6 +14,7 @@ const colorSchemes = {
       accent: '#4DB6AC',
       card: '#FFFFFF',
       highlight: '#80CBC4',
+      border: '#B2DFDB',
     },
     dark: {
       background: '#0A1F1C',
@@ -24,6 +25,7 @@ const colorSchemes = {
       accent: '#80CBC4',
       card: '#1A2F2C',
       highlight: '#4DB6AC',
+      border: '#004D40',
     },
   },
   warm: {
@@ -36,6 +38,7 @@ const colorSchemes = {
       accent: '#4DB6AC',
       card: '#FFFFFF',
       highlight: '#80CBC4',
+      border: '#D7CCC8',
     },
     dark: {
       background: '#1C1410',
@@ -46,6 +49,7 @@ const colorSchemes = {
       accent: '#80CBC4',
       card: '#2C2018',
       highlight: '#80CBC4',
+      border: '#3E2723',
     },
   },
   cool: {
@@ -58,6 +62,7 @@ const colorSchemes = {
       accent: '#4DB6AC',
       card: '#FFFFFF',
       highlight: '#80CBC4',
+      border: '#BBDEFB',
     },
     dark: {
       background: '#0A1929',
@@ -68,6 +73,7 @@ const colorSchemes = {
       accent: '#80CBC4',
       card: '#132F4C',
       highlight: '#80CBC4',
+      border: '#0D47A1',
     },
   },
   vibrant: {
@@ -80,6 +86,7 @@ const colorSchemes = {
       accent: '#4DB6AC',
       card: '#FFFFFF',
       highlight: '#80CBC4',
+      border: '#E1BEE7',
     },
     dark: {
       background: '#1A0A1F',
@@ -90,6 +97,7 @@ const colorSchemes = {
       accent: '#80CBC4',
       card: '#2A1A2F',
       highlight: '#80CBC4',
+      border: '#4A148C',
     },
   },
   minimal: {
@@ -102,6 +110,7 @@ const colorSchemes = {
       accent: '#4DB6AC',
       card: '#FFFFFF',
       highlight: '#80CBC4',
+      border: '#E0E0E0',
     },
     dark: {
       background: '#121212',
@@ -112,6 +121,7 @@ const colorSchemes = {
       accent: '#80CBC4',
       card: '#1E1E1E',
       highlight: '#80CBC4',
+      border: '#424242',
     },
   },
 };
