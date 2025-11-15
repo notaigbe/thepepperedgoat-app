@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,21 +9,21 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { IconSymbol } from '@/components/IconSymbol';
-import { colors } from '@/styles/commonStyles';
-import * as Haptics from 'expo-haptics';
-import { useAuth } from '@/contexts/AuthContext';
-import { orderService } from '@/services/supabaseService';
-import { supabase } from '@/app/integrations/supabase/client';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { IconSymbol } from "@/components/IconSymbol";
+import { colors } from "@/styles/commonStyles";
+import * as Haptics from "expo-haptics";
+import { useAuth } from "@/contexts/AuthContext";
+import { orderService } from "@/services/supabaseService";
+import { supabase } from "@/app/integrations/supabase/client";
 
 export default function AdminDashboard() {
   const router = useRouter();
   const { signIn, isAuthenticated, signOut } = useAuth();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -34,33 +33,36 @@ export default function AdminDashboard() {
   });
 
   const handleLogin = async () => {
-    console.log('Admin login attempt');
-    if (Platform.OS !== 'web') {
+    console.log("Admin login attempt");
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
     // For testing, use admin@jagabansla.com / admin
     // You can create this user in Supabase or use the default credentials
-    const email = username.includes('@') ? username : 'admin@jagabansla.com';
-    const pass = password || 'admin';
+    const email = username.includes("@") ? username : "admin@jagabansla.com";
+    const pass = password || "admin";
 
     setLoading(true);
     const { error } = await signIn(email, pass);
     setLoading(false);
 
     if (error) {
-      Alert.alert('Login Failed', 'Invalid credentials. Use admin@jagabansla.com / admin for testing.');
+      Alert.alert(
+        "Login Failed",
+        "Invalid credentials. Use admin@jagabansla.com / admin for testing."
+      );
     }
   };
 
   const handleLogout = async () => {
-    console.log('Logging out');
-    if (Platform.OS !== 'web') {
+    console.log("Logging out");
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     await signOut();
-    setUsername('');
-    setPassword('');
+    setUsername("");
+    setPassword("");
   };
 
   const fetchStats = async () => {
@@ -68,7 +70,7 @@ export default function AdminDashboard() {
       setStatsLoading(true);
       const [ordersResponse, usersResponse] = await Promise.all([
         orderService.getAllOrders(),
-        (supabase as any).from('user_profiles').select('*'),
+        (supabase as any).from("user_profiles").select("*"),
       ]);
 
       const orders = ordersResponse.data || [];
@@ -76,7 +78,10 @@ export default function AdminDashboard() {
 
       const totalOrders = orders.length;
       const activeUsers = users.length;
-      const revenue = orders.reduce((sum: number, order: any) => sum + (order.total || 0), 0);
+      const revenue = orders.reduce(
+        (sum: number, order: any) => sum + (order.total || 0),
+        0
+      );
 
       setStats({
         totalOrders,
@@ -84,7 +89,7 @@ export default function AdminDashboard() {
         revenue,
       });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error("Error fetching stats:", error);
       setStats({
         totalOrders: 0,
         activeUsers: 0,
@@ -103,74 +108,74 @@ export default function AdminDashboard() {
 
   const adminSections = [
     {
-      id: 'menu',
-      title: 'Menu Management',
-      description: 'Add, edit, and remove menu items',
-      icon: 'restaurant-menu' as const,
-      route: '/admin/menu',
+      id: "menu",
+      title: "Menu Management",
+      description: "Add, edit, and remove menu items",
+      icon: "restaurant-menu" as const,
+      route: "/admin/menu",
       color: colors.primary,
     },
     {
-      id: 'orders',
-      title: 'Order Management',
-      description: 'View and update order statuses',
-      icon: 'receipt-long' as const,
-      route: '/admin/orders',
-      color: '#FF6B35',
+      id: "orders",
+      title: "Order Management",
+      description: "View and update order statuses",
+      icon: "receipt-long" as const,
+      route: "/admin/orders",
+      color: "#FF6B35",
     },
     {
-      id: 'users',
-      title: 'User Management',
-      description: 'Manage user accounts and profiles',
-      icon: 'people' as const,
-      route: '/admin/users',
-      color: '#4ECDC4',
+      id: "users",
+      title: "User Management",
+      description: "Manage user accounts and profiles",
+      icon: "people" as const,
+      route: "/admin/users",
+      color: "#4ECDC4",
     },
     {
-      id: 'events',
-      title: 'Event Management',
-      description: 'Create and manage events',
-      icon: 'event' as const,
-      route: '/admin/events',
-      color: '#95E1D3',
+      id: "events",
+      title: "Event Management",
+      description: "Create and manage events",
+      icon: "event" as const,
+      route: "/admin/events",
+      color: "#95E1D3",
     },
     {
-      id: 'merch',
-      title: 'Merchandise',
-      description: 'Manage merch inventory',
-      icon: 'shopping-bag' as const,
-      route: '/admin/merch',
-      color: '#F38181',
+      id: "merch",
+      title: "Merchandise",
+      description: "Manage merch inventory",
+      icon: "shopping-bag" as const,
+      route: "/admin/merch",
+      color: "#F38181",
     },
     {
-      id: 'giftcards',
-      title: 'Gift Cards',
-      description: 'View and manage gift cards',
-      icon: 'card-giftcard' as const,
-      route: '/admin/giftcards',
-      color: '#AA96DA',
+      id: "giftcards",
+      title: "Gift Cards",
+      description: "View and manage gift cards",
+      icon: "card-giftcard" as const,
+      route: "/admin/giftcards",
+      color: "#AA96DA",
     },
     {
-      id: 'notifications',
-      title: 'Notifications',
-      description: 'Send push notifications',
-      icon: 'notifications' as const,
-      route: '/admin/notifications',
-      color: '#FCBAD3',
+      id: "notifications",
+      title: "Notifications",
+      description: "Send push notifications",
+      icon: "notifications" as const,
+      route: "/admin/notifications",
+      color: "#FCBAD3",
     },
     {
-      id: 'analytics',
-      title: 'Analytics',
-      description: 'View sales and engagement metrics',
-      icon: 'analytics' as const,
-      route: '/admin/analytics',
-      color: '#A8D8EA',
+      id: "analytics",
+      title: "Analytics",
+      description: "View sales and engagement metrics",
+      icon: "analytics" as const,
+      route: "/admin/analytics",
+      color: "#A8D8EA",
     },
   ];
 
   const handleSectionPress = (route: string) => {
-    console.log('Navigating to:', route);
-    if (Platform.OS !== 'web') {
+    console.log("Navigating to:", route);
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     router.push(route as any);
@@ -181,14 +186,22 @@ export default function AdminDashboard() {
       <SafeAreaView style={styles.container}>
         <View style={styles.loginContainer}>
           <View style={styles.loginHeader}>
-            <IconSymbol name="admin-panel-settings" size={64} color={colors.primary} />
+            <IconSymbol
+              name="admin-panel-settings"
+              size={64}
+              color={colors.primary}
+            />
             <Text style={styles.loginTitle}>Admin Dashboard</Text>
             <Text style={styles.loginSubtitle}>Jagabans LA</Text>
           </View>
 
           <View style={styles.loginForm}>
             <View style={styles.inputContainer}>
-              <IconSymbol name="person" size={20} color={colors.textSecondary} />
+              <IconSymbol
+                name="person"
+                size={20}
+                color={colors.textSecondary}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="Email or Username"
@@ -223,7 +236,7 @@ export default function AdminDashboard() {
               disabled={loading}
             >
               <Text style={styles.loginButtonText}>
-                {loading ? 'Signing In...' : 'Sign In'}
+                {loading ? "Signing In..." : "Sign In"}
               </Text>
             </Pressable>
 
@@ -238,16 +251,16 @@ export default function AdminDashboard() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Admin Dashboard</Text>
             <Text style={styles.subtitle}>Jagabans LA Management</Text>
           </View>
-          <Pressable
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
+          <Pressable style={styles.logoutButton} onPress={handleLogout}>
             <IconSymbol name="logout" size={24} color={colors.primary} />
           </Pressable>
         </View>
@@ -256,7 +269,10 @@ export default function AdminDashboard() {
           <View style={styles.statCard}>
             <IconSymbol name="shopping-cart" size={32} color={colors.primary} />
             {statsLoading ? (
-              <ActivityIndicator color={colors.primary} style={{ marginVertical: 8 }} />
+              <ActivityIndicator
+                color={colors.primary}
+                style={{ marginVertical: 8 }}
+              />
             ) : (
               <Text style={styles.statValue}>{stats.totalOrders}</Text>
             )}
@@ -265,7 +281,10 @@ export default function AdminDashboard() {
           <View style={styles.statCard}>
             <IconSymbol name="people" size={32} color="#4ECDC4" />
             {statsLoading ? (
-              <ActivityIndicator color="#4ECDC4" style={{ marginVertical: 8 }} />
+              <ActivityIndicator
+                color="#4ECDC4"
+                style={{ marginVertical: 8 }}
+              />
             ) : (
               <Text style={styles.statValue}>{stats.activeUsers}</Text>
             )}
@@ -274,9 +293,14 @@ export default function AdminDashboard() {
           <View style={styles.statCard}>
             <IconSymbol name="attach-money" size={32} color="#95E1D3" />
             {statsLoading ? (
-              <ActivityIndicator color="#95E1D3" style={{ marginVertical: 8 }} />
+              <ActivityIndicator
+                color="#95E1D3"
+                style={{ marginVertical: 8 }}
+              />
             ) : (
-              <Text style={styles.statValue}>${(stats.revenue / 1000).toFixed(1)}K</Text>
+              <Text style={styles.statValue}>
+                ${(stats.revenue / 1000).toFixed(1)}K
+              </Text>
             )}
             <Text style={styles.statLabel}>Revenue</Text>
           </View>
@@ -292,14 +316,29 @@ export default function AdminDashboard() {
               ]}
               onPress={() => handleSectionPress(section.route)}
             >
-              <View style={[styles.sectionIcon, { backgroundColor: section.color + '20' }]}>
-                <IconSymbol name={section.icon} size={32} color={section.color} />
+              <View
+                style={[
+                  styles.sectionIcon,
+                  { backgroundColor: section.color + "20" },
+                ]}
+              >
+                <IconSymbol
+                  name={section.icon}
+                  size={32}
+                  color={section.color}
+                />
               </View>
               <View style={styles.sectionContent}>
                 <Text style={styles.sectionTitle}>{section.title}</Text>
-                <Text style={styles.sectionDescription}>{section.description}</Text>
+                <Text style={styles.sectionDescription}>
+                  {section.description}
+                </Text>
               </View>
-              <IconSymbol name="chevron-right" size={24} color={colors.textSecondary} />
+              <IconSymbol
+                name="chevron-right"
+                size={24}
+                color={colors.textSecondary}
+              />
             </Pressable>
           ))}
         </View>
@@ -324,17 +363,17 @@ const styles = StyleSheet.create({
   },
   loginContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 24,
   },
   loginHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 48,
   },
   loginTitle: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     marginTop: 16,
   },
@@ -344,12 +383,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   loginForm: {
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.card,
     borderRadius: 12,
     paddingHorizontal: 16,
@@ -368,7 +407,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
   },
   loginButtonPressed: {
@@ -378,25 +417,25 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   loginButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   demoText: {
-    textAlign: 'center',
+    textAlign: "center",
     color: colors.textSecondary,
     fontSize: 14,
     marginTop: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 24,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
   },
   subtitle: {
@@ -408,7 +447,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   statsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 24,
     gap: 12,
     marginBottom: 24,
@@ -418,13 +457,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
     borderColor: colors.border,
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     marginTop: 8,
   },
@@ -438,8 +477,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sectionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
@@ -453,8 +492,8 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 16,
   },
   sectionContent: {
@@ -462,7 +501,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text,
   },
   sectionDescription: {
@@ -472,11 +511,11 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: 24,
-    alignItems: 'center',
+    alignItems: "center",
   },
   footerText: {
     fontSize: 14,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

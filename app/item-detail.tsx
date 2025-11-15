@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,13 @@ import {
   Pressable,
   ScrollView,
   Animated,
-} from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useApp } from '@/contexts/AppContext';
-import { IconSymbol } from '@/components/IconSymbol';
-import * as Haptics from 'expo-haptics';
-import { MenuItem } from '@/types';
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useApp } from "@/contexts/AppContext";
+import { IconSymbol } from "@/components/IconSymbol";
+import * as Haptics from "expo-haptics";
+import { MenuItem } from "@/types";
 
 export default function ItemDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -21,9 +21,8 @@ export default function ItemDetailScreen() {
   const { addToCart, currentColors, menuItems } = useApp();
   const [quantity, setQuantity] = useState(1);
   const [item, setItem] = useState<MenuItem | null>(null);
-	const [lastAddedQuantity, setLastAddedQuantity] = useState(1);
+  const [lastAddedQuantity, setLastAddedQuantity] = useState(1);
 
-  
   // Notification state
   const [showNotification, setShowNotification] = useState(false);
   // Use useRef to maintain the same Animated.Value instances
@@ -36,99 +35,127 @@ export default function ItemDetailScreen() {
   // Find item when menuItems changes or component mounts
   useEffect(() => {
     if (menuItems && menuItems.length > 0 && itemId) {
-      console.log('Looking for item id:', itemId);
-      console.log('Available item ids:', menuItems.map(i => i.id));
-      
-      const foundItem = menuItems.find((i) =>String( i.id )=== String(itemId));
-      console.log('Item found:', !!foundItem);
+      console.log("Looking for item id:", itemId);
+      console.log(
+        "Available item ids:",
+        menuItems.map((i) => i.id)
+      );
+
+      const foundItem = menuItems.find((i) => String(i.id) === String(itemId));
+      console.log("Item found:", !!foundItem);
       setItem(foundItem || null);
     }
   }, [menuItems, itemId]);
 
- const showNotificationToast = (addedQuantity: number) => {
-  setShowNotification(true);
-  
-  // Animate in
-  Animated.parallel([
-    Animated.timing(notificationOpacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }),
-    Animated.spring(notificationTranslateY, {
-      toValue: 0,
-      tension: 50,
-      friction: 7,
-      useNativeDriver: true,
-    }),
-  ]).start();
+  const showNotificationToast = (addedQuantity: number) => {
+    setShowNotification(true);
 
-  // Animate out after 3 seconds
-  setTimeout(() => {
+    // Animate in
     Animated.parallel([
       Animated.timing(notificationOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(notificationTranslateY, {
         toValue: 0,
-        duration: 300,
+        tension: 50,
+        friction: 7,
         useNativeDriver: true,
       }),
-      Animated.timing(notificationTranslateY, {
-        toValue: -100,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setShowNotification(false);
-      notificationTranslateY.setValue(-100);
-    });
-  }, 3000);
+    ]).start();
 
-  // Save the last added quantity to display correctly
-  setLastAddedQuantity(addedQuantity);
-};
+    // Animate out after 3 seconds
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(notificationOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(notificationTranslateY, {
+          toValue: -100,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShowNotification(false);
+        notificationTranslateY.setValue(-100);
+      });
+    }, 3000);
 
-  
+    // Save the last added quantity to display correctly
+    setLastAddedQuantity(addedQuantity);
+  };
+
   // Show loading state while menu items are being fetched
   if (!menuItems || menuItems.length === 0) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]}>
+      <SafeAreaView
+        style={[styles.safeArea, { backgroundColor: currentColors.background }]}
+      >
         <View style={styles.header}>
           <Pressable
             style={styles.backButton}
             onPress={() => {
-              console.log('Back button pressed');
+              console.log("Back button pressed");
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.back();
             }}
           >
-            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
-            <Text style={[styles.backButtonText, { color: currentColors.text }]}>Back</Text>
+            <IconSymbol
+              name="chevron.left"
+              size={24}
+              color={currentColors.text}
+            />
+            <Text
+              style={[styles.backButtonText, { color: currentColors.text }]}
+            >
+              Back
+            </Text>
           </Pressable>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={[styles.errorText, { color: currentColors.textSecondary }]}>Loading menu items...</Text>
+          <Text
+            style={[styles.errorText, { color: currentColors.textSecondary }]}
+          >
+            Loading menu items...
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
-  
+
   if (!item) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]}>
+      <SafeAreaView
+        style={[styles.safeArea, { backgroundColor: currentColors.background }]}
+      >
         <View style={styles.header}>
           <Pressable
             style={styles.backButton}
             onPress={() => {
-              console.log('Back button pressed');
+              console.log("Back button pressed");
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.back();
             }}
           >
-            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
-            <Text style={[styles.backButtonText, { color: currentColors.text }]}>Back</Text>
+            <IconSymbol
+              name="chevron.left"
+              size={24}
+              color={currentColors.text}
+            />
+            <Text
+              style={[styles.backButtonText, { color: currentColors.text }]}
+            >
+              Back
+            </Text>
           </Pressable>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={[styles.errorText, { color: currentColors.textSecondary }]}>
+          <Text
+            style={[styles.errorText, { color: currentColors.textSecondary }]}
+          >
             Item not found
           </Text>
         </View>
@@ -137,7 +164,7 @@ export default function ItemDetailScreen() {
   }
 
   const handleQuantityChange = (change: number) => {
-    console.log('Quantity change:', change);
+    console.log("Quantity change:", change);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const newQuantity = quantity + change;
     if (newQuantity >= 1) {
@@ -145,37 +172,49 @@ export default function ItemDetailScreen() {
     }
   };
 
-const handleAddToCart = () => {
-  const addedQuantity = quantity; // capture current quantity
-  console.log('Adding to cart:', item.name, addedQuantity);
-  
-  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  addToCart({ ...item, quantity: addedQuantity });
+  const handleAddToCart = () => {
+    const addedQuantity = quantity; // capture current quantity
+    console.log("Adding to cart:", item.name, addedQuantity);
 
-  // Pass the correct quantity to toast
-  showNotificationToast(addedQuantity);
-  
-  setQuantity(1);
-};
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    addToCart({ ...item, quantity: addedQuantity });
 
+    // Pass the correct quantity to toast
+    showNotificationToast(addedQuantity);
+
+    setQuantity(1);
+  };
 
   const handleBackPress = () => {
-    console.log('Back button pressed');
+    console.log("Back button pressed");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['bottom']}>
-      <View style={[styles.header, { backgroundColor: currentColors.background, borderBottomColor: currentColors.accent }]}>
-        <Pressable
-          style={styles.backButton}
-          onPress={handleBackPress}
-        >
-          <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
-          <Text style={[styles.backButtonText, { color: currentColors.text }]}>Back</Text>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: currentColors.background }]}
+      edges={["bottom"]}
+    >
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: currentColors.background,
+            borderBottomColor: currentColors.accent,
+          },
+        ]}
+      >
+        <Pressable style={styles.backButton} onPress={handleBackPress}>
+          <IconSymbol
+            name="chevron.left"
+            size={24}
+            color={currentColors.text}
+          />
+          <Text style={[styles.backButtonText, { color: currentColors.text }]}>
+            Back
+          </Text>
         </Pressable>
-        
       </View>
 
       {/* Notification Toast */}
@@ -191,82 +230,180 @@ const handleAddToCart = () => {
           ]}
         >
           <View style={styles.notificationContent}>
-            <View style={[styles.notificationIcon, { backgroundColor: currentColors.card }]}>
-              <IconSymbol name="checkmark.circle.fill" size={24} color={currentColors.primary} />
+            <View
+              style={[
+                styles.notificationIcon,
+                { backgroundColor: currentColors.card },
+              ]}
+            >
+              <IconSymbol
+                name="checkmark.circle.fill"
+                size={24}
+                color={currentColors.primary}
+              />
             </View>
             <View style={styles.notificationText}>
-              <Text style={[styles.notificationTitle, { color: currentColors.card }]}>
+              <Text
+                style={[
+                  styles.notificationTitle,
+                  { color: currentColors.card },
+                ]}
+              >
                 Added to Cart!
               </Text>
-              <Text style={[styles.notificationSubtitle, { color: currentColors.card }]}>
-								  {lastAddedQuantity} {item.name}
-								</Text>
-
+              <Text
+                style={[
+                  styles.notificationSubtitle,
+                  { color: currentColors.card },
+                ]}
+              >
+                {lastAddedQuantity} {item.name}
+              </Text>
             </View>
           </View>
         </Animated.View>
       )}
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Image source={{ uri: item.image }} style={[styles.image, { backgroundColor: currentColors.accent }]} />
-        
+        <Image
+          source={{ uri: item.image }}
+          style={[styles.image, { backgroundColor: currentColors.accent }]}
+        />
+
         <View style={styles.content}>
           <View style={styles.headerInfo}>
             <View style={styles.headerLeft}>
-              <Text style={[styles.name, { color: currentColors.text }]}>{item.name}</Text>
+              <Text style={[styles.name, { color: currentColors.text }]}>
+                {item.name}
+              </Text>
               {item.popular && (
-                <View style={[styles.popularBadge, { backgroundColor: currentColors.primary }]}>
-                  <IconSymbol name="star.fill" size={14} color={currentColors.card} />
-                  <Text style={[styles.popularText, { color: currentColors.card }]}>Popular</Text>
+                <View
+                  style={[
+                    styles.popularBadge,
+                    { backgroundColor: currentColors.primary },
+                  ]}
+                >
+                  <IconSymbol
+                    name="star.fill"
+                    size={14}
+                    color={currentColors.card}
+                  />
+                  <Text
+                    style={[styles.popularText, { color: currentColors.card }]}
+                  >
+                    Popular
+                  </Text>
                 </View>
               )}
             </View>
-            <Text style={[styles.price, { color: currentColors.primary }]}>${item.price.toFixed(2)}</Text>
+            <Text style={[styles.price, { color: currentColors.primary }]}>
+              ${item.price.toFixed(2)}
+            </Text>
           </View>
 
           <View style={styles.categoryContainer}>
-            <IconSymbol name="tag.fill" size={16} color={currentColors.textSecondary} />
-            <Text style={[styles.category, { color: currentColors.textSecondary }]}>{item.category}</Text>
+            <IconSymbol
+              name="tag.fill"
+              size={16}
+              color={currentColors.textSecondary}
+            />
+            <Text
+              style={[styles.category, { color: currentColors.textSecondary }]}
+            >
+              {item.category}
+            </Text>
           </View>
 
-          <Text style={[styles.description, { color: currentColors.text }]}>{item.description}</Text>
+          <Text style={[styles.description, { color: currentColors.text }]}>
+            {item.description}
+          </Text>
 
-          <View style={[styles.infoCard, { backgroundColor: currentColors.card }]}>
-            <IconSymbol name="star.fill" size={20} color={currentColors.highlight} />
+          <View
+            style={[styles.infoCard, { backgroundColor: currentColors.card }]}
+          >
+            <IconSymbol
+              name="star.fill"
+              size={20}
+              color={currentColors.highlight}
+            />
             <Text style={[styles.infoText, { color: currentColors.text }]}>
               Earn {Math.floor(item.price * quantity)} points with this order!
             </Text>
           </View>
 
-          <View style={[styles.quantitySection, { backgroundColor: currentColors.card }]}>
-            <Text style={[styles.quantityLabel, { color: currentColors.text }]}>Quantity</Text>
+          <View
+            style={[
+              styles.quantitySection,
+              { backgroundColor: currentColors.card },
+            ]}
+          >
+            <Text style={[styles.quantityLabel, { color: currentColors.text }]}>
+              Quantity
+            </Text>
             <View style={styles.quantityControls}>
               <Pressable
-                style={[styles.quantityButton, { backgroundColor: currentColors.background }]}
+                style={[
+                  styles.quantityButton,
+                  { backgroundColor: currentColors.background },
+                ]}
                 onPress={() => handleQuantityChange(-1)}
               >
-                <IconSymbol name="minus" size={20} color={currentColors.primary} />
+                <IconSymbol
+                  name="minus"
+                  size={20}
+                  color={currentColors.primary}
+                />
               </Pressable>
-              <Text style={[styles.quantityValue, { color: currentColors.text }]}>{quantity}</Text>
+              <Text
+                style={[styles.quantityValue, { color: currentColors.text }]}
+              >
+                {quantity}
+              </Text>
               <Pressable
-                style={[styles.quantityButton, { backgroundColor: currentColors.background }]}
+                style={[
+                  styles.quantityButton,
+                  { backgroundColor: currentColors.background },
+                ]}
                 onPress={() => handleQuantityChange(1)}
               >
-                <IconSymbol name="plus" size={20} color={currentColors.primary} />
+                <IconSymbol
+                  name="plus"
+                  size={20}
+                  color={currentColors.primary}
+                />
               </Pressable>
             </View>
           </View>
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { backgroundColor: currentColors.card, borderTopColor: currentColors.background }]}>
+      <View
+        style={[
+          styles.footer,
+          {
+            backgroundColor: currentColors.card,
+            borderTopColor: currentColors.background,
+          },
+        ]}
+      >
         <View style={styles.totalContainer}>
-          <Text style={[styles.totalLabel, { color: currentColors.textSecondary }]}>Total</Text>
-          <Text style={[styles.totalValue, { color: currentColors.text }]}>${(item.price * quantity).toFixed(2)}</Text>
+          <Text
+            style={[styles.totalLabel, { color: currentColors.textSecondary }]}
+          >
+            Total
+          </Text>
+          <Text style={[styles.totalValue, { color: currentColors.text }]}>
+            ${(item.price * quantity).toFixed(2)}
+          </Text>
         </View>
-        <Pressable style={[styles.addButton, { backgroundColor: currentColors.primary }]} onPress={handleAddToCart}>
+        <Pressable
+          style={[styles.addButton, { backgroundColor: currentColors.primary }]}
+          onPress={handleAddToCart}
+        >
           <IconSymbol name="cart.fill" size={20} color={currentColors.card} />
-          <Text style={[styles.addButtonText, { color: currentColors.card }]}>Add to Cart</Text>
+          <Text style={[styles.addButtonText, { color: currentColors.card }]}>
+            Add to Cart
+          </Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -283,8 +420,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingVertical: 8,
     paddingHorizontal: 8,
@@ -292,54 +429,54 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   container: {
     flex: 1,
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   errorText: {
     fontSize: 18,
-    textAlign: 'center',
+    textAlign: "center",
   },
   // Notification styles
   notification: {
-    position: 'absolute',
+    position: "absolute",
     top: 20,
     left: 20,
     right: 20,
     zIndex: 1000,
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
   },
   notificationContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   notificationIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   notificationText: {
     flex: 1,
   },
   notificationTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 2,
   },
   notificationSubtitle: {
@@ -347,16 +484,16 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   image: {
-    width: '100%',
+    width: "100%",
     height: 300,
   },
   content: {
     padding: 20,
   },
   headerInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 12,
   },
   headerLeft: {
@@ -365,13 +502,13 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
   },
   popularBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
@@ -379,15 +516,15 @@ const styles = StyleSheet.create({
   },
   popularText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   price: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   categoryContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     marginBottom: 16,
   },
@@ -400,49 +537,49 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   infoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderRadius: 12,
     gap: 12,
     marginBottom: 24,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
     elevation: 2,
   },
   infoText: {
     flex: 1,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   quantitySection: {
     padding: 20,
     borderRadius: 12,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
     elevation: 2,
   },
   quantityLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 12,
   },
   quantityControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 24,
   },
   quantityButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   quantityValue: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     minWidth: 40,
-    textAlign: 'center',
+    textAlign: "center",
   },
   footer: {
     padding: 20,
@@ -450,27 +587,27 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   totalContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   totalLabel: {
     fontSize: 18,
   },
   totalValue: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   addButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 16,
     borderRadius: 12,
     gap: 8,
   },
   addButtonText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });

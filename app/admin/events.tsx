@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,14 +11,14 @@ import {
   Alert,
   Share,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { IconSymbol } from '@/components/IconSymbol';
-import { colors } from '@/styles/commonStyles';
-import { Event } from '@/types';
-import { eventService } from '@/services/supabaseService';
-import * as Haptics from 'expo-haptics';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { IconSymbol } from "@/components/IconSymbol";
+import { colors } from "@/styles/commonStyles";
+import { Event } from "@/types";
+import { eventService } from "@/services/supabaseService";
+import * as Haptics from "expo-haptics";
 
 export default function AdminEventManagement() {
   const router = useRouter();
@@ -28,12 +28,12 @@ export default function AdminEventManagement() {
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: '',
-    location: '',
-    capacity: '',
-    image: '',
+    title: "",
+    description: "",
+    date: "",
+    location: "",
+    capacity: "",
+    image: "",
     isPrivate: true,
     isInviteOnly: false,
   });
@@ -48,14 +48,14 @@ export default function AdminEventManagement() {
       // Load both private and invite-only events for admin
       const privateRes = await eventService.getPrivateEvents();
       const publicRes = await eventService.getPublicEvents();
-      
+
       if (privateRes.error && publicRes.error) {
-        throw new Error('Failed to load events');
+        throw new Error("Failed to load events");
       }
 
       const allEvents = [
         ...(privateRes.data || []),
-        ...(publicRes.data || [])
+        ...(publicRes.data || []),
       ].map((event: any) => ({
         id: event.id,
         title: event.title,
@@ -72,50 +72,55 @@ export default function AdminEventManagement() {
 
       setEvents(allEvents);
     } catch (err) {
-      console.error('Failed to load events', err);
-      Alert.alert('Error', 'Failed to load events. Please try again.');
+      console.error("Failed to load events", err);
+      Alert.alert("Error", "Failed to load events. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddEvent = async () => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
     // Validation
     if (!formData.title.trim()) {
-      Alert.alert('Error', 'Event title is required');
+      Alert.alert("Error", "Event title is required");
       return;
     }
     if (!formData.date.trim()) {
-      Alert.alert('Error', 'Event date is required');
+      Alert.alert("Error", "Event date is required");
       return;
     }
     if (!formData.location.trim()) {
-      Alert.alert('Error', 'Event location is required');
+      Alert.alert("Error", "Event location is required");
       return;
     }
 
     // Validate date format
     const dateRegex = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$/;
     if (!dateRegex.test(formData.date)) {
-      Alert.alert('Error', 'Please use the format: YYYY-MM-DDTHH:MM:SS\
-Example: 2025-12-25T18:00:00');
+      Alert.alert(
+        "Error",
+        "Please use the format: YYYY-MM-DDTHH:MM:SS\
+Example: 2025-12-25T18:00:00"
+      );
       return;
     }
 
     try {
       setSaving(true);
 
-      const newEventData: Omit<Event, 'id' | 'attendees'> = {
+      const newEventData: Omit<Event, "id" | "attendees"> = {
         title: formData.title.trim(),
         description: formData.description.trim(),
         date: formData.date,
         location: formData.location.trim(),
         capacity: parseInt(formData.capacity) || 50,
-        image: formData.image.trim() || 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=800',
+        image:
+          formData.image.trim() ||
+          "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=800",
         isPrivate: formData.isPrivate,
         isInviteOnly: formData.isInviteOnly,
       };
@@ -127,37 +132,37 @@ Example: 2025-12-25T18:00:00');
       await loadEvents();
       setIsAddingEvent(false);
       resetForm();
-      
+
       if (formData.isInviteOnly) {
         Alert.alert(
-          'Event Created!',
-          'Invite Only event created successfully. Use the share button to send invitations.',
-          [{ text: 'OK' }]
+          "Event Created!",
+          "Invite Only event created successfully. Use the share button to send invitations.",
+          [{ text: "OK" }]
         );
       } else {
-        Alert.alert('Success', 'Private Event created successfully');
+        Alert.alert("Success", "Private Event created successfully");
       }
     } catch (err) {
-      console.error('Failed to create event', err);
-      Alert.alert('Error', 'Failed to create event. Please try again.');
+      console.error("Failed to create event", err);
+      Alert.alert("Error", "Failed to create event. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteEvent = (eventId: string) => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
     Alert.alert(
-      'Confirm Delete',
-      'Are you sure you want to delete this event? This action cannot be undone.',
+      "Confirm Delete",
+      "Are you sure you want to delete this event? This action cannot be undone.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
             try {
               const res = await eventService.deleteEvent(eventId);
@@ -165,10 +170,10 @@ Example: 2025-12-25T18:00:00');
 
               // Reload events from backend
               await loadEvents();
-              Alert.alert('Deleted', 'Event deleted successfully');
+              Alert.alert("Deleted", "Event deleted successfully");
             } catch (err) {
-              console.error('Failed to delete event', err);
-              Alert.alert('Error', 'Failed to delete event. Please try again.');
+              console.error("Failed to delete event", err);
+              Alert.alert("Error", "Failed to delete event. Please try again.");
             }
           },
         },
@@ -177,12 +182,12 @@ Example: 2025-12-25T18:00:00');
   };
 
   const handleShareEvent = async (event: Event) => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
     if (!event.shareableLink) {
-      Alert.alert('Error', 'This event does not have a shareable link.');
+      Alert.alert("Error", "This event does not have a shareable link.");
       return;
     }
 
@@ -190,7 +195,9 @@ Example: 2025-12-25T18:00:00');
 \
 ${event.description}\
 \
-Date: ${new Date(event.date).toLocaleDateString()} at ${new Date(event.date).toLocaleTimeString()}\
+Date: ${new Date(event.date).toLocaleDateString()} at ${new Date(
+      event.date
+    ).toLocaleTimeString()}\
 Location: ${event.location}\
 \
 Access the event: ${event.shareableLink}`;
@@ -202,22 +209,22 @@ Access the event: ${event.shareableLink}`;
       });
 
       if (result.action === Share.sharedAction) {
-        Alert.alert('Success', 'Event invitation shared successfully!');
+        Alert.alert("Success", "Event invitation shared successfully!");
       }
     } catch (error) {
-      console.error('Error sharing event:', error);
-      Alert.alert('Error', 'Failed to share event. Please try again.');
+      console.error("Error sharing event:", error);
+      Alert.alert("Error", "Failed to share event. Please try again.");
     }
   };
 
   const resetForm = () => {
     setFormData({
-      title: '',
-      description: '',
-      date: '',
-      location: '',
-      capacity: '',
-      image: '',
+      title: "",
+      description: "",
+      date: "",
+      location: "",
+      capacity: "",
+      image: "",
       isPrivate: true,
       isInviteOnly: false,
     });
@@ -226,13 +233,13 @@ Access the event: ${event.shareableLink}`;
   const formatDateForDisplay = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'short',
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      return date.toLocaleDateString("en-US", {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     } catch {
       return dateString;
@@ -245,7 +252,7 @@ Access the event: ${event.shareableLink}`;
         <Pressable
           style={styles.backButton}
           onPress={() => {
-            if (Platform.OS !== 'web') {
+            if (Platform.OS !== "web") {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
             router.back();
@@ -257,7 +264,7 @@ Access the event: ${event.shareableLink}`;
         <Pressable
           style={styles.addButton}
           onPress={() => {
-            if (Platform.OS !== 'web') {
+            if (Platform.OS !== "web") {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
             setIsAddingEvent(!isAddingEvent);
@@ -265,14 +272,17 @@ Access the event: ${event.shareableLink}`;
           }}
         >
           <IconSymbol
-            name={isAddingEvent ? 'close' : 'add'}
+            name={isAddingEvent ? "close" : "add"}
             size={24}
             color={colors.primary}
           />
         </Pressable>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {isAddingEvent && (
           <View style={styles.formContainer}>
             <Text style={styles.formTitle}>Create New Event</Text>
@@ -291,7 +301,9 @@ Access the event: ${event.shareableLink}`;
               placeholder="Description"
               placeholderTextColor={colors.textSecondary}
               value={formData.description}
-              onChangeText={(text) => setFormData({ ...formData, description: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, description: text })
+              }
               multiline
               numberOfLines={3}
               textAlignVertical="top"
@@ -313,7 +325,9 @@ Access the event: ${event.shareableLink}`;
               placeholder="Location *"
               placeholderTextColor={colors.textSecondary}
               value={formData.location}
-              onChangeText={(text) => setFormData({ ...formData, location: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, location: text })
+              }
               editable={!saving}
             />
 
@@ -322,7 +336,12 @@ Access the event: ${event.shareableLink}`;
               placeholder="Capacity (default: 50)"
               placeholderTextColor={colors.textSecondary}
               value={formData.capacity}
-              onChangeText={(text) => setFormData({ ...formData, capacity: text.replace(/[^0-9]/g, '') })}
+              onChangeText={(text) =>
+                setFormData({
+                  ...formData,
+                  capacity: text.replace(/[^0-9]/g, ""),
+                })
+              }
               keyboardType="number-pad"
               editable={!saving}
             />
@@ -339,22 +358,28 @@ Access the event: ${event.shareableLink}`;
 
             <View style={styles.eventTypeSection}>
               <Text style={styles.eventTypeTitle}>Event Type</Text>
-              
+
               <Pressable
                 style={styles.checkboxContainer}
                 onPress={() => {
                   if (saving) return;
-                  if (Platform.OS !== 'web') {
+                  if (Platform.OS !== "web") {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }
-                  setFormData({ ...formData, isPrivate: true, isInviteOnly: false });
+                  setFormData({
+                    ...formData,
+                    isPrivate: true,
+                    isInviteOnly: false,
+                  });
                 }}
                 disabled={saving}
               >
                 <View
                   style={[
                     styles.checkbox,
-                    formData.isPrivate && !formData.isInviteOnly && styles.checkboxChecked,
+                    formData.isPrivate &&
+                      !formData.isInviteOnly &&
+                      styles.checkboxChecked,
                   ]}
                 >
                   {formData.isPrivate && !formData.isInviteOnly && (
@@ -363,7 +388,9 @@ Access the event: ${event.shareableLink}`;
                 </View>
                 <View style={styles.checkboxLabelContainer}>
                   <Text style={styles.checkboxLabel}>Private Event</Text>
-                  <Text style={styles.checkboxSubtext}>Open to all app members</Text>
+                  <Text style={styles.checkboxSubtext}>
+                    Open to all app members
+                  </Text>
                 </View>
               </Pressable>
 
@@ -371,10 +398,14 @@ Access the event: ${event.shareableLink}`;
                 style={styles.checkboxContainer}
                 onPress={() => {
                   if (saving) return;
-                  if (Platform.OS !== 'web') {
+                  if (Platform.OS !== "web") {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }
-                  setFormData({ ...formData, isInviteOnly: true, isPrivate: false });
+                  setFormData({
+                    ...formData,
+                    isInviteOnly: true,
+                    isPrivate: false,
+                  });
                 }}
                 disabled={saving}
               >
@@ -390,7 +421,9 @@ Access the event: ${event.shareableLink}`;
                 </View>
                 <View style={styles.checkboxLabelContainer}>
                   <Text style={styles.checkboxLabel}>Invite Only Event</Text>
-                  <Text style={styles.checkboxSubtext}>Accessible via shared link only</Text>
+                  <Text style={styles.checkboxSubtext}>
+                    Accessible via shared link only
+                  </Text>
                 </View>
               </Pressable>
             </View>
@@ -399,7 +432,7 @@ Access the event: ${event.shareableLink}`;
               <Pressable
                 style={[styles.button, styles.cancelButton]}
                 onPress={() => {
-                  if (Platform.OS !== 'web') {
+                  if (Platform.OS !== "web") {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }
                   setIsAddingEvent(false);
@@ -410,7 +443,11 @@ Access the event: ${event.shareableLink}`;
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </Pressable>
               <Pressable
-                style={[styles.button, styles.saveButton, saving && styles.buttonDisabled]}
+                style={[
+                  styles.button,
+                  styles.saveButton,
+                  saving && styles.buttonDisabled,
+                ]}
                 onPress={handleAddEvent}
                 disabled={saving}
               >
@@ -434,15 +471,22 @@ Access the event: ${event.shareableLink}`;
             <View style={styles.emptyState}>
               <IconSymbol name="event" size={64} color={colors.textSecondary} />
               <Text style={styles.emptyText}>No events yet</Text>
-              <Text style={styles.emptySubtext}>Create your first event to get started</Text>
+              <Text style={styles.emptySubtext}>
+                Create your first event to get started
+              </Text>
             </View>
           ) : (
             events.map((event) => (
               <View key={event.id} style={styles.eventCard}>
-                <Image source={{ uri: event.image }} style={styles.eventImage} />
+                <Image
+                  source={{ uri: event.image }}
+                  style={styles.eventImage}
+                />
                 <View style={styles.eventContent}>
                   <View style={styles.eventHeader}>
-                    <Text style={styles.eventTitle} numberOfLines={2}>{event.title}</Text>
+                    <Text style={styles.eventTitle} numberOfLines={2}>
+                      {event.title}
+                    </Text>
                     <View style={styles.badgeContainer}>
                       {event.isPrivate && !event.isInviteOnly && (
                         <View style={styles.privateBadge}>
@@ -453,53 +497,73 @@ Access the event: ${event.shareableLink}`;
                       {event.isInviteOnly && (
                         <View style={[styles.privateBadge, styles.inviteBadge]}>
                           <IconSymbol name="mail" size={12} color="#FFFFFF" />
-                          <Text style={styles.privateBadgeText}>Invite Only</Text>
+                          <Text style={styles.privateBadgeText}>
+                            Invite Only
+                          </Text>
                         </View>
                       )}
                     </View>
                   </View>
-                  
+
                   {event.description ? (
                     <Text style={styles.eventDescription} numberOfLines={2}>
                       {event.description}
                     </Text>
                   ) : null}
-                  
+
                   <View style={styles.eventDetails}>
                     <View style={styles.eventDetail}>
-                      <IconSymbol name="calendar-today" size={16} color={colors.textSecondary} />
+                      <IconSymbol
+                        name="calendar-today"
+                        size={16}
+                        color={colors.textSecondary}
+                      />
                       <Text style={styles.eventDetailText}>
                         {formatDateForDisplay(event.date)}
                       </Text>
                     </View>
                     <View style={styles.eventDetail}>
-                      <IconSymbol name="location-on" size={16} color={colors.textSecondary} />
+                      <IconSymbol
+                        name="location-on"
+                        size={16}
+                        color={colors.textSecondary}
+                      />
                       <Text style={styles.eventDetailText} numberOfLines={1}>
                         {event.location}
                       </Text>
                     </View>
                     <View style={styles.eventDetail}>
-                      <IconSymbol name="people" size={16} color={colors.textSecondary} />
+                      <IconSymbol
+                        name="people"
+                        size={16}
+                        color={colors.textSecondary}
+                      />
                       <Text style={styles.eventDetailText}>
                         {event.attendees?.length || 0} / {event.capacity}
                       </Text>
                     </View>
                   </View>
-                  
+
                   <View style={styles.actionButtons}>
                     {event.isInviteOnly && (
                       <Pressable
                         style={styles.shareEventButton}
                         onPress={() => handleShareEvent(event)}
                       >
-                        <IconSymbol name="share" size={18} color={colors.primary} />
-                        <Text style={styles.shareEventButtonText}>Share Invite</Text>
+                        <IconSymbol
+                          name="share"
+                          size={18}
+                          color={colors.primary}
+                        />
+                        <Text style={styles.shareEventButtonText}>
+                          Share Invite
+                        </Text>
                       </Pressable>
                     )}
                     <Pressable
                       style={[
                         styles.deleteButton,
-                        event.isInviteOnly && styles.deleteButtonCompact
+                        event.isInviteOnly && styles.deleteButtonCompact,
                       ]}
                       onPress={() => handleDeleteEvent(event.id)}
                     >
@@ -526,9 +590,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -538,10 +602,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
   },
   addButton: {
     padding: 8,
@@ -556,7 +620,7 @@ const styles = StyleSheet.create({
   },
   formTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     marginBottom: 16,
   },
@@ -572,7 +636,7 @@ const styles = StyleSheet.create({
   },
   textArea: {
     height: 80,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   helperText: {
     fontSize: 12,
@@ -586,13 +650,13 @@ const styles = StyleSheet.create({
   },
   eventTypeTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text,
     marginBottom: 12,
   },
   checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 12,
     padding: 4,
   },
@@ -603,8 +667,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.border,
     marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: colors.background,
   },
   checkboxChecked: {
@@ -617,7 +681,7 @@ const styles = StyleSheet.create({
   checkboxLabel: {
     fontSize: 16,
     color: colors.text,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   checkboxSubtext: {
     fontSize: 12,
@@ -625,7 +689,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   formButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 8,
   },
@@ -633,8 +697,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -646,7 +710,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text,
   },
   saveButton: {
@@ -654,16 +718,16 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   eventsContainer: {
     padding: 16,
     gap: 16,
   },
   loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 64,
   },
   loadingText: {
@@ -672,13 +736,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 64,
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text,
     marginTop: 16,
   },
@@ -690,12 +754,12 @@ const styles = StyleSheet.create({
   eventCard: {
     backgroundColor: colors.card,
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: colors.border,
   },
   eventImage: {
-    width: '100%',
+    width: "100%",
     height: 200,
     backgroundColor: colors.border,
   },
@@ -703,25 +767,25 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   eventHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 8,
     gap: 12,
   },
   eventTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     flex: 1,
   },
   badgeContainer: {
     gap: 4,
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   privateBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -733,8 +797,8 @@ const styles = StyleSheet.create({
   },
   privateBadgeText: {
     fontSize: 11,
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
   eventDescription: {
     fontSize: 14,
@@ -747,8 +811,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   eventDetail: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   eventDetailText: {
@@ -757,33 +821,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   shareEventButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: colors.primary + '20',
+    backgroundColor: colors.primary + "20",
   },
   shareEventButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.primary,
   },
   deleteButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#FF6B6B20',
+    backgroundColor: "#FF6B6B20",
   },
   deleteButtonCompact: {
     flex: 0,
@@ -791,7 +855,7 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#FF6B6B',
+    fontWeight: "600",
+    color: "#FF6B6B",
   },
 });
