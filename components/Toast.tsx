@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { IconSymbol } from './IconSymbol';
 import { BlurView } from 'expo-blur';
@@ -23,55 +23,6 @@ export default function Toast({
 }: ToastProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-100)).current;
-
-  useEffect(() => {
-    if (visible) {
-      console.log('Toast showing:', message);
-      // Fade in and slide down
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.spring(translateY, {
-          toValue: 0,
-          tension: 50,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Auto hide after duration
-      const timer = setTimeout(() => {
-        hideToast();
-      }, duration);
-
-      return () => clearTimeout(timer);
-    }
-  }, [visible]);
-
-  const hideToast = () => {
-    console.log('Toast hiding');
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: -100,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onHide();
-    });
-  };
-
-  if (!visible && (fadeAnim as any)._value === 0) {
-    return null;
-  }
 
   const getIconName = () => {
     switch (type) {
@@ -98,6 +49,55 @@ export default function Toast({
         return currentColors.primary;
     }
   };
+
+  const hideToast = useCallback(() => {
+    console.log('Toast hiding');
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onHide();
+    });
+  }, [fadeAnim, translateY, onHide]);
+
+  useEffect(() => {
+    if (visible) {
+      console.log('Toast showing:', message);
+      // Fade in and slide down
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(translateY, {
+          toValue: 0,
+          tension: 50,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Auto hide after duration
+      const timer = setTimeout(() => {
+        hideToast();
+      }, duration);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible, message, duration, fadeAnim, translateY, hideToast]);
+
+  if (!visible && (fadeAnim as any)._value === 0) {
+    return null;
+  }
 
   return (
     <Animated.View

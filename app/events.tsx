@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -30,19 +31,7 @@ export default function EventsScreen() {
   const [loading, setLoading] = useState(true);
   const [rsvpLoading, setRsvpLoading] = useState<string | null>(null);
 
-  // Load events on mount and when authentication changes
-  useEffect(() => {
-    loadEvents();
-  }, [isAuthenticated]);
-
-  // Handle invite-only event access via URL params
-  useEffect(() => {
-    if (params.token && typeof params.token === 'string') {
-      handleInviteLink(params.token);
-    }
-  }, [params.token]);
-
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     setLoading(true);
     try {
       // Load public events (visible to everyone)
@@ -71,7 +60,7 @@ export default function EventsScreen() {
         date: event.date,
         location: event.location,
         capacity: event.capacity,
-        attendees: [], // Will be populated from RSVPs if needed
+        attendees: [],
         image: event.image,
         isPrivate: event.is_private,
         isInviteOnly: event.is_invite_only,
@@ -85,9 +74,14 @@ export default function EventsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, showToast]);
 
-  const handleInviteLink = async (token: string) => {
+  // Load events on mount and when authentication changes
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
+
+  const handleInviteLink = useCallback(async (token: string) => {
     try {
       const { data: event, error } = await eventService.getInviteOnlyEvent(token);
       
@@ -121,7 +115,14 @@ export default function EventsScreen() {
       console.error('Error accessing invite event:', error);
       Alert.alert('Error', 'Failed to access this event. Please try again.');
     }
-  };
+  }, [showToast]);
+
+  // Handle invite-only event access via URL params
+  useEffect(() => {
+    if (params.token && typeof params.token === 'string') {
+      handleInviteLink(params.token);
+    }
+  }, [params.token, handleInviteLink]);
 
   const handleRSVP = async (event: Event) => {
     if (!isAuthenticated || !user) {
@@ -532,4 +533,3 @@ export default function EventsScreen() {
     </SafeAreaView>
   );
 }
-
