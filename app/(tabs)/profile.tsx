@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -10,7 +9,6 @@ import {
   Platform,
   TextInput,
   Alert,
-  Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -25,7 +23,7 @@ import { supabase } from "@/app/integrations/supabase/client";
 export default function ProfileScreen() {
   const router = useRouter();
   const { currentColors, userProfile } = useApp();
-  const { isAuthenticated, signIn, signUp, signOut, isAdmin, refreshAdminStatus } = useAuth();
+  const { isAuthenticated, signIn, signUp, signOut } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +31,6 @@ export default function ProfileScreen() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -73,7 +70,6 @@ export default function ProfileScreen() {
       fetchProfileImage();
     }
   }, [userProfile?.profileImage, isAuthenticated]);
-
   const showToast = (type: "success" | "error" | "info", message: string) => {
     setToastType(type);
     setToastMessage(message);
@@ -116,7 +112,6 @@ export default function ProfileScreen() {
           setEmail("");
           setPassword("");
           setShowPassword(false);
-          setShowAdminLogin(false);
         }
       }
     } catch (error) {
@@ -124,18 +119,6 @@ export default function ProfileScreen() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleAdminLogin = async () => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    // Pre-fill with admin credentials
-    setEmail("admin@jagabansla.com");
-    setPassword("admin");
-    setShowAdminLogin(true);
-    setIsSignUp(false);
   };
 
   const handleSignOut = async () => {
@@ -158,7 +141,6 @@ export default function ProfileScreen() {
             setPhone("");
             setIsSignUp(false);
             setShowPassword(false);
-            setShowAdminLogin(false);
           } catch (error) {
             console.error("Sign out error:", error);
             showToast("error", "Failed to sign out. Please try again.");
@@ -193,7 +175,7 @@ export default function ProfileScreen() {
               color={currentColors.primary}
             />
             <Text style={[styles.authTitle, { color: currentColors.text }]}>
-              {showAdminLogin ? "Admin Login" : isSignUp ? "Create Account" : "Welcome Back"}
+              {isSignUp ? "Create Account" : "Welcome Back"}
             </Text>
             <Text
               style={[
@@ -201,16 +183,14 @@ export default function ProfileScreen() {
                 { color: currentColors.textSecondary },
               ]}
             >
-              {showAdminLogin
-                ? "Sign in with admin credentials"
-                : isSignUp
+              {isSignUp
                 ? "Sign up to start earning points"
                 : "Sign in to your account"}
             </Text>
           </View>
 
           <View style={styles.authForm}>
-            {isSignUp && !showAdminLogin && (
+            {isSignUp && (
               <View
                 style={[
                   styles.inputContainer,
@@ -301,7 +281,7 @@ export default function ProfileScreen() {
               </Pressable>
             </View>
 
-            {isSignUp && !showAdminLogin && (
+            {isSignUp && (
               <View
                 style={[
                   styles.inputContainer,
@@ -345,123 +325,35 @@ export default function ProfileScreen() {
               </Text>
             </Pressable>
 
-            {!showAdminLogin && (
-              <Pressable
-                style={styles.switchButton}
-                onPress={() => {
-                  setIsSignUp(!isSignUp);
-                  // Clear form when switching
-                  setEmail("");
-                  setPassword("");
-                  setName("");
-                  setPhone("");
-                  setShowPassword(false);
-                }}
-                disabled={loading}
-              >
-                <Text
-                  style={[
-                    styles.switchButtonText,
-                    { color: currentColors.textSecondary },
-                  ]}
-                >
-                  {isSignUp
-                    ? "Already have an account? "
-                    : "Don't have an account? "}
-                  <Text
-                    style={{ color: currentColors.primary, fontWeight: "600" }}
-                  >
-                    {isSignUp ? "Sign In" : "Sign Up"}
-                  </Text>
-                </Text>
-              </Pressable>
-            )}
-
-            {/* Admin Login Toggle */}
-            <View style={styles.adminToggleContainer}>
-              <View style={styles.divider}>
-                <View
-                  style={[
-                    styles.dividerLine,
-                    { backgroundColor: currentColors.border },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.dividerText,
-                    { color: currentColors.textSecondary },
-                  ]}
-                >
-                  OR
-                </Text>
-                <View
-                  style={[
-                    styles.dividerLine,
-                    { backgroundColor: currentColors.border },
-                  ]}
-                />
-              </View>
-
-              <Pressable
+            <Pressable
+              style={styles.switchButton}
+              onPress={() => {
+                setIsSignUp(!isSignUp);
+                // Clear form when switching
+                setEmail("");
+                setPassword("");
+                setName("");
+                setPhone("");
+                setShowPassword(false);
+              }}
+              disabled={loading}
+            >
+              <Text
                 style={[
-                  styles.adminButton,
-                  {
-                    backgroundColor: showAdminLogin
-                      ? currentColors.primary + "20"
-                      : currentColors.card,
-                    borderColor: showAdminLogin
-                      ? currentColors.primary
-                      : currentColors.border,
-                  },
+                  styles.switchButtonText,
+                  { color: currentColors.textSecondary },
                 ]}
-                onPress={() => {
-                  if (Platform.OS !== "web") {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  if (showAdminLogin) {
-                    setShowAdminLogin(false);
-                    setEmail("");
-                    setPassword("");
-                  } else {
-                    handleAdminLogin();
-                  }
-                }}
-                disabled={loading}
               >
-                <IconSymbol
-                  name="admin-panel-settings"
-                  size={24}
-                  color={
-                    showAdminLogin
-                      ? currentColors.primary
-                      : currentColors.textSecondary
-                  }
-                />
+                {isSignUp
+                  ? "Already have an account? "
+                  : "Don't have an account? "}
                 <Text
-                  style={[
-                    styles.adminButtonText,
-                    {
-                      color: showAdminLogin
-                        ? currentColors.primary
-                        : currentColors.text,
-                    },
-                  ]}
+                  style={{ color: currentColors.primary, fontWeight: "600" }}
                 >
-                  {showAdminLogin ? "Switch to Regular Login" : "Admin Login"}
+                  {isSignUp ? "Sign In" : "Sign Up"}
                 </Text>
-              </Pressable>
-
-              {showAdminLogin && (
-                <Text
-                  style={[
-                    styles.adminHintText,
-                    { color: currentColors.textSecondary },
-                  ]}
-                >
-                  Default credentials: admin@jagabansla.com / admin
-                </Text>
-              )}
-            </View>
+              </Text>
+            </Pressable>
           </View>
         </ScrollView>
         <Toast
@@ -546,30 +438,6 @@ export default function ProfileScreen() {
             {userProfile?.email}
           </Text>
 
-          {/* Admin Badge */}
-          {isAdmin && (
-            <View
-              style={[
-                styles.adminBadge,
-                { backgroundColor: currentColors.primary + "20" },
-              ]}
-            >
-              <IconSymbol
-                name="admin-panel-settings"
-                size={16}
-                color={currentColors.primary}
-              />
-              <Text
-                style={[
-                  styles.adminBadgeText,
-                  { color: currentColors.primary },
-                ]}
-              >
-                Administrator
-              </Text>
-            </View>
-          )}
-
           <View style={styles.pointsCard}>
             <IconSymbol
               name="star.fill"
@@ -594,48 +462,6 @@ export default function ProfileScreen() {
 
         {/* Menu Options */}
         <View style={styles.menuSection}>
-          {/* Admin Dashboard Link */}
-          {isAdmin && (
-            <Pressable
-              style={[
-                styles.menuItem,
-                { backgroundColor: currentColors.card },
-              ]}
-              onPress={() => handleMenuPress("/admin")}
-            >
-              <View
-                style={[
-                  styles.menuIcon,
-                  { backgroundColor: currentColors.primary + "20" },
-                ]}
-              >
-                <IconSymbol
-                  name="admin-panel-settings"
-                  size={24}
-                  color={currentColors.primary}
-                />
-              </View>
-              <View style={styles.menuContent}>
-                <Text style={[styles.menuTitle, { color: currentColors.text }]}>
-                  Admin Dashboard
-                </Text>
-                <Text
-                  style={[
-                    styles.menuSubtitle,
-                    { color: currentColors.textSecondary },
-                  ]}
-                >
-                  Manage app content and users
-                </Text>
-              </View>
-              <IconSymbol
-                name="chevron-right"
-                size={24}
-                color={currentColors.textSecondary}
-              />
-            </Pressable>
-          )}
-
           <Pressable
             style={[styles.menuItem, { backgroundColor: currentColors.card }]}
             onPress={() => handleMenuPress("/order-history")}
@@ -863,41 +689,15 @@ const styles = StyleSheet.create({
   switchButtonText: {
     fontSize: 14,
   },
-  adminToggleContainer: {
+  demoContainer: {
     marginTop: 32,
-  },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  adminButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 16,
     borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderWidth: 2,
-    gap: 12,
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
   },
-  adminButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  adminHintText: {
+  demoText: {
     fontSize: 12,
     textAlign: "center",
-    marginTop: 12,
   },
   profileHeader: {
     alignItems: "center",
@@ -937,20 +737,7 @@ const styles = StyleSheet.create({
   },
   profileEmail: {
     fontSize: 16,
-    marginBottom: 12,
-  },
-  adminBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-    marginBottom: 16,
-  },
-  adminBadgeText: {
-    fontSize: 14,
-    fontWeight: "600",
+    marginBottom: 24,
   },
   pointsCard: {
     flexDirection: "row",

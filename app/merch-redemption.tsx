@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +8,7 @@ import {
   TextInput,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '@/contexts/AppContext';
@@ -28,14 +28,14 @@ export default function MerchRedemptionScreen() {
     return () => {
       setTabBarVisible(true);
     };
-  }, [setTabBarVisible]);
+  }, []);
 
   // Use 0 points if userProfile is null
   const currentPoints = userProfile?.points || 0;
   const requiredPoints = parseInt(pointsCost as string);
   const hasEnoughPoints = currentPoints >= requiredPoints;
 
-  const handleRedeem = useCallback(() => {
+  const handleRedeem = () => {
     console.log('Redeeming merch with address');
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -78,7 +78,7 @@ export default function MerchRedemptionScreen() {
         },
       ]
     );
-  }, [deliveryAddress, pickupNotes, pointsCost, currentPoints, merchId, merchName, redeemMerch, router]);
+  };
 
   const styles = StyleSheet.create({
   safeArea: {
@@ -348,3 +348,4 @@ export default function MerchRedemptionScreen() {
     </SafeAreaView>
   );
 }
+

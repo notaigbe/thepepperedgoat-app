@@ -8,12 +8,10 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string, phone?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
-  refreshAdminStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,35 +20,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  const checkAdminStatus = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('is_admin')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
-        return;
-      }
-
-      setIsAdmin(data?.is_admin || false);
-      console.log('Admin status:', data?.is_admin);
-    } catch (error) {
-      console.error('Exception checking admin status:', error);
-      setIsAdmin(false);
-    }
-  };
-
-  const refreshAdminStatus = async () => {
-    if (user?.id) {
-      await checkAdminStatus(user.id);
-    }
-  };
 
   useEffect(() => {
     // Get initial session
@@ -58,9 +27,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('Initial session:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user?.id) {
-        checkAdminStatus(session.user.id);
-      }
       setLoading(false);
     });
 
@@ -69,11 +35,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('Auth state changed:', _event, session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user?.id) {
-        checkAdminStatus(session.user.id);
-      } else {
-        setIsAdmin(false);
-      }
       setLoading(false);
     });
 
@@ -95,9 +56,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       console.log('Sign in successful:', data.user?.email);
-      if (data.user?.id) {
-        await checkAdminStatus(data.user.id);
-      }
       return { error: null };
     } catch (error: any) {
       console.error('Sign in exception:', error);
@@ -161,7 +119,6 @@ const signUp = async (email: string, password: string, name: string, phone?: str
         Alert.alert('Sign Out Error', error.message);
         throw error;
       }
-      setIsAdmin(false);
       console.log('Sign out successful');
     } catch (error: any) {
       console.error('Sign out exception:', error);
@@ -176,12 +133,10 @@ const signUp = async (email: string, password: string, name: string, phone?: str
         session,
         user,
         loading,
-        isAdmin,
         signIn,
         signUp,
         signOut,
         isAuthenticated: !!session,
-        refreshAdminStatus,
       }}
     >
       {children}

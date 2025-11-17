@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -41,18 +40,18 @@ export default function CheckoutScreen() {
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
   
-    const showToast = useCallback((type: 'success' | 'error' | 'info', message: string) => {
+    const showToast = (type: 'success' | 'error' | 'info', message: string) => {
       setToastType(type);
       setToastMessage(message);
       setToastVisible(true);
-    }, []);
+    };
 
   React.useEffect(() => {
     setTabBarVisible(false);
     return () => {
       setTabBarVisible(true);
     };
-  }, [setTabBarVisible]);
+  }, []);
 
   // Set default payment method on load
   React.useEffect(() => {
@@ -266,7 +265,7 @@ export default function CheckoutScreen() {
       fontSize: 16,
       fontWeight: '600',
       marginBottom: 4,
-      letterSpacing: 0.5,
+      letterSpacing: 0.5,  // Add this line
     },
     savedCardExpiry: {
       fontSize: 14,
