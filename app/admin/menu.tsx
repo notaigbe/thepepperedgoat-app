@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,104 +9,132 @@ import {
   TextInput,
   Image,
   Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { IconSymbol } from '@/components/IconSymbol';
-import { colors } from '@/styles/commonStyles';
-import { menuItems, menuCategories } from '@/data/menuData';
-import { MenuItem } from '@/types';
-import * as Haptics from 'expo-haptics';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { IconSymbol } from "@/components/IconSymbol";
+import { colors } from "@/styles/commonStyles";
+import { menuItems as staticMenuItems } from "@/data/menuData";
+import { menuService } from "@/services/supabaseService";
+import { MenuItem } from "@/types";
+import * as Haptics from "expo-haptics";
 
 export default function AdminMenuManagement() {
   const router = useRouter();
-  const [items, setItems] = useState<MenuItem[]>(menuItems);
+  const [items, setItems] = useState<MenuItem[]>(staticMenuItems);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    category: 'Main Dishes',
-    image: '',
+    name: "",
+    description: "",
+    price: "",
+    category: "Main Dishes",
+    image: "",
   });
 
+  const categories: string[] = [
+    "All",
+    ...Array.from(new Set(items.map((i) => i.category))),
+  ];
+
   const handleAddItem = () => {
-    console.log('Adding new menu item');
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    console.log("Adding new menu item");
+    (async () => {
+      if (!formData.name || !formData.price) {
+        Alert.alert("Error", "Please fill in all required fields");
+        return;
+      }
 
-    if (!formData.name || !formData.price) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
+      const payload: Omit<MenuItem, "id"> = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        category: formData.category,
+        image:
+          formData.image ||
+          "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
+        popular: false,
+        available: true,
+      };
 
-    const newItem: MenuItem = {
-      id: Date.now().toString(),
-      name: formData.name,
-      description: formData.description,
-      price: parseFloat(formData.price),
-      category: formData.category,
-      image: formData.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
-    };
-
-    setItems([...items, newItem]);
-    setIsAddingItem(false);
-    resetForm();
-    Alert.alert('Success', 'Menu item added successfully');
+      try {
+        const res = await menuService.addMenuItem(payload);
+        if (res.error || !res.data) throw res.error || new Error("Add failed");
+        const added = res.data as MenuItem | null;
+        if (added) setItems((s) => [added, ...s]);
+        setIsAddingItem(false);
+        resetForm();
+        Alert.alert("Success", "Menu item added successfully");
+      } catch (err) {
+        console.error("Add menu item failed", err);
+        Alert.alert("Error", "Unable to add menu item");
+      }
+    })();
   };
 
   const handleUpdateItem = () => {
-    console.log('Updating menu item');
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    console.log("Updating menu item");
+    (async () => {
+      if (!editingItem) return;
 
-    if (!editingItem) return;
+      const updates: Partial<MenuItem> = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        category: formData.category,
+        image: formData.image,
+      };
 
-    const updatedItems = items.map((item) =>
-      item.id === editingItem.id
-        ? {
-            ...item,
-            name: formData.name,
-            description: formData.description,
-            price: parseFloat(formData.price),
-            category: formData.category,
-            image: formData.image,
-          }
-        : item
-    );
-
-    setItems(updatedItems);
-    setEditingItem(null);
-    resetForm();
-    Alert.alert('Success', 'Menu item updated successfully');
+      try {
+        const res = await menuService.updateMenuItem(editingItem.id, updates);
+        if (res.error || !res.data)
+          throw res.error || new Error("Update failed");
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === editingItem.id ? (res.data as MenuItem) : it
+          )
+        );
+        setEditingItem(null);
+        resetForm();
+        Alert.alert("Success", "Menu item updated successfully");
+      } catch (err) {
+        console.error("Update menu item failed", err);
+        Alert.alert("Error", "Unable to update menu item");
+      }
+    })();
   };
 
   const handleDeleteItem = (itemId: string) => {
-    console.log('Deleting menu item:', itemId);
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    Alert.alert('Confirm Delete', 'Are you sure you want to delete this item?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          setItems(items.filter((item) => item.id !== itemId));
+    console.log("Deleting menu item:", itemId);
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this item?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const res = await menuService.deleteMenuItem(itemId);
+              if (res.error) throw res.error;
+              setItems((prev) => prev.filter((item) => item.id !== itemId));
+              Alert.alert("Deleted", "Menu item deleted");
+            } catch (err) {
+              console.error("Delete failed", err);
+              Alert.alert("Error", "Unable to delete menu item");
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const handleEditItem = (item: MenuItem) => {
-    console.log('Editing menu item:', item.id);
-    if (Platform.OS !== 'web') {
+    console.log("Editing menu item:", item.id);
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
@@ -124,18 +151,30 @@ export default function AdminMenuManagement() {
 
   const resetForm = () => {
     setFormData({
-      name: '',
-      description: '',
-      price: '',
-      category: 'Main Dishes',
-      image: '',
+      name: "",
+      description: "",
+      price: "",
+      category: "Main Dishes",
+      image: "",
     });
   };
 
   const filteredItems =
-    selectedCategory === 'All'
+    selectedCategory === "All"
       ? items
       : items.filter((item) => item.category === selectedCategory);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const res = await menuService.getMenuItems();
+        if (res.error) throw res.error;
+        setItems(res.data || []);
+      } catch (err) {
+        console.error("Failed to load menu items", err);
+      }
+    })();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -143,7 +182,7 @@ export default function AdminMenuManagement() {
         <Pressable
           style={styles.backButton}
           onPress={() => {
-            if (Platform.OS !== 'web') {
+            if (Platform.OS !== "web") {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
             router.back();
@@ -155,7 +194,7 @@ export default function AdminMenuManagement() {
         <Pressable
           style={styles.addButton}
           onPress={() => {
-            if (Platform.OS !== 'web') {
+            if (Platform.OS !== "web") {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
             setIsAddingItem(!isAddingItem);
@@ -164,18 +203,21 @@ export default function AdminMenuManagement() {
           }}
         >
           <IconSymbol
-            name={isAddingItem ? 'close' : 'add'}
+            name={isAddingItem ? "close" : "add"}
             size={24}
             color={colors.primary}
           />
         </Pressable>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {isAddingItem && (
           <View style={styles.formContainer}>
             <Text style={styles.formTitle}>
-              {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
+              {editingItem ? "Edit Menu Item" : "Add New Menu Item"}
             </Text>
 
             <TextInput
@@ -191,7 +233,9 @@ export default function AdminMenuManagement() {
               placeholder="Description"
               placeholderTextColor={colors.textSecondary}
               value={formData.description}
-              onChangeText={(text) => setFormData({ ...formData, description: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, description: text })
+              }
               multiline
               numberOfLines={3}
             />
@@ -208,30 +252,36 @@ export default function AdminMenuManagement() {
             <View style={styles.categorySelector}>
               <Text style={styles.inputLabel}>Category:</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {menuCategories.filter((cat) => cat !== 'All').map((category) => (
-                  <Pressable
-                    key={category}
-                    style={[
-                      styles.categoryChip,
-                      formData.category === category && styles.categoryChipActive,
-                    ]}
-                    onPress={() => {
-                      if (Platform.OS !== 'web') {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
-                      setFormData({ ...formData, category });
-                    }}
-                  >
-                    <Text
+                {categories
+                  .filter((cat) => cat !== "All")
+                  .map((category) => (
+                    <Pressable
+                      key={category}
                       style={[
-                        styles.categoryChipText,
-                        formData.category === category && styles.categoryChipTextActive,
+                        styles.categoryChip,
+                        formData.category === category &&
+                          styles.categoryChipActive,
                       ]}
+                      onPress={() => {
+                        if (Platform.OS !== "web") {
+                          Haptics.impactAsync(
+                            Haptics.ImpactFeedbackStyle.Light
+                          );
+                        }
+                        setFormData({ ...formData, category });
+                      }}
                     >
-                      {category}
-                    </Text>
-                  </Pressable>
-                ))}
+                      <Text
+                        style={[
+                          styles.categoryChipText,
+                          formData.category === category &&
+                            styles.categoryChipTextActive,
+                        ]}
+                      >
+                        {category}
+                      </Text>
+                    </Pressable>
+                  ))}
               </ScrollView>
             </View>
 
@@ -247,7 +297,7 @@ export default function AdminMenuManagement() {
               <Pressable
                 style={[styles.button, styles.cancelButton]}
                 onPress={() => {
-                  if (Platform.OS !== 'web') {
+                  if (Platform.OS !== "web") {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }
                   setIsAddingItem(false);
@@ -262,7 +312,7 @@ export default function AdminMenuManagement() {
                 onPress={editingItem ? handleUpdateItem : handleAddItem}
               >
                 <Text style={styles.saveButtonText}>
-                  {editingItem ? 'Update' : 'Add Item'}
+                  {editingItem ? "Update" : "Add Item"}
                 </Text>
               </Pressable>
             </View>
@@ -275,7 +325,7 @@ export default function AdminMenuManagement() {
           style={styles.categoryFilter}
           contentContainerStyle={styles.categoryFilterContent}
         >
-          {menuCategories.map((category) => (
+          {categories.map((category) => (
             <Pressable
               key={category}
               style={[
@@ -283,7 +333,7 @@ export default function AdminMenuManagement() {
                 selectedCategory === category && styles.filterChipActive,
               ]}
               onPress={() => {
-                if (Platform.OS !== 'web') {
+                if (Platform.OS !== "web") {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
                 setSelectedCategory(category);
@@ -346,9 +396,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -358,10 +408,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
   },
   addButton: {
     padding: 8,
@@ -376,7 +426,7 @@ const styles = StyleSheet.create({
   },
   formTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
     marginBottom: 16,
   },
@@ -392,11 +442,11 @@ const styles = StyleSheet.create({
   },
   textArea: {
     height: 80,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   inputLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text,
     marginBottom: 8,
   },
@@ -421,11 +471,11 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   categoryChipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
   formButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 8,
   },
@@ -433,7 +483,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   cancelButton: {
     backgroundColor: colors.background,
@@ -442,7 +492,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text,
   },
   saveButton: {
@@ -450,8 +500,8 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   categoryFilter: {
     paddingHorizontal: 16,
@@ -477,15 +527,15 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   filterChipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
   itemsContainer: {
     padding: 16,
     gap: 12,
   },
   menuItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 12,
@@ -503,7 +553,7 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text,
   },
   itemDescription: {
@@ -512,14 +562,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   itemFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 8,
     gap: 12,
   },
   itemPrice: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.primary,
   },
   itemCategory: {
@@ -531,7 +581,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   itemActions: {
-    justifyContent: 'center',
+    justifyContent: "center",
     gap: 8,
   },
   actionButton: {
