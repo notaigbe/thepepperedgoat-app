@@ -11,7 +11,7 @@ import {
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 // Add your SFSymbol to MaterialIcons mappings here.
-const MAPPING = {
+const MAPPING = ({
   // See MaterialIcons here: https://icons.expo.fyi
   // See SF Symbols in the SF Symbols app on Mac.
 
@@ -42,6 +42,11 @@ const MAPPING = {
   "bell": "notifications-none",
   "heart.fill": "favorite",
   "heart": "favorite-border",
+	"receipt-long":"receipt-long",
+	"credit-card":"credit-card",
+	"event":"event",
+	"palette":"palette",
+	"logout":"logout",
 
   // Actions & Controls
   "plus": "add",
@@ -55,6 +60,7 @@ const MAPPING = {
   "multiply": "clear",
   "trash.fill": "delete",
   "trash": "delete-outline",
+  "plus.circle.fill": "add-circle",
 
   // Editing & Creation
   "pencil": "edit",
@@ -86,7 +92,7 @@ const MAPPING = {
   "gearshape.fill": "settings",
   "slider.horizontal.3": "tune",
   "info.circle.fill": "info",
-  "info.circle": "info-outlined",
+  "info.circle": "info-circle",
   "exclamationmark.triangle.fill": "warning",
   "exclamationmark.triangle": "warning-amber",
   "questionmark.circle.fill": "help",
@@ -145,6 +151,7 @@ const MAPPING = {
   "person.circle": "account-circle",
   "person.crop.circle.fill": "account-circle",
   "person.crop.circle": "account-circle",
+  "lock":"lock",
 
   // Sharing & Export
   "square.and.arrow.up": "share",
@@ -163,14 +170,10 @@ const MAPPING = {
   "lightbulb.fill": "lightbulb",
   "moon.fill": "dark-mode",
   "sun.max.fill": "light-mode",
-} as Partial<
-  Record<
-    import("expo-symbols").SymbolViewProps["name"],
-    React.ComponentProps<typeof MaterialIcons>["name"]
-  >
->;
+	"auto-mode":"auto-mode",
+} as unknown) as Record<string, React.ComponentProps<typeof MaterialIcons>["name"]>;
 
-export type IconSymbolName = keyof typeof MAPPING;
+export type IconSymbolName = string;
 
 /**
  * An icon component that uses native SFSymbols on iOS, and MaterialIcons on Android and web. This ensures a consistent look across platforms, and optimal resource usage.
@@ -189,11 +192,14 @@ export function IconSymbol({
   style?: StyleProp<ViewStyle>;
   weight?: SymbolWeight;
 }) {
+  const mappedName = (MAPPING as Record<string, string>)[name] ?? name;
+
   return (
     <MaterialIcons
       color={color}
       size={size}
-      name={MAPPING[name]}
+      // cast because MaterialIcons name prop has a narrower union
+      name={mappedName as React.ComponentProps<typeof MaterialIcons>["name"]}
       style={style as StyleProp<TextStyle>}
     />
   );

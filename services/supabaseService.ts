@@ -1,5 +1,6 @@
 
-import { supabase } from '@/app/integrations/supabase/client';
+import { supabase, SUPABASE_URL } from '@/app/integrations/supabase/client';
+import type { Database } from '@/app/integrations/supabase/types';
 import { 
   MenuItem, 
   Order, 
@@ -13,6 +14,8 @@ import {
   AppNotification,
   ThemeSettings
 } from '@/types';
+
+// The imported `supabase` from client.ts is already typed as SupabaseClient<Database>
 
 // ============================================
 // AUTHENTICATION SERVICES
@@ -40,7 +43,7 @@ export const authService = {
 
       // Create user profile
       if (data.user) {
-        const { error: profileError } = await supabase
+        const { error: profileError } = (await ((supabase as any)
           .from('user_profiles')
           .insert({
             id: data.user.id,
@@ -48,20 +51,20 @@ export const authService = {
             email,
             phone: phone || '',
             points: 0,
-          });
+          }) as unknown)) as { data: Database['public']['Tables']['user_profiles']['Row'][] | null; error: any };
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
         }
 
         // Create default theme settings
-        await supabase
+        await ((supabase as any)
           .from('theme_settings')
           .insert({
             user_id: data.user.id,
             mode: 'auto',
             color_scheme: 'default',
-          });
+          }) as unknown) as { data: Database['public']['Tables']['theme_settings']['Row'][] | null; error: any };
       }
 
       return { data, error: null };
@@ -142,11 +145,11 @@ export const userService = {
    */
   async getUserProfile(userId: string) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = (await ((supabase as any)
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .single() as unknown)) as { data: Database['public']['Tables']['user_profiles']['Row'] | null; error: any };
 
       if (error) throw error;
       return { data, error: null };
@@ -161,17 +164,14 @@ export const userService = {
    */
   async updateUserProfile(userId: string, updates: Partial<UserProfile>) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = (await ((supabase as any)
         .from('user_profiles')
         .update({
           name: updates.name,
           phone: updates.phone,
           profile_image: updates.profileImage,
           updated_at: new Date().toISOString(),
-        })
-        .eq('id', userId)
-        .select()
-        .single();
+        }) as unknown)) as { data: Database['public']['Tables']['user_profiles']['Row'] | null; error: any };
 
       if (error) throw error;
       return { data, error: null };
@@ -186,20 +186,17 @@ export const userService = {
    */
   async addPoints(userId: string, points: number) {
     try {
-      const { data: profile } = await supabase
+      const { data: profile } = (await ((supabase as any)
         .from('user_profiles')
         .select('points')
         .eq('id', userId)
-        .single();
+        .single() as unknown)) as { data: Pick<Database['public']['Tables']['user_profiles']['Row'], 'points'> | null; error: any };
 
       if (!profile) throw new Error('User profile not found');
 
-      const { data, error } = await supabase
+      const { data, error } = (await ((supabase as any)
         .from('user_profiles')
-        .update({ points: profile.points + points })
-        .eq('id', userId)
-        .select()
-        .single();
+        .update({ points: profile.points + points }) as unknown)) as { data: Database['public']['Tables']['user_profiles']['Row'] | null; error: any };
 
       if (error) throw error;
       return { data, error: null };
@@ -214,21 +211,18 @@ export const userService = {
    */
   async deductPoints(userId: string, points: number) {
     try {
-      const { data: profile } = await supabase
+      const { data: profile } = (await ((supabase as any)
         .from('user_profiles')
         .select('points')
         .eq('id', userId)
-        .single();
+        .single() as unknown)) as { data: Pick<Database['public']['Tables']['user_profiles']['Row'], 'points'> | null; error: any };
 
       if (!profile) throw new Error('User profile not found');
       if (profile.points < points) throw new Error('Insufficient points');
 
-      const { data, error } = await supabase
+      const { data, error } = (await ((supabase as any)
         .from('user_profiles')
-        .update({ points: profile.points - points })
-        .eq('id', userId)
-        .select()
-        .single();
+        .update({ points: profile.points - points }) as unknown)) as { data: Database['public']['Tables']['user_profiles']['Row'] | null; error: any };
 
       if (error) throw error;
       return { data, error: null };
@@ -287,7 +281,7 @@ export const menuService = {
    */
   async addMenuItem(item: Omit<MenuItem, 'id'>) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('menu_items')
         .insert({
           name: item.name,
@@ -297,9 +291,9 @@ export const menuService = {
           image: item.image,
           popular: item.popular || false,
           available: true,
-        })
+        } as any)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       return { data, error: null };
@@ -314,7 +308,7 @@ export const menuService = {
    */
   async updateMenuItem(itemId: string, updates: Partial<MenuItem>) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('menu_items')
         .update({
           name: updates.name,
@@ -375,7 +369,7 @@ export const orderService = {
       if (!session) throw new Error('Not authenticated');
 
       const response = await fetch(
-        `${supabase.supabaseUrl}/functions/v1/place-order`,
+        `${SUPABASE_URL}/functions/v1/place-order`,
         {
           method: 'POST',
           headers: {
@@ -449,7 +443,7 @@ export const orderService = {
    */
   async updateOrderStatus(orderId: string, status: Order['status']) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('orders')
         .update({ 
           status,
@@ -510,7 +504,7 @@ export const giftCardService = {
       if (!session) throw new Error('Not authenticated');
 
       const response = await fetch(
-        `${supabase.supabaseUrl}/functions/v1/send-gift-card`,
+        `${SUPABASE_URL}/functions/v1/send-gift-card`,
         {
           method: 'POST',
           headers: {
@@ -585,7 +579,7 @@ export const giftCardService = {
    */
   async redeemGiftCard(giftCardId: string, userId: string) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('gift_cards')
         .update({ 
           status: 'redeemed',
@@ -645,7 +639,7 @@ export const merchService = {
       if (!session) throw new Error('Not authenticated');
 
       const response = await fetch(
-        `${supabase.supabaseUrl}/functions/v1/redeem-merch`,
+        `${SUPABASE_URL}/functions/v1/redeem-merch`,
         {
           method: 'POST',
           headers: {
@@ -696,7 +690,7 @@ export const merchService = {
    */
   async addMerchItem(item: Omit<MerchItem, 'id'>) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('merch_items')
         .insert({
           name: item.name,
@@ -704,9 +698,9 @@ export const merchService = {
           points_cost: item.pointsCost,
           image: item.image,
           in_stock: item.inStock,
-        })
+        } as any)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       return { data, error: null };
@@ -721,7 +715,7 @@ export const merchService = {
    */
   async updateMerchItem(itemId: string, updates: Partial<MerchItem>) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('merch_items')
         .update({
           name: updates.name,
@@ -836,7 +830,7 @@ export const eventService = {
       if (!session) throw new Error('Not authenticated');
 
       const response = await fetch(
-        `${supabase.supabaseUrl}/functions/v1/rsvp-event`,
+        `${SUPABASE_URL}/functions/v1/rsvp-event`,
         {
           method: 'POST',
           headers: {
@@ -888,7 +882,7 @@ export const eventService = {
         ? `invite-${Math.random().toString(36).substring(2, 15)}`
         : null;
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('events')
         .insert({
           title: event.title,
@@ -900,9 +894,9 @@ export const eventService = {
           is_private: event.isPrivate,
           is_invite_only: event.isInviteOnly,
           shareable_link: shareableLink,
-        })
+        } as any)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       return { data, error: null };
@@ -917,7 +911,7 @@ export const eventService = {
    */
   async updateEvent(eventId: string, updates: Partial<Event>) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('events')
         .update({
           title: updates.title,
@@ -989,7 +983,7 @@ export const paymentMethodService = {
    */
   async addPaymentMethod(userId: string, paymentMethod: Omit<PaymentMethod, 'id'>) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('payment_methods')
         .insert({
           user_id: userId,
@@ -998,9 +992,9 @@ export const paymentMethodService = {
           cardholder_name: paymentMethod.cardholderName,
           expiry_date: paymentMethod.expiryDate,
           is_default: paymentMethod.isDefault,
-        })
+        } as any)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       return { data, error: null };
@@ -1034,13 +1028,13 @@ export const paymentMethodService = {
   async setDefaultPaymentMethod(userId: string, paymentMethodId: string) {
     try {
       // First, unset all default payment methods
-      await supabase
+      await (supabase as any)
         .from('payment_methods')
         .update({ is_default: false })
         .eq('user_id', userId);
 
       // Then set the new default
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('payment_methods')
         .update({ is_default: true })
         .eq('id', paymentMethodId)
@@ -1085,7 +1079,7 @@ export const notificationService = {
    */
   async markAsRead(notificationId: string) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('notifications')
         .update({ read: true })
         .eq('id', notificationId)
@@ -1105,17 +1099,17 @@ export const notificationService = {
    */
   async createNotification(notification: Omit<AppNotification, 'id' | 'date' | 'read'>) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('notifications')
         .insert({
-          user_id: notification.title, // This should be user_id from the notification object
+          user_id: (notification as any).userId, 
           title: notification.title,
           message: notification.message,
           type: notification.type,
           action_url: notification.actionUrl,
-        })
+        } as any)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       return { data, error: null };
@@ -1158,7 +1152,7 @@ export const themeService = {
         .from('theme_settings')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return { data, error: null };
@@ -1173,14 +1167,14 @@ export const themeService = {
    */
   async updateThemeSettings(userId: string, settings: ThemeSettings) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('theme_settings')
         .upsert({
           user_id: userId,
           mode: settings.mode,
           color_scheme: settings.colorScheme,
           updated_at: new Date().toISOString(),
-        })
+        }, {onConflict: ['user_id']})
         .select()
         .single();
 
@@ -1189,6 +1183,102 @@ export const themeService = {
     } catch (error) {
       console.error('Update theme settings error:', error);
       return { data: null, error };
+    }
+  },
+};
+
+// ============================================
+// IMAGE STORAGE SERVICES
+// ============================================
+
+export const imageService = {
+  /**
+   * Upload an image to Supabase Storage
+   * @param bucket - bucket name
+   * @param path - path including filename (e.g., 'avatars/user123.png')
+   * @param file - File or Blob object
+   */
+// Updated imageService.uploadImage method:
+async uploadImage(
+  bucket: string, 
+  path: string, 
+  file: ArrayBuffer | Blob | File,
+  options?: { contentType?: string; upsert?: boolean }
+) {
+  try {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, { 
+        cacheControl: '3600', 
+        upsert: options?.upsert ?? true,
+        contentType: options?.contentType
+      });
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Upload image error:', error);
+    return { data: null, error };
+  }
+},
+
+  /**
+   * Get public URL for a public bucket
+   * @param bucket - bucket name
+   * @param path - path to the file
+   */
+  getPublicUrl(bucket: string, path: string): string | null {
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data?.publicUrl || null;
+  },
+
+  /**
+   * Get signed URL for private bucket
+   * @param bucket - bucket name
+   * @param path - path to the file
+   * @param expiresIn - expiration in seconds (default 1 hour)
+   */
+  async getSignedUrl(bucket: string, path: string, expiresIn = 3600): Promise<string | null> {
+    try {
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn);
+      if (error) throw error;
+      return data?.signedUrl || null;
+    } catch (error) {
+      console.error('Get signed URL error:', error);
+      return null;
+    }
+  },
+
+  /**
+   * List files in a folder
+   * @param bucket - bucket name
+   * @param folder - folder path
+   */
+  async listFiles(bucket: string, folder: string) {
+    try {
+      const { data, error } = await supabase.storage.from(bucket).list(folder, {
+        sortBy: { column: 'name', order: 'asc' },
+      });
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('List files error:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Download file as blob (for caching or offline usage)
+   * @param bucket - bucket name
+   * @param path - file path
+   */
+  async downloadFile(bucket: string, path: string): Promise<Blob | null> {
+    try {
+      const { data, error } = await supabase.storage.from(bucket).download(path);
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Download file error:', error);
+      return null;
     }
   },
 };

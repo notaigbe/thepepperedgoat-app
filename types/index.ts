@@ -112,4 +112,5 @@ export interface UserProfile {
   rsvpEvents: string[];
   themeSettings?: ThemeSettings;
   merchRedemptions?: MerchRedemption[];
+  isAdmin?: boolean;
 }

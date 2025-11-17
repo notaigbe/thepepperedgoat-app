@@ -1,5 +1,6 @@
 
 import { useApp } from '@/contexts/AppContext';
+import type { CartItem } from '@/contexts/AppContext';
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -65,6 +66,7 @@ export default function CartScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
+			
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -76,7 +78,7 @@ export default function CartScreen() {
 
         {cart.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <IconSymbol name="cart" size={80} color={currentColors.textSecondary} />
+            <IconSymbol name="cart.fill" size={80} color={currentColors.textSecondary} />
             <Text style={[styles.emptyText, { color: currentColors.textSecondary }]}>
               Your cart is empty
             </Text>
@@ -85,7 +87,7 @@ export default function CartScreen() {
             </Text>
             <Pressable
               style={[styles.browseButton, { backgroundColor: currentColors.primary }]}
-              onPress={() => router.push('/(tabs)/(home)/')}
+              onPress={() => router.push('/')}
             >
               <Text style={[styles.browseButtonText, { color: currentColors.card }]}>
                 Browse Menu

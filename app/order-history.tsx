@@ -33,122 +33,7 @@ export default function OrderHistoryScreen() {
     }
   };
 
-  return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              router.back();
-            }}
-            style={styles.backButton}
-          >
-            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
-          </Pressable>
-          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Order History</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {userProfile.orders.length === 0 ? (
-            <View style={styles.emptyState}>
-              <IconSymbol name="bag" size={64} color={currentColors.textSecondary} />
-              <Text style={[styles.emptyStateTitle, { color: currentColors.text }]}>No Orders Yet</Text>
-              <Text style={[styles.emptyStateText, { color: currentColors.textSecondary }]}>
-                Start ordering delicious food to see your order history here
-              </Text>
-            </View>
-          ) : (
-            <>
-              <View style={[styles.statsCard, { backgroundColor: currentColors.card }]}>
-                <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: currentColors.primary }]}>{userProfile.orders.length}</Text>
-                  <Text style={[styles.statLabel, { color: currentColors.textSecondary }]}>Total Orders</Text>
-                </View>
-                <View style={[styles.statDivider, { backgroundColor: currentColors.textSecondary + '30' }]} />
-                <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: currentColors.primary }]}>
-                    ${userProfile.orders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: currentColors.textSecondary }]}>Total Spent</Text>
-                </View>
-                <View style={[styles.statDivider, { backgroundColor: currentColors.textSecondary + '30' }]} />
-                <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: currentColors.primary }]}>
-                    {userProfile.orders.reduce((sum, order) => sum + order.pointsEarned, 0)}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: currentColors.textSecondary }]}>Points Earned</Text>
-                </View>
-              </View>
-
-              <Text style={[styles.sectionTitle, { color: currentColors.text }]}>All Orders</Text>
-
-              {userProfile.orders.map((order) => (
-                <View key={order.id} style={[styles.orderCard, { backgroundColor: currentColors.card }]}>
-                  <View style={styles.orderHeader}>
-                    <View>
-                      <Text style={[styles.orderId, { color: currentColors.text }]}>Order #{order.id.slice(-6)}</Text>
-                      <Text style={[styles.orderDate, { color: currentColors.textSecondary }]}>
-                        {new Date(order.date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </Text>
-                    </View>
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusBadgeColor(order.status) }]}>
-                      <Text style={[styles.statusText, { color: currentColors.card }]}>{order.status}</Text>
-                    </View>
-                  </View>
-
-                  <View style={[styles.orderDivider, { backgroundColor: currentColors.textSecondary + '20' }]} />
-
-                  <View style={styles.orderItems}>
-                    {order.items.map((item, index) => (
-                      <View key={`${item.id}-${index}`} style={styles.orderItem}>
-                        <Text style={[styles.itemQuantity, { color: currentColors.textSecondary }]}>{item.quantity}x</Text>
-                        <Text style={[styles.itemName, { color: currentColors.text }]}>{item.name}</Text>
-                        <Text style={[styles.itemPrice, { color: currentColors.text }]}>
-                          ${(item.price * item.quantity).toFixed(2)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  <View style={[styles.orderDivider, { backgroundColor: currentColors.textSecondary + '20' }]} />
-
-                  <View style={styles.orderFooter}>
-                    <View style={styles.orderTotalRow}>
-                      <Text style={[styles.orderTotalLabel, { color: currentColors.text }]}>Total</Text>
-                      <Text style={[styles.orderTotal, { color: currentColors.primary }]}>${order.total.toFixed(2)}</Text>
-                    </View>
-                    <View style={styles.orderPoints}>
-                      <IconSymbol name="star.fill" size={16} color={currentColors.highlight} />
-                      <Text style={[styles.orderPointsText, { color: currentColors.text }]}>
-                        +{order.pointsEarned} points earned
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </>
-          )}
-        </ScrollView>
-      </View>
-    </SafeAreaView>
-  );
-}
-
-const styles = StyleSheet.create({
+  const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
@@ -163,8 +48,15 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   backButton: {
-    padding: 4,
-  },
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: currentColors.card,
+      justifyContent: 'center',
+      alignItems: 'center',
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -303,3 +195,119 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Pressable
+                      onPress={() => {
+                        if (Platform.OS !== 'web') {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                        router.back();
+                      }}
+                      style={styles.backButton}
+                    >
+                      <IconSymbol name="chevron.left" size={24} color={currentColors.primary} />
+                    </Pressable>
+          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Order History</Text>
+          <View style={{ width: 24 }} />
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {!userProfile || userProfile.orders.length === 0 ? (
+            <View style={styles.emptyState}>
+              <IconSymbol name="bag" size={64} color={currentColors.textSecondary} />
+              <Text style={[styles.emptyStateTitle, { color: currentColors.text }]}>No Orders Yet</Text>
+              <Text style={[styles.emptyStateText, { color: currentColors.textSecondary }]}>
+                Start ordering delicious food to see your order history here
+              </Text>
+            </View>
+          ) : (
+            <>
+              <View style={[styles.statsCard, { backgroundColor: currentColors.card }]}>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: currentColors.primary }]}>{userProfile?.orders?.length}</Text>
+                  <Text style={[styles.statLabel, { color: currentColors.textSecondary }]}>Total Orders</Text>
+                </View>
+                <View style={[styles.statDivider, { backgroundColor: currentColors.textSecondary + '30' }]} />
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: currentColors.primary }]}>
+                    ${userProfile?.orders?.reduce((sum, order) => sum + order.total, 0).toFixed(2)}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: currentColors.textSecondary }]}>Total Spent</Text>
+                </View>
+                <View style={[styles.statDivider, { backgroundColor: currentColors.textSecondary + '30' }]} />
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: currentColors.primary }]}>
+                    {userProfile?.orders?.reduce((sum, order) => sum + order.pointsEarned, 0)}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: currentColors.textSecondary }]}>Points Earned</Text>
+                </View>
+              </View>
+
+              <Text style={[styles.sectionTitle, { color: currentColors.text }]}>All Orders</Text>
+
+              {userProfile?.orders?.map((order) => (
+                <View key={order.id} style={[styles.orderCard, { backgroundColor: currentColors.card }]}>
+                  <View style={styles.orderHeader}>
+                    <View>
+                      <Text style={[styles.orderId, { color: currentColors.text }]}>Order #{order.id.slice(-6)}</Text>
+                      <Text style={[styles.orderDate, { color: currentColors.textSecondary }]}>
+                        {new Date(order.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusBadgeColor(order.status) }]}>
+                      <Text style={[styles.statusText, { color: currentColors.card }]}>{order.status}</Text>
+                    </View>
+                  </View>
+
+                  <View style={[styles.orderDivider, { backgroundColor: currentColors.textSecondary + '20' }]} />
+
+                  <View style={styles.orderItems}>
+                    {order.items.map((item, index) => (
+                      <View key={`${item.id}-${index}`} style={styles.orderItem}>
+                        <Text style={[styles.itemQuantity, { color: currentColors.textSecondary }]}>{item.quantity}x</Text>
+                        <Text style={[styles.itemName, { color: currentColors.text }]}>{item.name}</Text>
+                        <Text style={[styles.itemPrice, { color: currentColors.text }]}>
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={[styles.orderDivider, { backgroundColor: currentColors.textSecondary + '20' }]} />
+
+                  <View style={styles.orderFooter}>
+                    <View style={styles.orderTotalRow}>
+                      <Text style={[styles.orderTotalLabel, { color: currentColors.text }]}>Total</Text>
+                      <Text style={[styles.orderTotal, { color: currentColors.primary }]}>${order.total.toFixed(2)}</Text>
+                    </View>
+                    <View style={styles.orderPoints}>
+                      <IconSymbol name="star.fill" size={16} color={currentColors.highlight} />
+                      <Text style={[styles.orderPointsText, { color: currentColors.text }]}>
+                        +{order.pointsEarned} points earned
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </>
+          )}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
+  );
+}
+

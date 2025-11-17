@@ -54,90 +54,7 @@ export default function NotificationsScreen() {
     }
   };
 
-  return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              router.back();
-            }}
-            style={styles.backButton}
-          >
-            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
-          </Pressable>
-          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Notifications</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {userProfile.notifications.length === 0 ? (
-            <View style={styles.emptyState}>
-              <IconSymbol name="bell" size={64} color={currentColors.textSecondary} />
-              <Text style={[styles.emptyStateTitle, { color: currentColors.text }]}>No Notifications</Text>
-              <Text style={[styles.emptyStateText, { color: currentColors.textSecondary }]}>
-                You&apos;ll see notifications about orders, specials, and events here
-              </Text>
-            </View>
-          ) : (
-            <>
-              {userProfile.notifications.map((notification) => (
-                <Pressable
-                  key={notification.id}
-                  style={[
-                    styles.notificationCard,
-                    { backgroundColor: currentColors.card },
-                    !notification.read && { borderLeftWidth: 4, borderLeftColor: currentColors.primary },
-                  ]}
-                  onPress={() =>
-                    handleNotificationPress(notification.id, notification.actionUrl)
-                  }
-                >
-                  <View
-                    style={[
-                      styles.notificationIcon,
-                      { backgroundColor: getNotificationColor(notification.type) + '20' },
-                    ]}
-                  >
-                    <IconSymbol
-                      name={getNotificationIcon(notification.type)}
-                      size={24}
-                      color={getNotificationColor(notification.type)}
-                    />
-                  </View>
-                  <View style={styles.notificationContent}>
-                    <View style={styles.notificationHeader}>
-                      <Text style={[styles.notificationTitle, { color: currentColors.text }]}>{notification.title}</Text>
-                      {!notification.read && <View style={[styles.unreadDot, { backgroundColor: currentColors.primary }]} />}
-                    </View>
-                    <Text style={[styles.notificationMessage, { color: currentColors.textSecondary }]}>{notification.message}</Text>
-                    <Text style={[styles.notificationDate, { color: currentColors.textSecondary }]}>
-                      {new Date(notification.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </Text>
-                  </View>
-                </Pressable>
-              ))}
-            </>
-          )}
-        </ScrollView>
-      </View>
-    </SafeAreaView>
-  );
-}
-
-const styles = StyleSheet.create({
+  const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
@@ -152,8 +69,15 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   backButton: {
-    padding: 4,
-  },
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: currentColors.card,
+      justifyContent: 'center',
+      alignItems: 'center',
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -225,3 +149,87 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Pressable
+                      onPress={() => {
+                        if (Platform.OS !== 'web') {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                        router.back();
+                      }}
+                      style={styles.backButton}
+                    >
+                      <IconSymbol name="chevron.left" size={24} color={currentColors.primary} />
+                    </Pressable>
+          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Notifications</Text>
+          <View style={{ width: 24 }} />
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {!userProfile || userProfile.notifications.length === 0 ? (
+            <View style={styles.emptyState}>
+              <IconSymbol name="bell" size={64} color={currentColors.textSecondary} />
+              <Text style={[styles.emptyStateTitle, { color: currentColors.text }]}>No Notifications</Text>
+              <Text style={[styles.emptyStateText, { color: currentColors.textSecondary }]}>
+                You&apos;ll see notifications about orders, specials, and events here
+              </Text>
+            </View>
+          ) : (
+            <>
+              {userProfile?.notifications?.map((notification) => (
+                <Pressable
+                  key={notification.id}
+                  style={[
+                    styles.notificationCard,
+                    { backgroundColor: currentColors.card },
+                    !notification.read && { borderLeftWidth: 4, borderLeftColor: currentColors.primary },
+                  ]}
+                  onPress={() =>
+                    handleNotificationPress(notification.id, notification.actionUrl)
+                  }
+                >
+                  <View
+                    style={[
+                      styles.notificationIcon,
+                      { backgroundColor: getNotificationColor(notification.type) + '20' },
+                    ]}
+                  >
+                    <IconSymbol
+                      name={getNotificationIcon(notification.type)}
+                      size={24}
+                      color={getNotificationColor(notification.type)}
+                    />
+                  </View>
+                  <View style={styles.notificationContent}>
+                    <View style={styles.notificationHeader}>
+                      <Text style={[styles.notificationTitle, { color: currentColors.text }]}>{notification.title}</Text>
+                      {!notification.read && <View style={[styles.unreadDot, { backgroundColor: currentColors.primary }]} />}
+                    </View>
+                    <Text style={[styles.notificationMessage, { color: currentColors.textSecondary }]}>{notification.message}</Text>
+                    <Text style={[styles.notificationDate, { color: currentColors.textSecondary }]}>
+                      {new Date(notification.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </>
+          )}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
+  );
+}
+
