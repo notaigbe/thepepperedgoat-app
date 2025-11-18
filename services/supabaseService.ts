@@ -438,7 +438,7 @@ export const orderService = {
     }
   },
 
- /**
+  /**
  * Update order status (Admin)
  */
 async updateOrderStatus(orderId: string, status: Order['status']) {
