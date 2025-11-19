@@ -51,7 +51,7 @@ interface AppContextType {
   toast: ToastConfig;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   hideToast: () => void;
-	menuItems: MenuItem[];
+  menuItems: MenuItem[];
   setMenuItems: (items: MenuItem[]) => void;
   loadMenuItems: () => Promise<void>;
   getUnreadNotificationCount: () => number;
@@ -81,7 +81,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     loadMenuItems();
   }, []);
-	
+  
   // Load user profile when authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -118,11 +118,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       orderChannelRef.current = channel;
 
       // Set auth before subscribing
-     const { data: { session } } = await supabase.auth.getSession();
-if (session) {
-  await supabase.realtime.setAuth(session.access_token);
-}
-
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.realtime.setAuth(session.access_token);
+      }
 
       channel
         .on('broadcast', { event: 'INSERT' }, (payload) => {
@@ -687,57 +686,56 @@ if (session) {
     }
   };
 
- // Replace your updateThemeMode and updateColorScheme functions with these corrected versions:
+  const updateThemeMode = async (mode: ThemeMode) => {
+    console.log('Updating theme mode:', mode);
+    
+    // Update local state first for immediate UI response
+    setThemeSettings((prev) => ({ ...prev, mode }));
+    
+    // Save to Supabase if user is authenticated
+    if (!user?.id) return; // Early return if no user
+    
+    try {
+      const { error } = await themeService.updateThemeSettings(user.id, {
+        mode,
+        colorScheme: themeSettings.colorScheme, // Use current colorScheme
+      });
 
-const updateThemeMode = async (mode: ThemeMode) => {
-  console.log('Updating theme mode:', mode);
-  
-  // Update local state first for immediate UI response
-  setThemeSettings((prev) => ({ ...prev, mode }));
-  
-  // Save to Supabase if user is authenticated
-  if (!user?.id) return; // Early return if no user
-  
-  try {
-    const { error } = await themeService.updateThemeSettings(user.id, {
-      mode,
-      colorScheme: themeSettings.colorScheme, // Use current colorScheme
-    });
-
-    if (error) {
+      if (error) {
+        console.error('Error updating theme mode:', error);
+        showToast('Failed to save theme settings', 'error');
+      }
+    } catch (error) {
       console.error('Error updating theme mode:', error);
       showToast('Failed to save theme settings', 'error');
     }
-  } catch (error) {
-    console.error('Error updating theme mode:', error);
-    showToast('Failed to save theme settings', 'error');
-  }
-};
+  };
 
-const updateColorScheme = async (scheme: ColorScheme) => {
-  console.log('Updating color scheme:', scheme);
-  
-  // Update local state first for immediate UI response
-  setThemeSettings((prev) => ({ ...prev, colorScheme: scheme }));
-  
-  // Save to Supabase if user is authenticated
-  if (!user?.id) return; // Early return if no user
-  
-  try {
-    const { error } = await themeService.updateThemeSettings(user.id, {
-      mode: themeSettings.mode, // Use current mode
-      colorScheme: scheme,
-    });
+  const updateColorScheme = async (scheme: ColorScheme) => {
+    console.log('Updating color scheme:', scheme);
+    
+    // Update local state first for immediate UI response
+    setThemeSettings((prev) => ({ ...prev, colorScheme: scheme }));
+    
+    // Save to Supabase if user is authenticated
+    if (!user?.id) return; // Early return if no user
+    
+    try {
+      const { error } = await themeService.updateThemeSettings(user.id, {
+        mode: themeSettings.mode, // Use current mode
+        colorScheme: scheme,
+      });
 
-    if (error) {
+      if (error) {
+        console.error('Error updating color scheme:', error);
+        showToast('Failed to save theme settings', 'error');
+      }
+    } catch (error) {
       console.error('Error updating color scheme:', error);
       showToast('Failed to save theme settings', 'error');
     }
-  } catch (error) {
-    console.error('Error updating color scheme:', error);
-    showToast('Failed to save theme settings', 'error');
-  }
-};
+  };
+
   const loadMenuItems = async () => {
     try {
       console.log('Loading menu items from Supabase (AppContext)');
@@ -773,6 +771,7 @@ const updateColorScheme = async (scheme: ColorScheme) => {
     }
     return userProfile.notifications.filter(n => !n.read).length;
   };
+
   return (
     <AppContext.Provider
       value={{
@@ -803,9 +802,10 @@ const updateColorScheme = async (scheme: ColorScheme) => {
         toast,
         showToast,
         hideToast,
-				menuItems,
-  			setMenuItems,
-  			loadMenuItems,
+        menuItems,
+        setMenuItems,
+        loadMenuItems,
+        getUnreadNotificationCount,
       }}
     >
       {children}
