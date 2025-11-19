@@ -3,6 +3,7 @@ node_modules/
 .git/
 .expo/
 .vscode/
+notai/
 
 dist/
 web-build/
@@ -38,3 +39,4 @@ netlify.toml
 
 pnpm-lock.yaml
 package-lock.json
+/notai

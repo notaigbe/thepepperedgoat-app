@@ -803,10 +803,9 @@ const updateColorScheme = async (scheme: ColorScheme) => {
         toast,
         showToast,
         hideToast,
-        menuItems,
-        setMenuItems,
-        loadMenuItems,
-        getUnreadNotificationCount,
+				menuItems,
+  			setMenuItems,
+  			loadMenuItems,
       }}
     >
       {children}
