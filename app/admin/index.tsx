@@ -233,7 +233,7 @@ export default function AdminDashboard() {
                 </View>
 
                 <View style={styles.inputContainer}>
-                  <IconSymbol name="lock" size={20} color={colors.textSecondary} />
+                  <IconSymbol name="lock.fill" size={20} color={colors.textSecondary} />
                   <TextInput
                     style={styles.input}
                     placeholder="Password"

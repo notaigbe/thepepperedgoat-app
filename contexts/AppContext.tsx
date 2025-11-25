@@ -200,7 +200,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const { data: notifications } = await notificationService.getNotifications(user.id);
       
       // Load theme settings
-      const { data: theme } = await themeService.getThemeSettings(user.id);
+      const { data: theme, error: themeError } = await themeService.getThemeSettings(user.id);
+      
+      // If no theme settings exist, create default ones
+      if (!theme && !themeError) {
+        console.log('No theme settings found, creating default');
+        await themeService.updateThemeSettings(user.id, {
+          mode: 'auto',
+          colorScheme: 'default',
+        });
+      }
       
       // Load merch redemptions
       const { data: merchRedemptions } = await merchService.getMerchRedemptions(user.id);
