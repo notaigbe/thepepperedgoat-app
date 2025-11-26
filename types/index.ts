@@ -129,4 +129,5 @@ export interface UserProfile {
   themeSettings?: ThemeSettings;
   merchRedemptions?: MerchRedemption[];
   isAdmin?: boolean;
+  isSuperAdmin?: boolean;
 }

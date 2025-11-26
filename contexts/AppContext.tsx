@@ -221,6 +221,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         phone: profile.phone || '',
         points: profile.points || 0,
         profileImage: profile.profile_image ?? undefined,
+        isAdmin: profile.is_admin ?? false,
+        isSuperAdmin: profile.is_super_admin ?? false,
         orders: orders?.map((o: any) => ({
           id: o.id,
           items: o.order_items?.map((oi: any) => ({

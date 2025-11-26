@@ -232,6 +232,88 @@ export const userService = {
       return { data: null, error };
     }
   },
+
+  /**
+   * Get all users (Admin/Super-Admin)
+   */
+  async getAllUsers() {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Get all users error:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Update user admin status (Super-Admin only)
+   */
+  async updateUserAdminStatus(userId: string, isAdmin: boolean) {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('user_profiles')
+        .update({ 
+          is_admin: isAdmin,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Update user admin status error:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Update user super-admin status (Super-Admin only)
+   */
+  async updateUserSuperAdminStatus(userId: string, isSuperAdmin: boolean) {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('user_profiles')
+        .update({ 
+          is_super_admin: isSuperAdmin,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Update user super-admin status error:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Delete user account (Super-Admin only)
+   */
+  async deleteUser(userId: string) {
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      console.error('Delete user error:', error);
+      return { error };
+    }
+  },
 };
 
 // ============================================

@@ -13,6 +13,7 @@ export default function AdminLayout() {
       <Stack.Screen name="menu" />
       <Stack.Screen name="orders" />
       <Stack.Screen name="users" />
+      <Stack.Screen name="admins" />
       <Stack.Screen name="events" />
       <Stack.Screen name="merch" />
       <Stack.Screen name="giftcards" />

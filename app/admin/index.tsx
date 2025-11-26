@@ -20,10 +20,12 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/AuthContext";
 import { orderService } from "@/services/supabaseService";
 import { supabase } from "@/app/integrations/supabase/client";
+import { useApp } from "@/contexts/AppContext";
 
 export default function AdminDashboard() {
   const router = useRouter();
   const { signIn, isAuthenticated, signOut } = useAuth();
+  const { userProfile } = useApp();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -107,7 +109,7 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated]);
 
-  const adminSections = [
+  const allAdminSections = [
     {
       id: "menu",
       title: "Menu Management",
@@ -115,6 +117,7 @@ export default function AdminDashboard() {
       icon: "restaurant-menu" as const,
       route: "/admin/menu",
       color: colors.primary,
+      superAdminOnly: false,
     },
     {
       id: "orders",
@@ -123,6 +126,7 @@ export default function AdminDashboard() {
       icon: "receipt-long" as const,
       route: "/admin/orders",
       color: "#FF6B35",
+      superAdminOnly: false,
     },
     {
       id: "reservations",
@@ -131,6 +135,7 @@ export default function AdminDashboard() {
       icon: "event-seat" as const,
       route: "/admin/reservations",
       color: "#9B59B6",
+      superAdminOnly: false,
     },
     {
       id: "users",
@@ -139,6 +144,16 @@ export default function AdminDashboard() {
       icon: "people" as const,
       route: "/admin/users",
       color: "#4ECDC4",
+      superAdminOnly: false,
+    },
+    {
+      id: "admins",
+      title: "Admin Management",
+      description: "Manage admin roles and permissions",
+      icon: "admin-panel-settings" as const,
+      route: "/admin/admins",
+      color: "#E74C3C",
+      superAdminOnly: true,
     },
     {
       id: "events",
@@ -147,6 +162,7 @@ export default function AdminDashboard() {
       icon: "event" as const,
       route: "/admin/events",
       color: "#95E1D3",
+      superAdminOnly: false,
     },
     {
       id: "merch",
@@ -155,6 +171,7 @@ export default function AdminDashboard() {
       icon: "shopping-bag" as const,
       route: "/admin/merch",
       color: "#F38181",
+      superAdminOnly: false,
     },
     {
       id: "giftcards",
@@ -163,6 +180,7 @@ export default function AdminDashboard() {
       icon: "card-giftcard" as const,
       route: "/admin/giftcards",
       color: "#AA96DA",
+      superAdminOnly: false,
     },
     {
       id: "notifications",
@@ -171,6 +189,7 @@ export default function AdminDashboard() {
       icon: "notifications" as const,
       route: "/admin/notifications",
       color: "#FCBAD3",
+      superAdminOnly: false,
     },
     {
       id: "analytics",
@@ -179,8 +198,14 @@ export default function AdminDashboard() {
       icon: "analytics" as const,
       route: "/admin/analytics",
       color: "#A8D8EA",
+      superAdminOnly: false,
     },
   ];
+
+  // Filter sections based on user role
+  const adminSections = allAdminSections.filter(
+    (section) => !section.superAdminOnly || userProfile?.isSuperAdmin
+  );
 
   const handleSectionPress = (route: string) => {
     console.log("Navigating to:", route);
@@ -303,7 +328,21 @@ export default function AdminDashboard() {
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Admin Dashboard</Text>
-            <Text style={styles.subtitle}>Jagabans LA Management</Text>
+            <View style={styles.subtitleRow}>
+              <Text style={styles.subtitle}>Jagabans LA Management</Text>
+              {userProfile?.isSuperAdmin && (
+                <View style={styles.superAdminBadge}>
+                  <IconSymbol name="verified" size={12} color="#FFFFFF" />
+                  <Text style={styles.superAdminBadgeText}>Super Admin</Text>
+                </View>
+              )}
+              {userProfile?.isAdmin && !userProfile?.isSuperAdmin && (
+                <View style={styles.adminBadge}>
+                  <IconSymbol name="admin-panel-settings" size={12} color="#FFFFFF" />
+                  <Text style={styles.adminBadgeText}>Admin</Text>
+                </View>
+              )}
+            </View>
           </View>
           <View style={styles.headerButtons}>
             <Pressable
@@ -505,10 +544,43 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: colors.text,
   },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
-    marginTop: 4,
+  },
+  superAdminBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF6B35',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  superAdminBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  adminBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  adminBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   headerButtons: {
     flexDirection: "row",

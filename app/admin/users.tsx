@@ -9,6 +9,7 @@ import {
   Platform,
   TextInput,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,6 +17,8 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '@/app/integrations/supabase/client';
+import { userService } from '@/services/supabaseService';
+import { useApp } from '@/contexts/AppContext';
 
 interface User {
   id: string;
@@ -27,10 +30,13 @@ interface User {
   totalSpent: number;
   joinDate: string;
   active: boolean;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
 }
 
 export default function AdminUserManagement() {
   const router = useRouter();
+  const { userProfile } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +77,8 @@ export default function AdminUserManagement() {
           totalSpent,
           joinDate: profile.created_at || new Date().toISOString(),
           active: true,
+          isAdmin: profile.is_admin || false,
+          isSuperAdmin: profile.is_super_admin || false,
         };
       });
 
@@ -80,6 +88,73 @@ export default function AdminUserManagement() {
       setUsers([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePromoteToAdmin = async (userId: string, userName: string) => {
+    try {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+
+      Alert.alert(
+        'Promote to Admin',
+        `Are you sure you want to promote ${userName} to admin?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Promote',
+            onPress: async () => {
+              const { error } = await userService.updateUserAdminStatus(userId, true);
+
+              if (error) {
+                Alert.alert('Error', 'Failed to promote user to admin');
+                return;
+              }
+
+              Alert.alert('Success', `${userName} has been promoted to admin`);
+              fetchUsers();
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error promoting user:', error);
+      Alert.alert('Error', 'Failed to promote user to admin');
+    }
+  };
+
+  const handleRevokeAdmin = async (userId: string, userName: string) => {
+    try {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+
+      Alert.alert(
+        'Revoke Admin',
+        `Are you sure you want to revoke admin privileges from ${userName}?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Revoke',
+            style: 'destructive',
+            onPress: async () => {
+              const { error } = await userService.updateUserAdminStatus(userId, false);
+
+              if (error) {
+                Alert.alert('Error', 'Failed to revoke admin privileges');
+                return;
+              }
+
+              Alert.alert('Success', `Admin privileges revoked from ${userName}`);
+              fetchUsers();
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error revoking admin:', error);
+      Alert.alert('Error', 'Failed to revoke admin privileges');
     }
   };
 
@@ -152,7 +227,10 @@ export default function AdminUserManagement() {
           {filteredUsers.map((user) => (
             <View key={user.id} style={styles.userCard}>
               <View style={styles.userHeader}>
-                <View style={styles.userAvatar}>
+                <View style={[
+                  styles.userAvatar,
+                  { backgroundColor: user.isSuperAdmin ? '#FF6B35' : user.isAdmin ? '#9B59B6' : colors.primary }
+                ]}>
                   <Text style={styles.userInitials}>
                     {user.name
                       .split(' ')
@@ -161,7 +239,19 @@ export default function AdminUserManagement() {
                   </Text>
                 </View>
                 <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{user.name}</Text>
+                  <View style={styles.userNameRow}>
+                    <Text style={styles.userName}>{user.name}</Text>
+                    {user.isSuperAdmin && (
+                      <View style={styles.superAdminBadge}>
+                        <Text style={styles.badgeText}>Super Admin</Text>
+                      </View>
+                    )}
+                    {user.isAdmin && !user.isSuperAdmin && (
+                      <View style={styles.adminBadge}>
+                        <Text style={styles.badgeText}>Admin</Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={styles.userEmail}>{user.email}</Text>
                   <Text style={styles.userPhone}>{user.phone}</Text>
                 </View>
@@ -197,22 +287,37 @@ export default function AdminUserManagement() {
                 <Text style={styles.joinDate}>
                   Joined: {new Date(user.joinDate).toLocaleDateString()}
                 </Text>
-                <Pressable
-                  style={styles.viewButton}
-                  onPress={() => {
-                    if (Platform.OS !== 'web') {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                    console.log('View user details:', user.id);
-                  }}
-                >
-                  <Text style={styles.viewButtonText}>View Details</Text>
-                  <IconSymbol
-                    name="chevron-right"
-                    size={16}
-                    color={colors.primary}
-                  />
-                </Pressable>
+                <View style={styles.userActions}>
+                  {userProfile?.isSuperAdmin && !user.isSuperAdmin && (
+                    <Pressable
+                      style={[
+                        styles.actionButton,
+                        user.isAdmin && styles.revokeButton,
+                      ]}
+                      onPress={() => {
+                        if (user.isAdmin) {
+                          handleRevokeAdmin(user.id, user.name);
+                        } else {
+                          handlePromoteToAdmin(user.id, user.name);
+                        }
+                      }}
+                    >
+                      <IconSymbol
+                        name={user.isAdmin ? 'remove-circle' : 'admin-panel-settings'}
+                        size={16}
+                        color={user.isAdmin ? '#FF6B6B' : colors.primary}
+                      />
+                      <Text
+                        style={[
+                          styles.actionButtonText,
+                          user.isAdmin && styles.revokeButtonText,
+                        ]}
+                      >
+                        {user.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
               </View>
             </View>
           ))}
@@ -331,10 +436,33 @@ const styles = StyleSheet.create({
   userInfo: {
     flex: 1,
   },
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
   userName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: colors.text,
+  },
+  superAdminBadge: {
+    backgroundColor: '#FF6B35',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  adminBadge: {
+    backgroundColor: '#9B59B6',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   userEmail: {
     fontSize: 14,
@@ -383,15 +511,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
   },
-  viewButton: {
+  userActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: colors.card,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
-  viewButtonText: {
-    fontSize: 14,
+  actionButtonText: {
+    fontSize: 12,
     fontWeight: '600',
     color: colors.primary,
+  },
+  revokeButton: {
+    borderColor: '#FF6B6B',
+  },
+  revokeButtonText: {
+    color: '#FF6B6B',
   },
   emptyState: {
     alignItems: 'center',

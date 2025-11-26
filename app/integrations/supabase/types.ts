@@ -20,6 +20,9 @@ export interface Database {
           profile_image: string | null
           created_at: string
           updated_at: string
+          user_id: string | null
+          is_admin: boolean | null
+          is_super_admin: boolean | null
         }
         Insert: {
           id: string
@@ -30,6 +33,9 @@ export interface Database {
           profile_image?: string | null
           created_at?: string
           updated_at?: string
+          user_id?: string | null
+          is_admin?: boolean | null
+          is_super_admin?: boolean | null
         }
         Update: {
           id?: string
@@ -40,6 +46,9 @@ export interface Database {
           profile_image?: string | null
           created_at?: string
           updated_at?: string
+          user_id?: string | null
+          is_admin?: boolean | null
+          is_super_admin?: boolean | null
         }
       }
       menu_items: {
