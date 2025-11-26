@@ -40,6 +40,8 @@ export default function AdminUserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const isSuperAdmin = userProfile?.userRole === 'super_admin';
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -47,10 +49,17 @@ export default function AdminUserManagement() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // Get all users
-      const { data: userProfiles, error: usersError } = await (supabase as any)
-        .from('user_profiles')
-        .select('*');
+      
+      // Build query based on user role
+      let query = (supabase as any).from('user_profiles').select('*');
+      
+      // If regular admin, only show users with user_role = 'user'
+      if (!isSuperAdmin) {
+        query = query.eq('user_role', 'user');
+      }
+      // If super_admin, show all users (no filter needed)
+
+      const { data: userProfiles, error: usersError } = await query;
 
       if (usersError) throw usersError;
 
@@ -162,7 +171,7 @@ export default function AdminUserManagement() {
       user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Calculate active users (excluding admins and super_admins)
+  // Calculate active users (only regular users)
   const activeRegularUsers = users.filter((u) => u.active && u.userRole === 'user').length;
 
   return (
@@ -202,7 +211,9 @@ export default function AdminUserManagement() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{users.length}</Text>
-            <Text style={styles.statLabel}>Total Users</Text>
+            <Text style={styles.statLabel}>
+              {isSuperAdmin ? 'Total Users' : 'Regular Users'}
+            </Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statValue}>
@@ -289,7 +300,7 @@ export default function AdminUserManagement() {
                   Joined: {new Date(user.joinDate).toLocaleDateString()}
                 </Text>
                 <View style={styles.userActions}>
-                  {userProfile?.userRole === 'super_admin' && user.userRole !== 'super_admin' && (
+                  {isSuperAdmin && user.userRole !== 'super_admin' && (
                     <Pressable
                       style={[
                         styles.actionButton,
@@ -403,6 +414,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 4,
+    textAlign: 'center',
   },
   usersContainer: {
     padding: 16,

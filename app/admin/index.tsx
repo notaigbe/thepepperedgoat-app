@@ -74,12 +74,21 @@ export default function AdminDashboard() {
   const fetchStats = async () => {
     try {
       setStatsLoading(true);
-      const [ordersResponse, usersResponse] = await Promise.all([
-        orderService.getAllOrders(),
-        (supabase as any).from("user_profiles").select("*"),
-      ]);
-
+      
+      // Fetch orders
+      const ordersResponse = await orderService.getAllOrders();
       const orders = ordersResponse.data || [];
+
+      // Fetch users based on role
+      let usersQuery = (supabase as any).from("user_profiles").select("*");
+      
+      // If regular admin, only count users with user_role = 'user'
+      if (!isSuperAdmin) {
+        usersQuery = usersQuery.eq('user_role', 'user');
+      }
+      // If super_admin, count all users (no filter)
+
+      const usersResponse = await usersQuery;
       const users = usersResponse.data || [];
 
       const totalOrders = orders.length;
@@ -383,7 +392,9 @@ export default function AdminDashboard() {
             ) : (
               <Text style={styles.statValue}>{stats.activeUsers}</Text>
             )}
-            <Text style={styles.statLabel}>Active Users</Text>
+            <Text style={styles.statLabel}>
+              {isSuperAdmin ? 'Total Users' : 'Active Users'}
+            </Text>
           </View>
           <View style={styles.statCard}>
             <IconSymbol name="attach-money" size={32} color="#95E1D3" />
@@ -621,6 +632,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 4,
+    textAlign: 'center',
   },
   sectionsContainer: {
     paddingHorizontal: 24,

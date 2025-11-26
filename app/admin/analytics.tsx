@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -19,6 +20,7 @@ import {
   userService,
 } from "@/services/supabaseService";
 import { supabase } from "@/app/integrations/supabase/client";
+import { useApp } from "@/contexts/AppContext";
 
 interface Metric {
   id: string;
@@ -38,10 +40,13 @@ interface TopItem {
 
 export default function AdminAnalytics() {
   const router = useRouter();
+  const { userProfile } = useApp();
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [topItems, setTopItems] = useState<TopItem[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+
+  const isSuperAdmin = userProfile?.userRole === 'super_admin';
 
   useEffect(() => {
     fetchAnalyticsData();
@@ -56,10 +61,16 @@ export default function AdminAnalytics() {
         await orderService.getAllOrders();
       if (ordersError) throw ordersError;
 
-      // Fetch all users
-      const { data: users, error: usersError } = await supabase
-        .from("user_profiles")
-        .select("*");
+      // Fetch users based on role
+      let usersQuery = (supabase as any).from("user_profiles").select("*");
+      
+      // If regular admin, only count users with user_role = 'user'
+      if (!isSuperAdmin) {
+        usersQuery = usersQuery.eq('user_role', 'user');
+      }
+      // If super_admin, count all users (no filter)
+
+      const { data: users, error: usersError } = await usersQuery;
       if (usersError) throw usersError;
 
       // Fetch all menu items with order data
@@ -99,7 +110,7 @@ export default function AdminAnalytics() {
         },
         {
           id: "users",
-          title: "Active Users",
+          title: isSuperAdmin ? "Total Users" : "Active Users",
           value: activeUsers.toString(),
           change: "+15.2%",
           positive: true,
