@@ -257,7 +257,7 @@ export default function OrderHistoryScreen() {
                 <View key={order.id} style={[styles.orderCard, { backgroundColor: currentColors.card }]}>
                   <View style={styles.orderHeader}>
                     <View>
-                      <Text style={[styles.orderId, { color: currentColors.text }]}>Order #{order.id.slice(-6)}</Text>
+                      <Text style={[styles.orderId, { color: currentColors.text }]}>Order #{order.orderNumber}</Text>
                       <Text style={[styles.orderDate, { color: currentColors.textSecondary }]}>
                         {new Date(order.date).toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -310,4 +310,3 @@ export default function OrderHistoryScreen() {
     </SafeAreaView>
   );
 }
-

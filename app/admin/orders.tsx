@@ -42,6 +42,7 @@ export default function AdminOrderManagement() {
       // Transform backend data to match Order interface
       const transformedOrders = (res.data || []).map((order: any) => ({
         id: order.id,
+        orderNumber: order.order_number || 0,
         items: (order.order_items || []).map((item: any) => ({
           id: item.id || item.item_id || '',
           name: item.item_name || item.name || '',
@@ -87,6 +88,7 @@ export default function AdminOrderManagement() {
         const updatedOrder = res.data as any;
         const transformedOrder: OrderWithItems = {
           id: updatedOrder.id,
+          orderNumber: updatedOrder.order_number || 0,
           items: (updatedOrder.order_items || []).map((item: any) => ({
             id: item.id || item.item_id || '',
             name: item.item_name || item.name || '',
@@ -195,7 +197,7 @@ export default function AdminOrderManagement() {
                 <View key={order.id} style={styles.orderCard}>
                   <View style={styles.orderHeader}>
                     <View>
-                      <Text style={styles.orderId}>Order #{order.id}</Text>
+                      <Text style={styles.orderId}>Order #{order.orderNumber}</Text>
                       <Text style={styles.orderDate}>
                         {new Date(order.date).toLocaleString()}
                       </Text>
