@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { orderService } from "@/services/supabaseService";
 import { Alert } from "react-native";
@@ -21,6 +22,7 @@ export function useOrders() {
 
   const transformOrder = (order: any): OrderWithItems => ({
     id: order.id,
+    orderNumber: order.order_number || 0,
     items: (order.order_items || []).map((item: any) => ({
       id: item.id || item.item_id || "",
       name: item.item_name || item.name || "",
@@ -60,7 +62,7 @@ export function useOrders() {
     if (!allowedTransitions[order.status].includes(newStatus)) {
       Alert.alert(
         "Not Allowed",
-        "You can’t move this order to that status from its current state."
+        "You can't move this order to that status from its current state."
       );
       return;
     }

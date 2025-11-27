@@ -1,3 +1,4 @@
+
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { colors } from "@/styles/commonStyles";
@@ -21,7 +22,7 @@ export function OrderCard({
     <View style={styles.card}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.orderId}>Order #{order.id}</Text>
+          <Text style={styles.orderId}>Order #{order.orderNumber}</Text>
           <Text style={styles.date}>
             {new Date(order.date).toLocaleString()}
           </Text>

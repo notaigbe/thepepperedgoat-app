@@ -17,6 +17,7 @@ export interface CartItem extends MenuItem {
 
 export interface Order {
   id: string;
+  orderNumber: number; // Human-readable order number (e.g., 1001, 1002)
   items: CartItem[];
   total: number;
   pointsEarned: number;
