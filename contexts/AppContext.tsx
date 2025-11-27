@@ -224,6 +224,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         userRole: profile.user_role as UserRole,
         orders: orders?.map((o: any) => ({
           id: o.id,
+          orderNumber: o.order_number || 0,
           items: o.order_items?.map((oi: any) => ({
             id: oi.menu_item_id || oi.id,
             name: oi.name,
