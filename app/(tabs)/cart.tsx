@@ -1,7 +1,7 @@
 
 import { useApp } from '@/contexts/AppContext';
 import type { CartItem } from '@/contexts/AppContext';
-import React from 'react';
+import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -13,13 +13,16 @@ import {
   Image,
   Pressable,
   Platform,
-  Alert,
 } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
+import Dialog from '@/components/Dialog';
 
 export default function CartScreen() {
   const { cart, updateCartQuantity, removeFromCart, currentColors } = useApp();
   const router = useRouter();
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogType, setDialogType] = useState<'remove' | 'empty'>('remove');
+  const [itemToRemove, setItemToRemove] = useState<string | null>(null);
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.08;
@@ -36,29 +39,25 @@ export default function CartScreen() {
 
   const handleRemoveItem = (itemId: string) => {
     console.log('Removing item:', itemId);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert(
-      'Remove Item',
-      'Are you sure you want to remove this item from your cart?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            removeFromCart(itemId);
-          },
-        },
-      ]
-    );
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setItemToRemove(itemId);
+    setDialogVisible(true);
+  };
+
+  const handleConfirmRemove = () => {
+    if (itemToRemove) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      removeFromCart(itemToRemove);
+      setItemToRemove(null);
+    }
   };
 
   const handleCheckout = () => {
     console.log('Proceeding to checkout');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (cart.length === 0) {
-      Alert.alert('Empty Cart', 'Please add items to your cart before checking out.');
+      setDialogType('empty');
+      setDialogVisible(true);
       return;
     }
     router.push('/checkout');
@@ -162,6 +161,42 @@ export default function CartScreen() {
           </>
         )}
       </View>
+      <Dialog
+        visible={dialogVisible}
+        title={dialogType === 'remove' ? 'Remove Item' : 'Empty Cart'}
+        message={
+          dialogType === 'remove'
+            ? 'Are you sure you want to remove this item from your cart?'
+            : 'Please add items to your cart before checking out.'
+        }
+        buttons={
+          dialogType === 'remove'
+            ? [
+                {
+                  text: 'Cancel',
+                  onPress: () => setItemToRemove(null),
+                  style: 'cancel',
+                },
+                {
+                  text: 'Remove',
+                  onPress: handleConfirmRemove,
+                  style: 'destructive',
+                },
+              ]
+            : [
+                {
+                  text: 'OK',
+                  onPress: () => {},
+                  style: 'default',
+                },
+              ]
+        }
+        onHide={() => {
+          setDialogVisible(false);
+          setItemToRemove(null);
+        }}
+        currentColors={currentColors}
+      />
     </SafeAreaView>
   );
 }
