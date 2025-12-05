@@ -1,34 +1,56 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Pressable,
-  TextInput,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import { IconSymbol } from '@/components/IconSymbol';
-import { PaymentMethod } from '@/types';
 import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
+import { supabase } from '@/app/integrations/supabase/client';
+import {
+  SQIPCardEntry,
+  SQIPCore,
+} from 'react-native-square-in-app-payments';
+
+interface StoredCard {
+  id: string;
+  cardBrand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  cardholderName?: string;
+  isDefault: boolean;
+  squareCardId: string;
+  squareCustomerId: string;
+}
 
 export default function PaymentMethodsScreen() {
   const router = useRouter();
-  const { userProfile, addPaymentMethod, removePaymentMethod, setDefaultPaymentMethod, currentColors } = useApp();
-  const [showAddCard, setShowAddCard] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardholderName, setCardholderName] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
+  const { userProfile, currentColors, loadUserProfile } = useApp();
+  
+  const [storedCards, setStoredCards] = useState<StoredCard[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+
+  useEffect(() => {
+    if (userProfile) {
+      loadStoredCards();
+      initializeSquare();
+    }
+  }, [userProfile]);
 
   const showToast = (type: 'success' | 'error' | 'info', message: string) => {
     setToastType(type);
@@ -36,65 +58,122 @@ export default function PaymentMethodsScreen() {
     setToastVisible(true);
   };
 
-  const formatCardNumber = (text: string) => {
-    const cleaned = text.replace(/\s/g, '');
-    const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
-    return formatted.substring(0, 19);
-  };
-
-  const formatExpiryDate = (text: string) => {
-    const cleaned = text.replace(/\D/g, '');
-    if (cleaned.length >= 2) {
-      return `${cleaned.substring(0, 2)}/${cleaned.substring(2, 4)}`;
+  const initializeSquare = async () => {
+    try {
+      const applicationId = 'sandbox-sq0idb-YOUR_APP_ID'; // Replace with actual app ID
+      await SQIPCore.setSquareApplicationId(applicationId);
+      console.log('Square SDK initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize Square SDK:', error);
     }
-    return cleaned;
   };
 
-  const handleAddCard = () => {
+  const loadStoredCards = async () => {
+    if (!userProfile) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('square_cards')
+        .select('*')
+        .eq('user_id', userProfile.id)
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const cards: StoredCard[] = data.map((card: any) => ({
+          id: card.id,
+          cardBrand: card.card_brand,
+          last4: card.last_4,
+          expMonth: card.exp_month,
+          expYear: card.exp_year,
+          cardholderName: card.cardholder_name,
+          isDefault: card.is_default,
+          squareCardId: card.square_card_id,
+          squareCustomerId: card.square_customer_id,
+        }));
+        
+        setStoredCards(cards);
+      } else {
+        setStoredCards([]);
+      }
+    } catch (error) {
+      console.error('Error loading stored cards:', error);
+      showToast('error', 'Failed to load saved cards');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddCard = async () => {
+    try {
+      setProcessing(true);
+      
+      await SQIPCardEntry.startCardEntryFlow(
+        {
+          collectPostalCode: true,
+          skipCardHolderName: false,
+        },
+        async (cardDetails) => {
+          console.log('Card nonce received:', cardDetails.nonce);
+          
+          // Here you would typically make a small charge or create a customer
+          // For now, we'll show a message that the card needs to be added during checkout
+          showToast('info', 'Please add your card during checkout to save it for future use.');
+          setProcessing(false);
+        },
+        (error) => {
+          console.error('Card entry error:', error);
+          showToast('error', error.message || 'Failed to capture card information');
+          setProcessing(false);
+        },
+        () => {
+          console.log('Card entry cancelled');
+          setProcessing(false);
+        }
+      );
+    } catch (error) {
+      console.error('Failed to start card entry:', error);
+      showToast('error', 'Failed to open card entry form');
+      setProcessing(false);
+    }
+  };
+
+  const handleSetDefault = async (cardId: string) => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
-    if (!cardNumber || !cardholderName || !expiryDate || !cvv) {
-      showToast('error', 'Please fill in all fields');
-      return;
+    try {
+      setProcessing(true);
+
+      // Update all cards to not be default
+      await supabase
+        .from('square_cards')
+        .update({ is_default: false })
+        .eq('user_id', userProfile!.id);
+
+      // Set the selected card as default
+      const { error } = await supabase
+        .from('square_cards')
+        .update({ is_default: true })
+        .eq('id', cardId);
+
+      if (error) throw error;
+
+      showToast('success', 'Default card updated successfully');
+      await loadStoredCards();
+    } catch (error) {
+      console.error('Error setting default card:', error);
+      showToast('error', 'Failed to update default card');
+    } finally {
+      setProcessing(false);
     }
-
-    const cleanedCardNumber = cardNumber.replace(/\s/g, '');
-    if (cleanedCardNumber.length !== 16) {
-      showToast('error', 'Please enter a valid 16-digit card number');
-      return;
-    }
-
-    if (expiryDate.length !== 5) {
-      showToast('error', 'Please enter a valid expiry date (MM/YY)');
-      return;
-    }
-
-    if (cvv.length !== 3) {
-      showToast('error', 'Please enter a valid 3-digit CVV');
-      return;
-    }
-
-    const newPaymentMethod: PaymentMethod = {
-      id: Date.now().toString(),
-      type: 'credit',
-      cardNumber: `**** **** **** ${cleanedCardNumber.slice(-4)}`,
-      cardholderName,
-      expiryDate,
-      isDefault: false,
-    };
-
-    addPaymentMethod(newPaymentMethod);
-    setShowAddCard(false);
-    setCardNumber('');
-    setCardholderName('');
-    setExpiryDate('');
-    setCvv('');
-    showToast('success', 'Payment method added successfully!');
   };
 
-  const handleRemoveCard = (paymentMethodId: string) => {
+  const handleRemoveCard = (cardId: string) => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
@@ -107,34 +186,55 @@ export default function PaymentMethodsScreen() {
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: () => removePaymentMethod(paymentMethodId),
+          onPress: async () => {
+            try {
+              setProcessing(true);
+
+              const { error } = await supabase
+                .from('square_cards')
+                .delete()
+                .eq('id', cardId);
+
+              if (error) throw error;
+
+              showToast('success', 'Payment method removed successfully');
+              await loadStoredCards();
+            } catch (error) {
+              console.error('Error removing card:', error);
+              showToast('error', 'Failed to remove payment method');
+            } finally {
+              setProcessing(false);
+            }
+          },
         },
       ]
     );
   };
 
-  const handleSetDefault = (paymentMethodId: string) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setDefaultPaymentMethod(paymentMethodId);
+  const getCardBrandIcon = (brand: string) => {
+    const brandLower = brand.toLowerCase();
+    if (brandLower.includes('visa')) return 'creditcard.fill';
+    if (brandLower.includes('mastercard')) return 'creditcard.fill';
+    if (brandLower.includes('amex') || brandLower.includes('american')) return 'creditcard.fill';
+    if (brandLower.includes('discover')) return 'creditcard.fill';
+    return 'creditcard';
   };
 
   const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  backButton: {
+    safeArea: {
+      flex: 1,
+    },
+    container: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    backButton: {
       width: 40,
       height: 40,
       borderRadius: 20,
@@ -144,167 +244,138 @@ export default function PaymentMethodsScreen() {
       boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
       elevation: 2,
     },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    textAlign: 'center',
-    paddingHorizontal: 40,
-  },
-  cardsContainer: {
-    marginBottom: 20,
-  },
-  cardItem: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
-  },
-  cardInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cardDetails: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  cardNumber: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  cardHolder: {
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  cardExpiry: {
-    fontSize: 12,
-  },
-  cardActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  defaultBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  defaultBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  setDefaultButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  setDefaultText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  removeButton: {
-    padding: 8,
-  },
-  addCardForm: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
-  },
-  formTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    borderWidth: 1,
-  },
-  row: {
-    flexDirection: 'row',
-  },
-  formActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  button: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  cancelButton: {
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  addButton: {
-  },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  addNewButton: {
-    borderRadius: 12,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
-  },
-  addNewButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 12,
-  },
-  securityNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    gap: 8,
-  },
-  securityNoteText: {
-    fontSize: 14,
-  },
-});
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: 20,
+      paddingBottom: 40,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 60,
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+    },
+    emptyState: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 60,
+    },
+    emptyStateTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    emptyStateText: {
+      fontSize: 16,
+      textAlign: 'center',
+      paddingHorizontal: 40,
+      lineHeight: 24,
+    },
+    cardsContainer: {
+      marginBottom: 20,
+    },
+    cardItem: {
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 16,
+      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+      elevation: 3,
+    },
+    cardInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    cardDetails: {
+      flex: 1,
+      marginLeft: 16,
+    },
+    cardNumber: {
+      fontSize: 18,
+      fontWeight: '600',
+      marginBottom: 4,
+    },
+    cardHolder: {
+      fontSize: 14,
+      marginBottom: 2,
+    },
+    cardExpiry: {
+      fontSize: 12,
+    },
+    cardActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    defaultBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+    },
+    defaultBadgeText: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    setDefaultButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+    setDefaultText: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    removeButton: {
+      padding: 8,
+    },
+    addNewButton: {
+      borderRadius: 12,
+      padding: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
+    },
+    addNewButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 12,
+    },
+    infoCard: {
+      flexDirection: 'row',
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 20,
+      gap: 12,
+    },
+    infoText: {
+      flex: 1,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    securityNote: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+      gap: 8,
+    },
+    securityNoteText: {
+      fontSize: 14,
+    },
+  });
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
@@ -322,7 +393,7 @@ export default function PaymentMethodsScreen() {
             <IconSymbol name="chevron.left" size={24} color={currentColors.primary} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: currentColors.text }]}>Payment Methods</Text>
-          <View style={{ width: 24 }} />
+          <View style={{ width: 40 }} />
         </View>
 
         <ScrollView
@@ -330,42 +401,68 @@ export default function PaymentMethodsScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {!userProfile || userProfile.paymentMethods.length === 0 && !showAddCard ? (
+          <View style={[styles.infoCard, { backgroundColor: currentColors.highlight + '20' }]}>
+            <IconSymbol name="info" size={20} color={currentColors.primary} />
+            <Text style={[styles.infoText, { color: currentColors.text }]}>
+              Cards are securely saved during checkout. Add items to your cart and complete a purchase to save a new card.
+            </Text>
+          </View>
+
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={currentColors.primary} />
+              <Text style={[styles.loadingText, { color: currentColors.textSecondary }]}>
+                Loading saved cards...
+              </Text>
+            </View>
+          ) : storedCards.length === 0 ? (
             <View style={styles.emptyState}>
               <IconSymbol name="creditcard" size={64} color={currentColors.textSecondary} />
               <Text style={[styles.emptyStateTitle, { color: currentColors.text }]}>No Payment Methods</Text>
               <Text style={[styles.emptyStateText, { color: currentColors.textSecondary }]}>
-                Add a payment method to make checkout faster and easier
+                You haven&apos;t saved any payment methods yet. Complete a purchase and choose to save your card for faster checkout next time.
               </Text>
             </View>
           ) : (
             <View style={styles.cardsContainer}>
-              {userProfile?.paymentMethods?.map((method) => (
-                <View key={method.id} style={[styles.cardItem, { backgroundColor: currentColors.card }]}>
+              {storedCards.map((card) => (
+                <View key={card.id} style={[styles.cardItem, { backgroundColor: currentColors.card }]}>
                   <View style={styles.cardInfo}>
-                    <IconSymbol name="creditcard.fill" size={32} color={currentColors.primary} />
+                    <IconSymbol name={getCardBrandIcon(card.cardBrand)} size={32} color={currentColors.primary} />
                     <View style={styles.cardDetails}>
-                      <Text style={[styles.cardNumber, { color: currentColors.text }]}>{method.cardNumber}</Text>
-                      <Text style={[styles.cardHolder, { color: currentColors.textSecondary }]}>{method.cardholderName}</Text>
-                      <Text style={[styles.cardExpiry, { color: currentColors.textSecondary }]}>Expires {method.expiryDate}</Text>
+                      <Text style={[styles.cardNumber, { color: currentColors.text }]}>
+                        {card.cardBrand} •••• {card.last4}
+                      </Text>
+                      {card.cardholderName && (
+                        <Text style={[styles.cardHolder, { color: currentColors.textSecondary }]}>
+                          {card.cardholderName}
+                        </Text>
+                      )}
+                      <Text style={[styles.cardExpiry, { color: currentColors.textSecondary }]}>
+                        Expires {card.expMonth}/{card.expYear}
+                      </Text>
                     </View>
                   </View>
                   <View style={styles.cardActions}>
-                    {method.isDefault ? (
+                    {card.isDefault ? (
                       <View style={[styles.defaultBadge, { backgroundColor: currentColors.primary }]}>
                         <Text style={[styles.defaultBadgeText, { color: currentColors.card }]}>Default</Text>
                       </View>
                     ) : (
                       <Pressable
-                        onPress={() => handleSetDefault(method.id)}
+                        onPress={() => handleSetDefault(card.id)}
                         style={styles.setDefaultButton}
+                        disabled={processing}
                       >
-                        <Text style={[styles.setDefaultText, { color: currentColors.primary }]}>Set as Default</Text>
+                        <Text style={[styles.setDefaultText, { color: currentColors.primary }]}>
+                          Set as Default
+                        </Text>
                       </Pressable>
                     )}
                     <Pressable
-                      onPress={() => handleRemoveCard(method.id)}
+                      onPress={() => handleRemoveCard(card.id)}
                       style={styles.removeButton}
+                      disabled={processing}
                     >
                       <IconSymbol name="trash" size={20} color={currentColors.accent} />
                     </Pressable>
@@ -373,105 +470,6 @@ export default function PaymentMethodsScreen() {
                 </View>
               ))}
             </View>
-          )}
-
-          {showAddCard && (
-            <View style={[styles.addCardForm, { backgroundColor: currentColors.card }]}>
-              <Text style={[styles.formTitle, { color: currentColors.text }]}>Add New Card</Text>
-              
-              <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: currentColors.text }]}>Card Number</Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: currentColors.background, color: currentColors.text, borderColor: currentColors.textSecondary + '30' }]}
-                  placeholder="1234 5678 9012 3456"
-                  placeholderTextColor={currentColors.textSecondary}
-                  value={cardNumber}
-                  onChangeText={(text) => setCardNumber(formatCardNumber(text))}
-                  keyboardType="numeric"
-                  maxLength={19}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: currentColors.text }]}>Cardholder Name</Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: currentColors.background, color: currentColors.text, borderColor: currentColors.textSecondary + '30' }]}
-                  placeholder="John Doe"
-                  placeholderTextColor={currentColors.textSecondary}
-                  value={cardholderName}
-                  onChangeText={setCardholderName}
-                  autoCapitalize="words"
-                />
-              </View>
-
-              <View style={styles.row}>
-                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                  <Text style={[styles.inputLabel, { color: currentColors.text }]}>Expiry Date</Text>
-                  <TextInput
-                    style={[styles.input, { backgroundColor: currentColors.background, color: currentColors.text, borderColor: currentColors.textSecondary + '30' }]}
-                    placeholder="MM/YY"
-                    placeholderTextColor={currentColors.textSecondary}
-                    value={expiryDate}
-                    onChangeText={(text) => setExpiryDate(formatExpiryDate(text))}
-                    keyboardType="numeric"
-                    maxLength={5}
-                  />
-                </View>
-
-                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                  <Text style={[styles.inputLabel, { color: currentColors.text }]}>CVV</Text>
-                  <TextInput
-                    style={[styles.input, { backgroundColor: currentColors.background, color: currentColors.text, borderColor: currentColors.textSecondary + '30' }]}
-                    placeholder="123"
-                    placeholderTextColor={currentColors.textSecondary}
-                    value={cvv}
-                    onChangeText={(text) => setCvv(text.replace(/\D/g, ''))}
-                    keyboardType="numeric"
-                    maxLength={3}
-                    secureTextEntry
-                  />
-                </View>
-              </View>
-
-              <View style={styles.formActions}>
-                <Pressable
-                  style={[styles.button, styles.cancelButton, { backgroundColor: currentColors.background }]}
-                  onPress={() => {
-                    if (Platform.OS !== 'web') {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                    setShowAddCard(false);
-                    setCardNumber('');
-                    setCardholderName('');
-                    setExpiryDate('');
-                    setCvv('');
-                  }}
-                >
-                  <Text style={[styles.cancelButtonText, { color: currentColors.text }]}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.button, styles.addButton, { backgroundColor: currentColors.primary }]}
-                  onPress={handleAddCard}
-                >
-                  <Text style={[styles.addButtonText, { color: currentColors.card }]}>Add Card</Text>
-                </Pressable>
-              </View>
-            </View>
-          )}
-
-          {!showAddCard && (
-            <Pressable
-              style={[styles.addNewButton, { backgroundColor: currentColors.card }]}
-              onPress={() => {
-                if (Platform.OS !== 'web') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                setShowAddCard(true);
-              }}
-            >
-              <IconSymbol name="plus.circle.fill" size={24} color={currentColors.primary} />
-              <Text style={[styles.addNewButtonText, { color: currentColors.primary }]}>Add New Payment Method</Text>
-            </Pressable>
           )}
 
           <View style={styles.securityNote}>
@@ -482,6 +480,7 @@ export default function PaymentMethodsScreen() {
           </View>
         </ScrollView>
       </View>
+      
       <Toast
         visible={toastVisible}
         message={toastMessage}
@@ -492,4 +491,3 @@ export default function PaymentMethodsScreen() {
     </SafeAreaView>
   );
 }
-
