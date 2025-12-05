@@ -39,10 +39,14 @@ interface AddressValidationResult {
 
 interface PaymentResult {
   success: boolean;
-  payment?: any;
-  checkout?: any;
+  orderId?: string;
+  orderNumber?: number;
+  paymentId?: string;
+  pointsEarned?: number;
   error?: any;
 }
+
+type OrderType = 'delivery' | 'pickup';
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -56,12 +60,11 @@ export default function CheckoutScreen() {
   } = useApp();
 
   // State
+  const [orderType, setOrderType] = useState<OrderType>('delivery');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [pickupNotes, setPickupNotes] = useState('');
   const [usePoints, setUsePoints] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [selectedCardId, setSelectedCardId] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'web'>('card');
   
   // Address validation state
   const [addressValidation, setAddressValidation] = useState<AddressValidationResult | null>(null);
@@ -76,7 +79,6 @@ export default function CheckoutScreen() {
 
   // Computed values
   const availablePoints = userProfile?.points || 0;
-  const hasSavedCards = userProfile?.paymentMethods && userProfile.paymentMethods.length > 0;
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.0875;
   const pointsDiscount = usePoints ? Math.min(availablePoints * 0.01, subtotal * 0.2) : 0;
@@ -90,17 +92,11 @@ export default function CheckoutScreen() {
   }, [setTabBarVisible]);
 
   useEffect(() => {
-    if (userProfile?.paymentMethods && userProfile.paymentMethods.length > 0) {
-      const defaultCard = userProfile.paymentMethods.find(pm => pm.isDefault);
-      setSelectedCardId(defaultCard?.id || userProfile.paymentMethods[0].id);
-    }
-  }, [userProfile?.paymentMethods]);
-
-  useEffect(() => {
-    if (!addressTouched) return;
+    // Only validate address if delivery is selected
+    if (orderType !== 'delivery' || !addressTouched) return;
     const timeoutId = setTimeout(() => validateAddress(deliveryAddress), 1000);
     return () => clearTimeout(timeoutId);
-  }, [deliveryAddress, addressTouched]);
+  }, [deliveryAddress, addressTouched, orderType]);
 
   // Helper functions
   const showToast = (type: 'success' | 'error' | 'info', message: string) => {
@@ -204,7 +200,7 @@ export default function CheckoutScreen() {
     }
   };
 
-  // Payment processing
+  // Payment processing using Square Payments API
   const processSquarePayment = async (): Promise<PaymentResult> => {
     try {
       console.log('Starting Square payment process...');
@@ -223,10 +219,15 @@ export default function CheckoutScreen() {
         throw new Error('You are not logged in. Please log in and try again.');
       }
 
-      console.log('Session obtained, calling Edge Function...');
+      console.log('Session obtained, calling process-square-payment Edge Function...');
 
-      const addressParts = parseAddress(validatedAddress || deliveryAddress);
-      const sourceId = 'cnon:card-nonce-ok'; // Square sandbox test nonce
+      const addressParts = orderType === 'delivery' 
+        ? parseAddress(validatedAddress || deliveryAddress)
+        : { address: '', city: '', state: '', zip: '' };
+      
+      // Use Square sandbox test nonce for testing
+      // In production, this would come from Square Web Payments SDK
+      const sourceId = 'cnon:card-nonce-ok';
       const amountInCents = Math.round(total * 100);
 
       const response = await fetch(`${SUPABASE_URL}/functions/v1/process-square-payment`, {
@@ -254,6 +255,9 @@ export default function CheckoutScreen() {
             quantity: item.quantity,
             price: item.price,
           })),
+          orderType,
+          deliveryAddress: orderType === 'delivery' ? (validatedAddress || deliveryAddress) : undefined,
+          pickupNotes: orderType === 'pickup' ? pickupNotes : undefined,
         }),
       });
 
@@ -276,108 +280,55 @@ export default function CheckoutScreen() {
 
       if (!result.success) throw new Error(result.error || 'Payment failed');
 
-      return { success: true, payment: result };
+      return { 
+        success: true, 
+        orderId: result.orderId,
+        orderNumber: result.orderNumber,
+        paymentId: result.paymentId,
+        pointsEarned: result.pointsEarned,
+      };
     } catch (error) {
       console.error('Payment processing error:', error);
       return { success: false, error };
     }
   };
 
-  const createSquareCheckout = async (): Promise<PaymentResult> => {
-    try {
-      console.log('Starting Square checkout creation...');
-
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        throw new Error('Failed to get authentication session. Please try logging in again.');
-      }
-      
-      if (!session) {
-        console.error('No active session found');
-        throw new Error('You are not logged in. Please log in and try again.');
-      }
-
-      console.log('Session obtained, calling Edge Function...');
-
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/create-square-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          items: cart.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          deliveryAddress,
-          pickupNotes,
-          redirectUrl: 'https://natively.dev/order-confirmation',
-        }),
-      });
-
-      console.log('Edge Function response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Edge Function error response:', errorText);
-        
-        try {
-          const errorJson = JSON.parse(errorText);
-          throw new Error(errorJson.error || 'Checkout creation failed');
-        } catch (parseError) {
-          throw new Error(`Checkout creation failed with status ${response.status}`);
-        }
-      }
-
-      const result = await response.json();
-      console.log('Checkout result:', result);
-
-      if (!result.success) throw new Error(result.error || 'Checkout creation failed');
-
-      return { success: true, checkout: result.checkout };
-    } catch (error) {
-      console.error('Checkout creation error:', error);
-      return { success: false, error };
-    }
-  };
-
   // Order handling
   const handlePlaceOrder = async () => {
-    console.log('Placing order with Square');
+    console.log('Placing order with Square Payments API');
     
-    if (!deliveryAddress.trim()) {
-      showToast('error', 'Please enter a delivery address.');
-      return;
-    }
-
-    if (addressTouched && addressValidation) {
-      if (!addressValidation.isValid) {
-        Alert.alert(
-          'Address Verification',
-          'The address you entered could not be verified. Please check and correct your address before continuing.',
-          [{ text: 'OK' }]
-        );
+    // Validate based on order type
+    if (orderType === 'delivery') {
+      if (!deliveryAddress.trim()) {
+        showToast('error', 'Please enter a delivery address.');
         return;
       }
 
-      if (addressValidation.confidence === 'low') {
-        Alert.alert(
-          'Address Verification',
-          'The address you entered has low confidence. We recommend reviewing it for accuracy.',
-          [
-            { text: 'Review Address', style: 'cancel' },
-            { 
-              text: 'Continue Anyway', 
-              onPress: () => proceedWithOrder(),
-              style: 'destructive'
-            }
-          ]
-        );
-        return;
+      if (addressTouched && addressValidation) {
+        if (!addressValidation.isValid) {
+          Alert.alert(
+            'Address Verification',
+            'The address you entered could not be verified. Please check and correct your address before continuing.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+
+        if (addressValidation.confidence === 'low') {
+          Alert.alert(
+            'Address Verification',
+            'The address you entered has low confidence. We recommend reviewing it for accuracy.',
+            [
+              { text: 'Review Address', style: 'cancel' },
+              { 
+                text: 'Continue Anyway', 
+                onPress: () => proceedWithOrder(),
+                style: 'destructive'
+              }
+            ]
+          );
+          return;
+        }
       }
     }
 
@@ -385,57 +336,10 @@ export default function CheckoutScreen() {
   };
 
   const proceedWithOrder = async () => {
-    if (paymentMethod === 'card' && !hasSavedCards) {
-      showToast('error', 'Please add a payment method before placing an order.');
-      return;
-    }
-
-    if (paymentMethod === 'card' && !selectedCardId) {
-      showToast('error', 'Please select a payment method.');
-      return;
-    }
-
     setProcessing(true);
 
     try {
-      let paymentResult: PaymentResult;
-
-      if (paymentMethod === 'web') {
-        paymentResult = await createSquareCheckout();
-        
-        if (paymentResult.success && paymentResult.checkout) {
-          if (Platform.OS === 'web') {
-            window.open(paymentResult.checkout.url, '_blank');
-          } else {
-            Alert.alert(
-              'Complete Payment',
-              'You will be redirected to Square to complete your payment.',
-              [
-                {
-                  text: 'Continue',
-                  onPress: () => {
-                    console.log('Open checkout URL:', paymentResult.checkout.url);
-                  },
-                },
-                { text: 'Cancel', style: 'cancel' },
-              ]
-            );
-          }
-          
-          showToast('info', 'Redirecting to Square checkout...');
-          setProcessing(false);
-          return;
-        } else {
-          const errorMessage = paymentResult.error instanceof Error 
-            ? paymentResult.error.message 
-            : 'Failed to create checkout';
-          showToast('error', errorMessage);
-          setProcessing(false);
-          return;
-        }
-      } else {
-        paymentResult = await processSquarePayment();
-      }
+      const paymentResult = await processSquarePayment();
 
       if (!paymentResult.success) {
         const errorMessage = paymentResult.error instanceof Error 
@@ -450,9 +354,10 @@ export default function CheckoutScreen() {
       clearCart();
       await loadUserProfile();
       
+      const orderTypeText = orderType === 'delivery' ? 'delivery' : 'pickup';
       Alert.alert(
         'Order Placed!',
-        `Your order has been placed successfully!\n\nOrder #${paymentResult.payment.orderNumber || 'N/A'}\nPayment ID: ${paymentResult.payment.paymentId || 'N/A'}\n\nYou earned ${paymentResult.payment.pointsEarned || 0} points!`,
+        `Your ${orderTypeText} order has been placed successfully!\n\nOrder #${paymentResult.orderNumber || 'N/A'}\nPayment ID: ${paymentResult.paymentId || 'N/A'}\n\nYou earned ${paymentResult.pointsEarned || 0} points!`,
         [
           {
             text: 'OK',
@@ -517,6 +422,25 @@ export default function CheckoutScreen() {
       fontWeight: 'bold',
       marginBottom: 12,
     },
+    orderTypeSelector: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 16,
+    },
+    orderTypeButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 2,
+      gap: 8,
+    },
+    orderTypeText: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
     inputContainer: {
       position: 'relative',
     },
@@ -580,109 +504,6 @@ export default function CheckoutScreen() {
     useSuggestionButtonText: {
       fontSize: 13,
       fontWeight: '600',
-    },
-    paymentMethodSection: {
-      gap: 12,
-    },
-    paymentTypeSelector: {
-      flexDirection: 'row',
-      gap: 12,
-      marginBottom: 12,
-    },
-    paymentTypeButton: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 12,
-      borderRadius: 12,
-      borderWidth: 2,
-      gap: 8,
-    },
-    paymentTypeText: {
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    savedCardsContainer: {
-      gap: 12,
-    },
-    savedCardItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 16,
-      borderRadius: 12,
-      borderWidth: 2,
-      gap: 12,
-    },
-    savedCardInfo: {
-      flex: 1,
-    },
-    savedCardNumber: {
-      fontSize: 16,
-      fontWeight: '600',
-      marginBottom: 4,
-      letterSpacing: 0.5,
-    },
-    savedCardExpiry: {
-      fontSize: 14,
-      opacity: 0.7,
-    },
-    savedCardDefault: {
-      fontSize: 12,
-      fontWeight: '600',
-      marginTop: 4,
-    },
-    manageCardsButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 16,
-      borderRadius: 12,
-      gap: 8,
-    },
-    manageCardsText: {
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    noCardsContainer: {
-      padding: 24,
-      borderRadius: 12,
-      alignItems: 'center',
-      gap: 12,
-    },
-    noCardsText: {
-      fontSize: 16,
-      textAlign: 'center',
-      marginBottom: 4,
-    },
-    noCardsSubtext: {
-      fontSize: 14,
-      textAlign: 'center',
-      opacity: 0.7,
-      marginBottom: 8,
-    },
-    addCardButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 12,
-      borderRadius: 8,
-      gap: 8,
-    },
-    addCardButtonText: {
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    secureLabel: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      marginTop: 8,
-      paddingLeft: 4,
-    },
-    secureLabelText: {
-      fontSize: 12,
-      opacity: 0.7,
     },
     pointsToggle: {
       borderRadius: 12,
@@ -812,98 +633,167 @@ export default function CheckoutScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Delivery Address *</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
+            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Order Type</Text>
+            <View style={styles.orderTypeSelector}>
+              <Pressable
                 style={[
-                  styles.input,
-                  styles.inputWithValidation,
-                  { 
-                    backgroundColor: currentColors.card, 
-                    color: currentColors.text,
-                    borderColor: addressTouched && addressValidation 
-                      ? getAddressValidationColor()
-                      : currentColors.border,
+                  styles.orderTypeButton,
+                  {
+                    backgroundColor: orderType === 'delivery' ? currentColors.primary : currentColors.card,
+                    borderColor: orderType === 'delivery' ? currentColors.primary : currentColors.border,
                   }
                 ]}
-                placeholder="Enter your full delivery address (street, city, state, ZIP)"
-                placeholderTextColor={currentColors.textSecondary}
-                value={deliveryAddress}
-                onChangeText={(text) => {
-                  setDeliveryAddress(text);
-                  setAddressTouched(true);
+                onPress={() => {
+                  if (!processing) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setOrderType('delivery');
+                  }
                 }}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-                editable={!processing}
-              />
-              {addressTouched && (
-                <View style={styles.validationIconContainer}>
-                  {isValidatingAddress ? (
-                    <ActivityIndicator size="small" color={currentColors.primary} />
-                  ) : (
-                    <IconSymbol 
-                      name={getAddressValidationIcon()} 
-                      size={24} 
-                      color={getAddressValidationColor()} 
-                    />
-                  )}
+                disabled={processing}
+              >
+                <IconSymbol 
+                  name="car" 
+                  size={20} 
+                  color={orderType === 'delivery' ? currentColors.card : currentColors.text} 
+                />
+                <Text style={[
+                  styles.orderTypeText, 
+                  { color: orderType === 'delivery' ? currentColors.card : currentColors.text }
+                ]}>
+                  Delivery
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.orderTypeButton,
+                  {
+                    backgroundColor: orderType === 'pickup' ? currentColors.primary : currentColors.card,
+                    borderColor: orderType === 'pickup' ? currentColors.primary : currentColors.border,
+                  }
+                ]}
+                onPress={() => {
+                  if (!processing) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setOrderType('pickup');
+                  }
+                }}
+                disabled={processing}
+              >
+                <IconSymbol 
+                  name="shopping-bag" 
+                  size={20} 
+                  color={orderType === 'pickup' ? currentColors.card : currentColors.text} 
+                />
+                <Text style={[
+                  styles.orderTypeText, 
+                  { color: orderType === 'pickup' ? currentColors.card : currentColors.text }
+                ]}>
+                  Pickup
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {orderType === 'delivery' && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Delivery Address *</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.inputWithValidation,
+                    { 
+                      backgroundColor: currentColors.card, 
+                      color: currentColors.text,
+                      borderColor: addressTouched && addressValidation 
+                        ? getAddressValidationColor()
+                        : currentColors.border,
+                    }
+                  ]}
+                  placeholder="Enter your full delivery address (street, city, state, ZIP)"
+                  placeholderTextColor={currentColors.textSecondary}
+                  value={deliveryAddress}
+                  onChangeText={(text) => {
+                    setDeliveryAddress(text);
+                    setAddressTouched(true);
+                  }}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  editable={!processing}
+                />
+                {addressTouched && (
+                  <View style={styles.validationIconContainer}>
+                    {isValidatingAddress ? (
+                      <ActivityIndicator size="small" color={currentColors.primary} />
+                    ) : (
+                      <IconSymbol 
+                        name={getAddressValidationIcon()} 
+                        size={24} 
+                        color={getAddressValidationColor()} 
+                      />
+                    )}
+                  </View>
+                )}
+              </View>
+              
+              {addressTouched && addressValidation && (
+                <View style={styles.validationMessage}>
+                  <Text style={[
+                    styles.validationMessageText, 
+                    { color: getAddressValidationColor() }
+                  ]}>
+                    {getAddressValidationMessage()}
+                  </Text>
+                </View>
+              )}
+
+              {addressValidation?.isValid && 
+               addressValidation.formattedAddress && 
+               addressValidation.formattedAddress !== deliveryAddress && (
+                <View style={[
+                  styles.formattedAddressSuggestion,
+                  { 
+                    backgroundColor: currentColors.card,
+                    borderColor: currentColors.primary + '40',
+                  }
+                ]}>
+                  <View style={styles.suggestionHeader}>
+                    <IconSymbol name="lightbulb.fill" size={16} color={currentColors.primary} />
+                    <Text style={[styles.suggestionTitle, { color: currentColors.text }]}>
+                      Suggested Address
+                    </Text>
+                  </View>
+                  <Text style={[styles.suggestionAddress, { color: currentColors.textSecondary }]}>
+                    {addressValidation.formattedAddress}
+                  </Text>
+                  <Pressable
+                    style={[
+                      styles.useSuggestionButton,
+                      { backgroundColor: currentColors.primary }
+                    ]}
+                    onPress={useFormattedAddress}
+                  >
+                    <IconSymbol name="checkmark" size={14} color={currentColors.card} />
+                    <Text style={[styles.useSuggestionButtonText, { color: currentColors.card }]}>
+                      Use This Address
+                    </Text>
+                  </Pressable>
                 </View>
               )}
             </View>
-            
-            {addressTouched && addressValidation && (
-              <View style={styles.validationMessage}>
-                <Text style={[
-                  styles.validationMessageText, 
-                  { color: getAddressValidationColor() }
-                ]}>
-                  {getAddressValidationMessage()}
-                </Text>
-              </View>
-            )}
-
-            {addressValidation?.isValid && 
-             addressValidation.formattedAddress && 
-             addressValidation.formattedAddress !== deliveryAddress && (
-              <View style={[
-                styles.formattedAddressSuggestion,
-                { 
-                  backgroundColor: currentColors.card,
-                  borderColor: currentColors.primary + '40',
-                }
-              ]}>
-                <View style={styles.suggestionHeader}>
-                  <IconSymbol name="lightbulb.fill" size={16} color={currentColors.primary} />
-                  <Text style={[styles.suggestionTitle, { color: currentColors.text }]}>
-                    Suggested Address
-                  </Text>
-                </View>
-                <Text style={[styles.suggestionAddress, { color: currentColors.textSecondary }]}>
-                  {addressValidation.formattedAddress}
-                </Text>
-                <Pressable
-                  style={[
-                    styles.useSuggestionButton,
-                    { backgroundColor: currentColors.primary }
-                  ]}
-                  onPress={useFormattedAddress}
-                >
-                  <IconSymbol name="checkmark" size={14} color={currentColors.card} />
-                  <Text style={[styles.useSuggestionButtonText, { color: currentColors.card }]}>
-                    Use This Address
-                  </Text>
-                </Pressable>
-              </View>
-            )}
-          </View>
+          )}
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Pickup Notes (Optional)</Text>
+            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>
+              {orderType === 'pickup' ? 'Pickup Notes (Optional)' : 'Delivery Notes (Optional)'}
+            </Text>
             <TextInput
               style={[styles.input, { backgroundColor: currentColors.card, color: currentColors.text }]}
-              placeholder="Add any special instructions for pickup..."
+              placeholder={orderType === 'pickup' 
+                ? 'Add any special instructions for pickup...' 
+                : 'Add any special instructions for delivery...'}
               placeholderTextColor={currentColors.textSecondary}
               value={pickupNotes}
               onChangeText={setPickupNotes}
@@ -912,188 +802,6 @@ export default function CheckoutScreen() {
               textAlignVertical="top"
               editable={!processing}
             />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Payment Method</Text>
-            
-            <View style={styles.paymentTypeSelector}>
-              <Pressable
-                style={[
-                  styles.paymentTypeButton,
-                  {
-                    backgroundColor: paymentMethod === 'card' ? currentColors.primary : currentColors.card,
-                    borderColor: paymentMethod === 'card' ? currentColors.primary : currentColors.border,
-                  }
-                ]}
-                onPress={() => {
-                  if (!processing) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setPaymentMethod('card');
-                  }
-                }}
-                disabled={processing}
-              >
-                <IconSymbol 
-                  name="credit-card" 
-                  size={20} 
-                  color={paymentMethod === 'card' ? currentColors.card : currentColors.text} 
-                />
-                <Text style={[
-                  styles.paymentTypeText, 
-                  { color: paymentMethod === 'card' ? currentColors.card : currentColors.text }
-                ]}>
-                  Saved Card
-                </Text>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.paymentTypeButton,
-                  {
-                    backgroundColor: paymentMethod === 'web' ? currentColors.primary : currentColors.card,
-                    borderColor: paymentMethod === 'web' ? currentColors.primary : currentColors.border,
-                  }
-                ]}
-                onPress={() => {
-                  if (!processing) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setPaymentMethod('web');
-                  }
-                }}
-                disabled={processing}
-              >
-                <IconSymbol 
-                  name="web-stories" 
-                  size={20} 
-                  color={paymentMethod === 'web' ? currentColors.card : currentColors.text} 
-                />
-                <Text style={[
-                  styles.paymentTypeText, 
-                  { color: paymentMethod === 'web' ? currentColors.card : currentColors.text }
-                ]}>
-                  Web Checkout
-                </Text>
-              </Pressable>
-            </View>
-
-            {paymentMethod === 'card' ? (
-              hasSavedCards ? (
-                <View style={styles.paymentMethodSection}>
-                  <View style={styles.savedCardsContainer}>
-                    {userProfile?.paymentMethods?.map((card) => (
-                      <Pressable
-                        key={card.id}
-                        style={[
-                          styles.savedCardItem,
-                          {
-                            backgroundColor: currentColors.card,
-                            borderColor: selectedCardId === card.id ? currentColors.primary : currentColors.border,
-                          }
-                        ]}
-                        onPress={() => {
-                          if (!processing) {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            setSelectedCardId(card.id);
-                          }
-                        }}
-                        disabled={processing}
-                      >
-                        <IconSymbol 
-                          name={card.type === 'credit' ? 'credit-card' : 'banknote.fill'} 
-                          size={24} 
-                          color={selectedCardId === card.id ? currentColors.primary : currentColors.textSecondary} 
-                        />
-                        <View style={styles.savedCardInfo}>
-                          <Text style={[styles.savedCardNumber, { color: currentColors.text }]}>
-                            •••• •••• •••• {card.cardNumber.slice(-4)}
-                          </Text>
-                          <Text style={[styles.savedCardExpiry, { color: currentColors.textSecondary }]}>
-                            {card.cardholderName} • Expires {card.expiryDate}
-                          </Text>
-                          {card.isDefault && (
-                            <Text style={[styles.savedCardDefault, { color: currentColors.primary }]}>
-                              DEFAULT
-                            </Text>
-                          )}
-                        </View>
-                        {selectedCardId === card.id && (
-                          <IconSymbol name="check-circle" size={24} color={currentColors.primary} />
-                        )}
-                      </Pressable>
-                    ))}
-                  </View>
-                  
-                  <Pressable
-                    style={[
-                      styles.manageCardsButton,
-                      { backgroundColor: currentColors.card }
-                    ]}
-                    onPress={() => {
-                      if (!processing) {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        router.push('/payment-methods');
-                      }
-                    }}
-                    disabled={processing}
-                  >
-                    <IconSymbol name="credit-card" size={20} color={currentColors.primary} />
-                    <Text style={[styles.manageCardsText, { color: currentColors.primary }]}>
-                      Manage Payment Methods
-                    </Text>
-                    <IconSymbol name="chevron-right" size={16} color={currentColors.textSecondary} />
-                  </Pressable>
-
-                  <View style={styles.secureLabel}>
-                    <IconSymbol name="lock" size={14} color={currentColors.primary} />
-                    <Text style={[styles.secureLabelText, { color: currentColors.textSecondary }]}>
-                      Secured by Square • Your payment info is encrypted
-                    </Text>
-                  </View>
-                </View>
-              ) : (
-                <View style={[styles.noCardsContainer, { backgroundColor: currentColors.card }]}>
-                  <IconSymbol name="credit-card" size={48} color={currentColors.textSecondary} />
-                  <Text style={[styles.noCardsText, { color: currentColors.text }]}>
-                    No Payment Methods Saved
-                  </Text>
-                  <Text style={[styles.noCardsSubtext, { color: currentColors.textSecondary }]}>
-                    Add a payment method or use web checkout
-                  </Text>
-                  <Pressable
-                    style={[
-                      styles.addCardButton,
-                      { backgroundColor: currentColors.primary }
-                    ]}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      router.push('/payment-methods');
-                    }}
-                  >
-                    <IconSymbol name="add-circle" size={20} color={currentColors.card} />
-                    <Text style={[styles.addCardButtonText, { color: currentColors.card }]}>
-                      Add Payment Method
-                    </Text>
-                  </Pressable>
-                </View>
-              )
-            ) : (
-              <View style={[styles.noCardsContainer, { backgroundColor: currentColors.card }]}>
-                <IconSymbol name="web" size={48} color={currentColors.textSecondary} />
-                <Text style={[styles.noCardsText, { color: currentColors.text }]}>
-                  Square Web Checkout
-                </Text>
-                <Text style={[styles.noCardsSubtext, { color: currentColors.textSecondary }]}>
-                  You&apos;ll be redirected to Square&apos;s secure checkout page to complete your payment
-                </Text>
-                <View style={styles.secureLabel}>
-                  <IconSymbol name="lock" size={14} color={currentColors.primary} />
-                  <Text style={[styles.secureLabelText, { color: currentColors.textSecondary }]}>
-                    PCI-DSS Compliant • Bank-level encryption
-                  </Text>
-                </View>
-              </View>
-            )}
           </View>
 
           <View style={styles.section}>

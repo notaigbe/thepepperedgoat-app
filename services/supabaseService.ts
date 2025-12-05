@@ -320,7 +320,11 @@ export const menuService = {
         .eq('available', true)
         .order('category', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Get menu items error:', error);
+        throw error;
+      }
+      
       return { data, error: null };
     } catch (error) {
       console.error('Get menu items error:', error);
