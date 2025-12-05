@@ -18,6 +18,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
 import { SUPABASE_URL, supabase } from '@/app/integrations/supabase/client';
+import { WebView } from 'react-native-webview';
 
 // Types
 interface AddressValidationResult {
@@ -46,7 +47,18 @@ interface PaymentResult {
   error?: any;
 }
 
+interface StoredCard {
+  id: string;
+  cardBrand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  cardholderName?: string;
+  isDefault: boolean;
+}
+
 type OrderType = 'delivery' | 'pickup';
+type PaymentMethodType = 'new-card' | 'stored-card';
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -65,6 +77,14 @@ export default function CheckoutScreen() {
   const [pickupNotes, setPickupNotes] = useState('');
   const [usePoints, setUsePoints] = useState(false);
   const [processing, setProcessing] = useState(false);
+  
+  // Payment state
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('new-card');
+  const [selectedCardId, setSelectedCardId] = useState<string>('');
+  const [storedCards, setStoredCards] = useState<StoredCard[]>([]);
+  const [loadingCards, setLoadingCards] = useState(false);
+  const [showCardForm, setShowCardForm] = useState(false);
+  const [cardToken, setCardToken] = useState<string>('');
   
   // Address validation state
   const [addressValidation, setAddressValidation] = useState<AddressValidationResult | null>(null);
@@ -92,11 +112,58 @@ export default function CheckoutScreen() {
   }, [setTabBarVisible]);
 
   useEffect(() => {
+    if (userProfile) {
+      loadStoredCards();
+    }
+  }, [userProfile]);
+
+  useEffect(() => {
     // Only validate address if delivery is selected
     if (orderType !== 'delivery' || !addressTouched) return;
     const timeoutId = setTimeout(() => validateAddress(deliveryAddress), 1000);
     return () => clearTimeout(timeoutId);
   }, [deliveryAddress, addressTouched, orderType]);
+
+  // Load stored cards from database
+  const loadStoredCards = async () => {
+    if (!userProfile) return;
+    
+    setLoadingCards(true);
+    try {
+      const { data, error } = await supabase
+        .from('square_cards')
+        .select('*')
+        .eq('user_id', userProfile.id)
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const cards: StoredCard[] = data.map((card: any) => ({
+          id: card.id,
+          cardBrand: card.card_brand,
+          last4: card.last_4,
+          expMonth: card.exp_month,
+          expYear: card.exp_year,
+          cardholderName: card.cardholder_name,
+          isDefault: card.is_default,
+        }));
+        setStoredCards(cards);
+        
+        // Auto-select default card if available
+        const defaultCard = cards.find(c => c.isDefault);
+        if (defaultCard) {
+          setSelectedCardId(defaultCard.id);
+          setPaymentMethod('stored-card');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading stored cards:', error);
+    } finally {
+      setLoadingCards(false);
+    }
+  };
 
   // Helper functions
   const showToast = (type: 'success' | 'error' | 'info', message: string) => {
@@ -150,6 +217,15 @@ export default function CheckoutScreen() {
     return 'Address verification failed.';
   };
 
+  const getCardBrandIcon = (brand: string) => {
+    const brandLower = brand.toLowerCase();
+    if (brandLower.includes('visa')) return 'creditcard.fill';
+    if (brandLower.includes('mastercard')) return 'creditcard.fill';
+    if (brandLower.includes('amex') || brandLower.includes('american')) return 'creditcard.fill';
+    if (brandLower.includes('discover')) return 'creditcard.fill';
+    return 'creditcard';
+  };
+
   // Address validation
   const validateAddress = useCallback(async (address: string) => {
     if (!address || address.trim().length < 5) {
@@ -200,6 +276,24 @@ export default function CheckoutScreen() {
     }
   };
 
+  // Handle card form message from WebView
+  const handleCardFormMessage = (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      console.log('Card form message:', data);
+
+      if (data.type === 'TOKEN_CREATED') {
+        setCardToken(data.token);
+        setShowCardForm(false);
+        showToast('success', 'Card added successfully!');
+      } else if (data.type === 'ERROR') {
+        showToast('error', data.message || 'Failed to process card');
+      }
+    } catch (error) {
+      console.error('Error handling card form message:', error);
+    }
+  };
+
   // Payment processing using Square Payments API
   const processSquarePayment = async (): Promise<PaymentResult> => {
     try {
@@ -225,9 +319,24 @@ export default function CheckoutScreen() {
         ? parseAddress(validatedAddress || deliveryAddress)
         : { address: '', city: '', state: '', zip: '' };
       
-      // Use Square sandbox test nonce for testing
-      // In production, this would come from Square Web Payments SDK
-      const sourceId = 'cnon:card-nonce-ok';
+      // Determine source ID based on payment method
+      let sourceId: string;
+      let saveCard = false;
+      
+      if (paymentMethod === 'stored-card' && selectedCardId) {
+        // Use stored card
+        const selectedCard = storedCards.find(c => c.id === selectedCardId);
+        if (!selectedCard) throw new Error('Selected card not found');
+        sourceId = selectedCardId; // The card ID from our database
+      } else if (paymentMethod === 'new-card' && cardToken) {
+        // Use new card token from Square Web Payments SDK
+        sourceId = cardToken;
+        saveCard = true;
+      } else {
+        // Fallback to test nonce for development
+        sourceId = 'cnon:card-nonce-ok';
+      }
+
       const amountInCents = Math.round(total * 100);
 
       const response = await fetch(`${SUPABASE_URL}/functions/v1/process-square-payment`, {
@@ -240,6 +349,7 @@ export default function CheckoutScreen() {
           sourceId,
           amount: amountInCents,
           currency: 'USD',
+          saveCard,
           customer: {
             name: userProfile.name,
             email: userProfile.email,
@@ -279,6 +389,11 @@ export default function CheckoutScreen() {
       console.log('Payment result:', result);
 
       if (!result.success) throw new Error(result.error || 'Payment failed');
+
+      // Reload stored cards if a new card was saved
+      if (saveCard) {
+        await loadStoredCards();
+      }
 
       return { 
         success: true, 
@@ -330,6 +445,17 @@ export default function CheckoutScreen() {
           return;
         }
       }
+    }
+
+    // Validate payment method
+    if (paymentMethod === 'stored-card' && !selectedCardId) {
+      showToast('error', 'Please select a payment method.');
+      return;
+    }
+
+    if (paymentMethod === 'new-card' && !cardToken) {
+      showToast('error', 'Please add your card information.');
+      return;
     }
 
     await proceedWithOrder();
@@ -505,6 +631,95 @@ export default function CheckoutScreen() {
       fontSize: 13,
       fontWeight: '600',
     },
+    paymentMethodSelector: {
+      gap: 12,
+    },
+    paymentMethodButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 2,
+      gap: 12,
+    },
+    paymentMethodInfo: {
+      flex: 1,
+    },
+    paymentMethodTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    paymentMethodSubtitle: {
+      fontSize: 14,
+      marginTop: 2,
+    },
+    radioButton: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    radioButtonInner: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    storedCardsList: {
+      gap: 12,
+      marginTop: 12,
+    },
+    storedCardItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 2,
+      gap: 12,
+    },
+    storedCardInfo: {
+      flex: 1,
+    },
+    storedCardBrand: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    storedCardDetails: {
+      fontSize: 14,
+      marginTop: 2,
+    },
+    defaultBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      marginTop: 4,
+    },
+    defaultBadgeText: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    addCardButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderStyle: 'dashed',
+      gap: 8,
+      marginTop: 12,
+    },
+    addCardButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    cardFormContainer: {
+      height: 400,
+      borderRadius: 12,
+      overflow: 'hidden',
+      marginTop: 12,
+    },
     pointsToggle: {
       borderRadius: 12,
       padding: 16,
@@ -607,6 +822,113 @@ export default function CheckoutScreen() {
     },
   });
 
+  // Square Web Payments SDK HTML
+  const cardFormHTML = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <script type="text/javascript" src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+      <style>
+        body {
+          margin: 0;
+          padding: 20px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background-color: ${currentColors.background};
+        }
+        #card-container {
+          margin-bottom: 20px;
+        }
+        #card-button {
+          background-color: ${currentColors.primary};
+          color: ${currentColors.card};
+          border: none;
+          border-radius: 8px;
+          padding: 16px;
+          font-size: 16px;
+          font-weight: 600;
+          width: 100%;
+          cursor: pointer;
+        }
+        #card-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .error {
+          color: #EF4444;
+          margin-top: 10px;
+          font-size: 14px;
+        }
+      </style>
+    </head>
+    <body>
+      <div id="card-container"></div>
+      <button id="card-button" type="button">Add Card</button>
+      <div id="error-message" class="error"></div>
+      
+      <script>
+        async function initializeCard(payments) {
+          const card = await payments.card();
+          await card.attach('#card-container');
+          return card;
+        }
+
+        async function tokenize(paymentMethod) {
+          const tokenResult = await paymentMethod.tokenize();
+          if (tokenResult.status === 'OK') {
+            return tokenResult.token;
+          } else {
+            let errorMessage = 'Tokenization failed';
+            if (tokenResult.errors) {
+              errorMessage = tokenResult.errors.map(error => error.message).join(', ');
+            }
+            throw new Error(errorMessage);
+          }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function () {
+          // Initialize Square Payments
+          // Note: In production, you'll need to pass the application ID from your backend
+          const appId = 'sandbox-sq0idb-YOUR_APP_ID'; // Replace with actual app ID
+          const locationId = 'YOUR_LOCATION_ID'; // Replace with actual location ID
+          
+          try {
+            const payments = Square.payments(appId, locationId);
+            const card = await initializeCard(payments);
+
+            const cardButton = document.getElementById('card-button');
+            cardButton.addEventListener('click', async function (event) {
+              event.preventDefault();
+              cardButton.disabled = true;
+              
+              try {
+                const token = await tokenize(card);
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'TOKEN_CREATED',
+                  token: token
+                }));
+              } catch (e) {
+                document.getElementById('error-message').textContent = e.message;
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'ERROR',
+                  message: e.message
+                }));
+                cardButton.disabled = false;
+              }
+            });
+          } catch (e) {
+            document.getElementById('error-message').textContent = 'Failed to initialize payment form: ' + e.message;
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'ERROR',
+              message: 'Failed to initialize payment form'
+            }));
+          }
+        });
+      </script>
+    </body>
+    </html>
+  `;
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['bottom']}>
       <View style={styles.header}>
@@ -652,7 +974,7 @@ export default function CheckoutScreen() {
                 disabled={processing}
               >
                 <IconSymbol 
-                  name="car" 
+                  name="deliver-dining" 
                   size={20} 
                   color={orderType === 'delivery' ? currentColors.card : currentColors.text} 
                 />
@@ -802,6 +1124,183 @@ export default function CheckoutScreen() {
               textAlignVertical="top"
               editable={!processing}
             />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Payment Method *</Text>
+            
+            {loadingCards ? (
+              <ActivityIndicator size="large" color={currentColors.primary} />
+            ) : (
+              <View style={styles.paymentMethodSelector}>
+                {storedCards.length > 0 && (
+                  <>
+                    <Pressable
+                      style={[
+                        styles.paymentMethodButton,
+                        {
+                          backgroundColor: paymentMethod === 'stored-card' ? currentColors.primary + '20' : currentColors.card,
+                          borderColor: paymentMethod === 'stored-card' ? currentColors.primary : currentColors.border,
+                        }
+                      ]}
+                      onPress={() => {
+                        if (!processing) {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setPaymentMethod('stored-card');
+                          setShowCardForm(false);
+                        }
+                      }}
+                      disabled={processing}
+                    >
+                      <IconSymbol 
+                        name="creditcard.fill" 
+                        size={24} 
+                        color={paymentMethod === 'stored-card' ? currentColors.primary : currentColors.text} 
+                      />
+                      <View style={styles.paymentMethodInfo}>
+                        <Text style={[
+                          styles.paymentMethodTitle, 
+                          { color: paymentMethod === 'stored-card' ? currentColors.primary : currentColors.text }
+                        ]}>
+                          Saved Card
+                        </Text>
+                        <Text style={[
+                          styles.paymentMethodSubtitle, 
+                          { color: currentColors.textSecondary }
+                        ]}>
+                          Use a saved payment method
+                        </Text>
+                      </View>
+                      <View style={[
+                        styles.radioButton,
+                        { borderColor: paymentMethod === 'stored-card' ? currentColors.primary : currentColors.textSecondary }
+                      ]}>
+                        {paymentMethod === 'stored-card' && (
+                          <View style={[styles.radioButtonInner, { backgroundColor: currentColors.primary }]} />
+                        )}
+                      </View>
+                    </Pressable>
+
+                    {paymentMethod === 'stored-card' && (
+                      <View style={styles.storedCardsList}>
+                        {storedCards.map((card) => (
+                          <Pressable
+                            key={card.id}
+                            style={[
+                              styles.storedCardItem,
+                              {
+                                backgroundColor: selectedCardId === card.id ? currentColors.primary + '10' : currentColors.card,
+                                borderColor: selectedCardId === card.id ? currentColors.primary : currentColors.border,
+                              }
+                            ]}
+                            onPress={() => {
+                              if (!processing) {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setSelectedCardId(card.id);
+                              }
+                            }}
+                            disabled={processing}
+                          >
+                            <IconSymbol 
+                              name={getCardBrandIcon(card.cardBrand)} 
+                              size={32} 
+                              color={selectedCardId === card.id ? currentColors.primary : currentColors.text} 
+                            />
+                            <View style={styles.storedCardInfo}>
+                              <Text style={[
+                                styles.storedCardBrand, 
+                                { color: selectedCardId === card.id ? currentColors.primary : currentColors.text }
+                              ]}>
+                                {card.cardBrand} •••• {card.last4}
+                              </Text>
+                              <Text style={[styles.storedCardDetails, { color: currentColors.textSecondary }]}>
+                                Expires {card.expMonth}/{card.expYear}
+                              </Text>
+                              {card.isDefault && (
+                                <View style={[styles.defaultBadge, { backgroundColor: currentColors.primary }]}>
+                                  <Text style={[styles.defaultBadgeText, { color: currentColors.card }]}>
+                                    Default
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                            <View style={[
+                              styles.radioButton,
+                              { borderColor: selectedCardId === card.id ? currentColors.primary : currentColors.textSecondary }
+                            ]}>
+                              {selectedCardId === card.id && (
+                                <View style={[styles.radioButtonInner, { backgroundColor: currentColors.primary }]} />
+                              )}
+                            </View>
+                          </Pressable>
+                        ))}
+                      </View>
+                    )}
+                  </>
+                )}
+
+                <Pressable
+                  style={[
+                    styles.paymentMethodButton,
+                    {
+                      backgroundColor: paymentMethod === 'new-card' ? currentColors.primary + '20' : currentColors.card,
+                      borderColor: paymentMethod === 'new-card' ? currentColors.primary : currentColors.border,
+                    }
+                  ]}
+                  onPress={() => {
+                    if (!processing) {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setPaymentMethod('new-card');
+                      setShowCardForm(true);
+                    }
+                  }}
+                  disabled={processing}
+                >
+                  <IconSymbol 
+                    name="plus.circle.fill" 
+                    size={24} 
+                    color={paymentMethod === 'new-card' ? currentColors.primary : currentColors.text} 
+                  />
+                  <View style={styles.paymentMethodInfo}>
+                    <Text style={[
+                      styles.paymentMethodTitle, 
+                      { color: paymentMethod === 'new-card' ? currentColors.primary : currentColors.text }
+                    ]}>
+                      New Card
+                    </Text>
+                    <Text style={[
+                      styles.paymentMethodSubtitle, 
+                      { color: currentColors.textSecondary }
+                    ]}>
+                      Add a new payment method
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.radioButton,
+                    { borderColor: paymentMethod === 'new-card' ? currentColors.primary : currentColors.textSecondary }
+                  ]}>
+                    {paymentMethod === 'new-card' && (
+                      <View style={[styles.radioButtonInner, { backgroundColor: currentColors.primary }]} />
+                    )}
+                  </View>
+                </Pressable>
+
+                {showCardForm && paymentMethod === 'new-card' && (
+                  <View style={styles.cardFormContainer}>
+                    <WebView
+                      source={{ html: cardFormHTML }}
+                      onMessage={handleCardFormMessage}
+                      javaScriptEnabled={true}
+                      domStorageEnabled={true}
+                      startInLoadingState={true}
+                      renderLoading={() => (
+                        <ActivityIndicator size="large" color={currentColors.primary} />
+                      )}
+                    />
+                  </View>
+                )}
+              </View>
+            )}
           </View>
 
           <View style={styles.section}>
