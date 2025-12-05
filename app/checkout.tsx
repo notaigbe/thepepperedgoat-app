@@ -55,6 +55,8 @@ interface StoredCard {
   expYear: number;
   cardholderName?: string;
   isDefault: boolean;
+  squareCardId: string;
+  squareCustomerId: string;
 }
 
 type OrderType = 'delivery' | 'pickup';
@@ -130,6 +132,8 @@ export default function CheckoutScreen() {
     
     setLoadingCards(true);
     try {
+      console.log('Loading stored cards for user:', userProfile.id);
+      
       const { data, error } = await supabase
         .from('square_cards')
         .select('*')
@@ -137,7 +141,12 @@ export default function CheckoutScreen() {
         .order('is_default', { ascending: false })
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading stored cards:', error);
+        throw error;
+      }
+
+      console.log('Loaded cards data:', data);
 
       if (data && data.length > 0) {
         const cards: StoredCard[] = data.map((card: any) => ({
@@ -148,7 +157,11 @@ export default function CheckoutScreen() {
           expYear: card.exp_year,
           cardholderName: card.cardholder_name,
           isDefault: card.is_default,
+          squareCardId: card.square_card_id,
+          squareCustomerId: card.square_customer_id,
         }));
+        
+        console.log('Processed cards:', cards);
         setStoredCards(cards);
         
         // Auto-select default card if available
@@ -156,10 +169,15 @@ export default function CheckoutScreen() {
         if (defaultCard) {
           setSelectedCardId(defaultCard.id);
           setPaymentMethod('stored-card');
+          console.log('Auto-selected default card:', defaultCard.id);
         }
+      } else {
+        console.log('No stored cards found');
+        setStoredCards([]);
       }
     } catch (error) {
       console.error('Error loading stored cards:', error);
+      showToast('error', 'Failed to load saved cards');
     } finally {
       setLoadingCards(false);
     }
@@ -322,22 +340,54 @@ export default function CheckoutScreen() {
       // Determine source ID based on payment method
       let sourceId: string;
       let saveCard = false;
+      let customerId: string | undefined;
       
       if (paymentMethod === 'stored-card' && selectedCardId) {
-        // Use stored card
+        // Use stored card - find the card and use its Square card ID
         const selectedCard = storedCards.find(c => c.id === selectedCardId);
         if (!selectedCard) throw new Error('Selected card not found');
-        sourceId = selectedCardId; // The card ID from our database
+        
+        sourceId = selectedCard.squareCardId;
+        customerId = selectedCard.squareCustomerId;
+        console.log('Using stored card:', { sourceId, customerId });
       } else if (paymentMethod === 'new-card' && cardToken) {
         // Use new card token from Square Web Payments SDK
         sourceId = cardToken;
         saveCard = true;
+        console.log('Using new card token:', sourceId);
       } else {
-        // Fallback to test nonce for development
-        sourceId = 'cnon:card-nonce-ok';
+        throw new Error('Please select a payment method or add a new card');
       }
 
       const amountInCents = Math.round(total * 100);
+
+      const requestBody = {
+        sourceId,
+        amount: amountInCents,
+        currency: 'USD',
+        saveCard,
+        customerId,
+        customer: {
+          name: userProfile.name,
+          email: userProfile.email,
+          phone: userProfile.phone,
+          address: addressParts.address,
+          city: addressParts.city,
+          state: addressParts.state,
+          zip: addressParts.zip,
+        },
+        items: cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        orderType,
+        deliveryAddress: orderType === 'delivery' ? (validatedAddress || deliveryAddress) : undefined,
+        pickupNotes: orderType === 'pickup' ? pickupNotes : undefined,
+      };
+
+      console.log('Payment request:', JSON.stringify(requestBody, null, 2));
 
       const response = await fetch(`${SUPABASE_URL}/functions/v1/process-square-payment`, {
         method: 'POST',
@@ -345,30 +395,7 @@ export default function CheckoutScreen() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          sourceId,
-          amount: amountInCents,
-          currency: 'USD',
-          saveCard,
-          customer: {
-            name: userProfile.name,
-            email: userProfile.email,
-            phone: userProfile.phone,
-            address: addressParts.address,
-            city: addressParts.city,
-            state: addressParts.state,
-            zip: addressParts.zip,
-          },
-          items: cart.map(item => ({
-            id: item.id,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          orderType,
-          deliveryAddress: orderType === 'delivery' ? (validatedAddress || deliveryAddress) : undefined,
-          pickupNotes: orderType === 'pickup' ? pickupNotes : undefined,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       console.log('Edge Function response status:', response.status);
@@ -694,6 +721,7 @@ export default function CheckoutScreen() {
       paddingVertical: 4,
       borderRadius: 6,
       marginTop: 4,
+      alignSelf: 'flex-start',
     },
     defaultBadgeText: {
       fontSize: 12,
@@ -822,108 +850,58 @@ export default function CheckoutScreen() {
     },
   });
 
-  // Square Web Payments SDK HTML
+  // Square Web Payments SDK HTML - This will not work in React Native WebView
+  // because Square requires HTTPS and a proper domain. We'll show a message instead.
   const cardFormHTML = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <script type="text/javascript" src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
       <style>
         body {
           margin: 0;
           padding: 20px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           background-color: ${currentColors.background};
+          color: ${currentColors.text};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
         }
-        #card-container {
-          margin-bottom: 20px;
+        .message {
+          text-align: center;
+          padding: 20px;
         }
-        #card-button {
-          background-color: ${currentColors.primary};
-          color: ${currentColors.card};
-          border: none;
-          border-radius: 8px;
-          padding: 16px;
-          font-size: 16px;
-          font-weight: 600;
-          width: 100%;
-          cursor: pointer;
+        .message h2 {
+          color: ${currentColors.primary};
+          margin-bottom: 16px;
         }
-        #card-button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
+        .message p {
+          color: ${currentColors.textSecondary};
+          line-height: 1.6;
+          margin-bottom: 12px;
         }
         .error {
           color: #EF4444;
-          margin-top: 10px;
-          font-size: 14px;
+          font-weight: 600;
         }
       </style>
     </head>
     <body>
-      <div id="card-container"></div>
-      <button id="card-button" type="button">Add Card</button>
-      <div id="error-message" class="error"></div>
-      
+      <div class="message">
+        <h2>Card Form Not Available</h2>
+        <p class="error">Square Web Payments SDK requires HTTPS and cannot be embedded in a React Native WebView.</p>
+        <p>To add a new card, please use one of the following options:</p>
+        <p>• Save a card during checkout on the website</p>
+        <p>• Contact support to add a payment method</p>
+      </div>
       <script>
-        async function initializeCard(payments) {
-          const card = await payments.card();
-          await card.attach('#card-container');
-          return card;
-        }
-
-        async function tokenize(paymentMethod) {
-          const tokenResult = await paymentMethod.tokenize();
-          if (tokenResult.status === 'OK') {
-            return tokenResult.token;
-          } else {
-            let errorMessage = 'Tokenization failed';
-            if (tokenResult.errors) {
-              errorMessage = tokenResult.errors.map(error => error.message).join(', ');
-            }
-            throw new Error(errorMessage);
-          }
-        }
-
-        document.addEventListener('DOMContentLoaded', async function () {
-          // Initialize Square Payments
-          // Note: In production, you'll need to pass the application ID from your backend
-          const appId = 'sandbox-sq0idb-YOUR_APP_ID'; // Replace with actual app ID
-          const locationId = 'YOUR_LOCATION_ID'; // Replace with actual location ID
-          
-          try {
-            const payments = Square.payments(appId, locationId);
-            const card = await initializeCard(payments);
-
-            const cardButton = document.getElementById('card-button');
-            cardButton.addEventListener('click', async function (event) {
-              event.preventDefault();
-              cardButton.disabled = true;
-              
-              try {
-                const token = await tokenize(card);
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                  type: 'TOKEN_CREATED',
-                  token: token
-                }));
-              } catch (e) {
-                document.getElementById('error-message').textContent = e.message;
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                  type: 'ERROR',
-                  message: e.message
-                }));
-                cardButton.disabled = false;
-              }
-            });
-          } catch (e) {
-            document.getElementById('error-message').textContent = 'Failed to initialize payment form: ' + e.message;
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'ERROR',
-              message: 'Failed to initialize payment form'
-            }));
-          }
-        });
+        // Notify the app that the form cannot be initialized
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'ERROR',
+          message: 'Square Web Payments SDK requires HTTPS and cannot be embedded in React Native WebView'
+        }));
       </script>
     </body>
     </html>
@@ -974,7 +952,7 @@ export default function CheckoutScreen() {
                 disabled={processing}
               >
                 <IconSymbol 
-                  name="deliver-dining" 
+                  name="delivery-dining" 
                   size={20} 
                   color={orderType === 'delivery' ? currentColors.card : currentColors.text} 
                 />
@@ -1130,7 +1108,12 @@ export default function CheckoutScreen() {
             <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Payment Method *</Text>
             
             {loadingCards ? (
-              <ActivityIndicator size="large" color={currentColors.primary} />
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={currentColors.primary} />
+                <Text style={[{ color: currentColors.textSecondary, marginTop: 12 }]}>
+                  Loading saved cards...
+                </Text>
+              </View>
             ) : (
               <View style={styles.paymentMethodSelector}>
                 {storedCards.length > 0 && (
@@ -1250,8 +1233,11 @@ export default function CheckoutScreen() {
                   onPress={() => {
                     if (!processing) {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setPaymentMethod('new-card');
-                      setShowCardForm(true);
+                      Alert.alert(
+                        'Add New Card',
+                        'To add a new card, please complete a purchase on the website at www.jagabansla.com and save your card during checkout. Saved cards will appear here for future orders.',
+                        [{ text: 'OK' }]
+                      );
                     }
                   }}
                   disabled={processing}
@@ -1259,12 +1245,12 @@ export default function CheckoutScreen() {
                   <IconSymbol 
                     name="plus.circle.fill" 
                     size={24} 
-                    color={paymentMethod === 'new-card' ? currentColors.primary : currentColors.text} 
+                    color={currentColors.textSecondary} 
                   />
                   <View style={styles.paymentMethodInfo}>
                     <Text style={[
                       styles.paymentMethodTitle, 
-                      { color: paymentMethod === 'new-card' ? currentColors.primary : currentColors.text }
+                      { color: currentColors.textSecondary }
                     ]}>
                       New Card
                     </Text>
@@ -1272,33 +1258,11 @@ export default function CheckoutScreen() {
                       styles.paymentMethodSubtitle, 
                       { color: currentColors.textSecondary }
                     ]}>
-                      Add a new payment method
+                      Add via website checkout
                     </Text>
                   </View>
-                  <View style={[
-                    styles.radioButton,
-                    { borderColor: paymentMethod === 'new-card' ? currentColors.primary : currentColors.textSecondary }
-                  ]}>
-                    {paymentMethod === 'new-card' && (
-                      <View style={[styles.radioButtonInner, { backgroundColor: currentColors.primary }]} />
-                    )}
-                  </View>
+                  <IconSymbol name="info" size={20} color={currentColors.textSecondary} />
                 </Pressable>
-
-                {showCardForm && paymentMethod === 'new-card' && (
-                  <View style={styles.cardFormContainer}>
-                    <WebView
-                      source={{ html: cardFormHTML }}
-                      onMessage={handleCardFormMessage}
-                      javaScriptEnabled={true}
-                      domStorageEnabled={true}
-                      startInLoadingState={true}
-                      renderLoading={() => (
-                        <ActivityIndicator size="large" color={currentColors.primary} />
-                      )}
-                    />
-                  </View>
-                )}
               </View>
             )}
           </View>

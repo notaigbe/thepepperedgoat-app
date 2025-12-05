@@ -203,6 +203,53 @@ export interface Database {
           updated_at?: string
         }
       }
+      square_cards: {
+        Row: {
+          id: string
+          user_id: string
+          square_customer_id: string
+          square_card_id: string
+          card_brand: string
+          last_4: string
+          exp_month: number
+          exp_year: number
+          cardholder_name: string | null
+          billing_address: Json | null
+          is_default: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          square_customer_id: string
+          square_card_id: string
+          card_brand: string
+          last_4: string
+          exp_month: number
+          exp_year: number
+          cardholder_name?: string | null
+          billing_address?: Json | null
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          square_customer_id?: string
+          square_card_id?: string
+          card_brand?: string
+          last_4?: string
+          exp_month?: number
+          exp_year?: number
+          cardholder_name?: string | null
+          billing_address?: Json | null
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
       gift_cards: {
         Row: {
           id: string
