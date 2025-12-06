@@ -5,13 +5,13 @@
     "slug": "Ooosum Foods LLC",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/natively-dark.png",
+    "icon": "./assets/images/9fd556bb-ad33-4d32-a5ad-b20988c68b2a.jpeg",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/32297f18-8c85-4435-9bd9-0ac1fa24076e.png",
+      "image": "./assets/images/9fd556bb-ad33-4d32-a5ad-b20988c68b2a.jpeg",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true,
@@ -22,14 +22,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/32297f18-8c85-4435-9bd9-0ac1fa24076e.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/images/9fd556bb-ad33-4d32-a5ad-b20988c68b2a.jpeg",
+        "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.Natively"
     },
     "web": {
-      "favicon": "./assets/images/final_quest_240x240.png",
+      "favicon": "./assets/images/9fd556bb-ad33-4d32-a5ad-b20988c68b2a.jpeg",
       "bundler": "metro"
     },
     "plugins": [
@@ -44,5 +44,6 @@
     "extra": {
       "router": {}
     }
-  }
+  },
+  "scheme": "Ooosum Foods LLC"
 }

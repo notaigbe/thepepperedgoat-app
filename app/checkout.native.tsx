@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -8,7 +7,6 @@ import {
   Pressable,
   Alert,
   TextInput,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
