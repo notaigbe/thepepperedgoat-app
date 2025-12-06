@@ -48,7 +48,7 @@ type OrderType = 'delivery' | 'pickup';
 // ============================================================================
 // TODO: Replace with your actual Stripe publishable key
 // Get this from: https://dashboard.stripe.com/apikeys
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_51YOUR_STRIPE_PUBLISHABLE_KEY';
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SbDvPKZwIF4J9pKEK6dHIGLWdMtwlgkTwzChNtA3BNvVFZY5UkdgpQoas4Tzu9jmYqhKgkVnMAWmtvl0ROvhNwd00kkEUh15y';
 
 // ============================================================================
 // CHECKOUT CONTENT COMPONENT

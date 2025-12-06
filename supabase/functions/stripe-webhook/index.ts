@@ -6,21 +6,49 @@ import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders, status: 200 });
   }
+
+  // Only accept POST requests
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  console.log('=== Stripe Webhook Request Received ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
 
   try {
     // Get Stripe keys from environment
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
     const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
     
-    if (!stripeSecretKey || !stripeWebhookSecret) {
-      throw new Error('Stripe keys not configured');
+    console.log('Stripe Secret Key exists:', !!stripeSecretKey);
+    console.log('Stripe Webhook Secret exists:', !!stripeWebhookSecret);
+    
+    if (!stripeSecretKey) {
+      console.error('STRIPE_SECRET_KEY not configured');
+      return new Response(
+        JSON.stringify({ error: 'Stripe secret key not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!stripeWebhookSecret) {
+      console.error('STRIPE_WEBHOOK_SECRET not configured');
+      return new Response(
+        JSON.stringify({ error: 'Stripe webhook secret not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Initialize Stripe
@@ -29,47 +57,76 @@ serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    // Get Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Get Supabase client with service role key (bypasses RLS)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Supabase configuration missing');
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
 
     // Get the signature from headers
     const signature = req.headers.get('stripe-signature');
+    console.log('Stripe signature exists:', !!signature);
+    
     if (!signature) {
-      throw new Error('No stripe signature found');
+      console.error('No stripe-signature header found');
+      return new Response(
+        JSON.stringify({ error: 'No stripe signature found' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Get raw body
     const body = await req.text();
+    console.log('Body length:', body.length);
 
     // Verify webhook signature
     let event: Stripe.Event;
     try {
       event = stripe.webhooks.constructEvent(body, signature, stripeWebhookSecret);
-    } catch (err) {
-      console.error('Webhook signature verification failed:', err.message);
+      console.log('✓ Webhook signature verified successfully');
+    } catch (err: any) {
+      console.error('✗ Webhook signature verification failed:', err.message);
+      console.error('Error details:', err);
       return new Response(
-        JSON.stringify({ error: 'Webhook signature verification failed' }),
-        { status: 400, headers: corsHeaders }
+        JSON.stringify({ error: 'Webhook signature verification failed', details: err.message }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Webhook event received:', event.type);
+    console.log('=== Webhook Event Details ===');
+    console.log('Event type:', event.type);
+    console.log('Event ID:', event.id);
 
     // Handle the event
     switch (event.type) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log('PaymentIntent succeeded:', paymentIntent.id);
+        console.log('Metadata:', paymentIntent.metadata);
 
         const orderId = paymentIntent.metadata.orderId;
         const userId = paymentIntent.metadata.userId;
 
         if (!orderId || !userId) {
           console.error('Missing orderId or userId in metadata');
+          console.error('Available metadata:', paymentIntent.metadata);
           break;
         }
+
+        console.log('Processing payment success for order:', orderId, 'user:', userId);
 
         // Update stripe_payments table
         const { error: paymentUpdateError } = await supabase
@@ -83,6 +140,8 @@ serve(async (req) => {
 
         if (paymentUpdateError) {
           console.error('Error updating stripe_payments:', paymentUpdateError);
+        } else {
+          console.log('✓ stripe_payments table updated');
         }
 
         // Update orders table
@@ -97,6 +156,8 @@ serve(async (req) => {
 
         if (orderUpdateError) {
           console.error('Error updating order:', orderUpdateError);
+        } else {
+          console.log('✓ orders table updated');
         }
 
         // Send notification to user
@@ -112,9 +173,11 @@ serve(async (req) => {
 
         if (notificationError) {
           console.error('Error creating notification:', notificationError);
+        } else {
+          console.log('✓ Notification created');
         }
 
-        console.log('Payment succeeded and order updated');
+        console.log('✓ Payment succeeded and order updated successfully');
         break;
       }
 
@@ -131,6 +194,8 @@ serve(async (req) => {
           break;
         }
 
+        console.log('Processing payment failure for order:', orderId);
+
         // Update stripe_payments table
         const { error: paymentUpdateError } = await supabase
           .from('stripe_payments')
@@ -143,6 +208,8 @@ serve(async (req) => {
 
         if (paymentUpdateError) {
           console.error('Error updating stripe_payments:', paymentUpdateError);
+        } else {
+          console.log('✓ stripe_payments table updated');
         }
 
         // Update orders table
@@ -157,6 +224,8 @@ serve(async (req) => {
 
         if (orderUpdateError) {
           console.error('Error updating order:', orderUpdateError);
+        } else {
+          console.log('✓ orders table updated');
         }
 
         // Send notification to user
@@ -172,9 +241,11 @@ serve(async (req) => {
 
         if (notificationError) {
           console.error('Error creating notification:', notificationError);
+        } else {
+          console.log('✓ Notification created');
         }
 
-        console.log('Payment failed and order cancelled');
+        console.log('✓ Payment failed and order cancelled');
         break;
       }
 
@@ -189,6 +260,8 @@ serve(async (req) => {
           break;
         }
 
+        console.log('Processing payment cancellation for order:', orderId);
+
         // Update stripe_payments table
         const { error: paymentUpdateError } = await supabase
           .from('stripe_payments')
@@ -200,6 +273,8 @@ serve(async (req) => {
 
         if (paymentUpdateError) {
           console.error('Error updating stripe_payments:', paymentUpdateError);
+        } else {
+          console.log('✓ stripe_payments table updated');
         }
 
         // Update orders table
@@ -214,9 +289,11 @@ serve(async (req) => {
 
         if (orderUpdateError) {
           console.error('Error updating order:', orderUpdateError);
+        } else {
+          console.log('✓ orders table updated');
         }
 
-        console.log('Payment canceled and order cancelled');
+        console.log('✓ Payment canceled and order cancelled');
         break;
       }
 
@@ -235,6 +312,8 @@ serve(async (req) => {
 
         if (paymentUpdateError) {
           console.error('Error updating stripe_payments:', paymentUpdateError);
+        } else {
+          console.log('✓ stripe_payments table updated');
         }
 
         // Update orders table
@@ -250,10 +329,12 @@ serve(async (req) => {
 
           if (orderUpdateError) {
             console.error('Error updating order:', orderUpdateError);
+          } else {
+            console.log('✓ orders table updated');
           }
         }
 
-        console.log('Payment processing status updated');
+        console.log('✓ Payment processing status updated');
         break;
       }
 
@@ -262,6 +343,7 @@ serve(async (req) => {
     }
 
     // Return success response
+    console.log('=== Webhook processed successfully ===');
     return new Response(
       JSON.stringify({ received: true }),
       {
@@ -269,15 +351,18 @@ serve(async (req) => {
         status: 200,
       }
     );
-  } catch (error) {
-    console.error('Webhook error:', error);
+  } catch (error: any) {
+    console.error('=== Webhook error ===');
+    console.error('Error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     return new Response(
       JSON.stringify({
         error: error.message || 'Webhook processing failed',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 500,
       }
     );
   }

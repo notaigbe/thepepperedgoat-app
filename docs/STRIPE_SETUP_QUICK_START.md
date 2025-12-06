@@ -109,15 +109,15 @@ supabase functions deploy stripe-webhook
 
 After setup, verify everything works:
 
-- [ ] Stripe publishable key is set in `app/checkout.tsx`
-- [ ] Stripe secret key is set in Supabase environment variables
-- [ ] Stripe webhook secret is set in Supabase environment variables
-- [ ] Webhook endpoint is configured in Stripe Dashboard
-- [ ] Database migration has been applied
-- [ ] `stripe_payments` table exists in database
-- [ ] Realtime is enabled on `orders` table
-- [ ] Edge functions are deployed
-- [ ] Test payment completes successfully
+- [✅] Stripe publishable key is set in `app/checkout.tsx`
+- [✅] Stripe secret key is set in Supabase environment variables
+- [✅] Stripe webhook secret is set in Supabase environment variables
+- [✅] Webhook endpoint is configured in Stripe Dashboard
+- [✅] Database migration has been applied
+- [✅] `stripe_payments` table exists in database
+- [✅] Realtime is enabled on `orders` table
+- [✅] Edge functions are deployed
+- [✅] Test payment completes successfully
 - [ ] Order status updates to "preparing"
 - [ ] Payment status updates to "succeeded"
 - [ ] User receives "Order Confirmed" alert
