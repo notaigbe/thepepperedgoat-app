@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -376,20 +377,11 @@ function CheckoutContent() {
             clearCart();
             loadUserProfile();
 
-            Alert.alert(
-              'Order Confirmed!',
-              `Your ${orderType} order has been confirmed!\n\nOrder ID: ${currentOrderId}\n\nYou earned ${pointsToEarn} points!`,
-              [
-                {
-                  text: 'View Orders',
-                  onPress: () => router.replace('/order-history'),
-                },
-                {
-                  text: 'OK',
-                  onPress: () => router.replace('/(tabs)/(home)'),
-                },
-              ]
-            );
+            // Navigate to order confirmation screen
+            router.replace({
+              pathname: '/order-confirmation',
+              params: { orderId: currentOrderId },
+            });
           } else if (updatedOrder.payment_status === 'failed') {
             console.log('Payment failed');
             showToast('error', 'Payment failed. Please try again.');
