@@ -2,32 +2,27 @@ const { getDefaultConfig } = require('expo/metro-config');
 const { FileStore } = require('metro-cache');
 const path = require('path');
 
-const config = getDefaultConfig(__dirname);
+module.exports = (() => {
+  const config = getDefaultConfig(__dirname);
 
-// Use turborepo to restore the cache when possible
-config.cacheStores = [
-  new FileStore({ root: path.join(__dirname, 'node_modules', '.cache', 'metro') }),
-];
+  // Turbo-compatible cache restore
+  config.cacheStores = [
+    new FileStore({
+      root: path.join(__dirname, 'node_modules', '.cache', 'metro'),
+    }),
+  ];
 
-// Configure platform-specific extensions with proper priority
-config.resolver.sourceExts = [...(config.resolver.sourceExts || []), 'tsx', 'ts', 'jsx', 'js'];
+  // Do NOT override sourceExts — Expo owns this
+  // Do NOT override platforms — Expo owns this
 
-// Ensure platforms are defined
-config.resolver.platforms = ['ios', 'android', 'web'];
+  // Safe blockList override (preserves Expo defaults)
+  const nativeBlock = /\.native\.(tsx?|jsx?)$/;
 
-// Always block .native files on web platform
-// Metro will handle this automatically based on the platform you're bundling for
-const blacklistRE = /\.native\.(tsx?|jsx?)$/;
+  if (config.resolver.blockList) {
+    config.resolver.blockList.push(nativeBlock);
+  } else {
+    config.resolver.blockList = [nativeBlock];
+  }
 
-if (config.resolver.blockList) {
-  // Expo SDK 50+
-  config.resolver.blockList = [blacklistRE];
-} else if (config.resolver.blacklistRE) {
-  // Older Expo versions
-  config.resolver.blacklistRE = blacklistRE;
-} else {
-  // Fallback
-  config.resolver.blacklistRE = blacklistRE;
-}
-
-module.exports = config;
+  return config;
+})();
