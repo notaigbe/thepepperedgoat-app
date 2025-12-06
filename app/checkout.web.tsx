@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '@/contexts/AppContext';
 import { IconSymbol } from '@/components/IconSymbol';
 
-export default function CheckoutScreen() {
+export default function CheckoutWebScreen() {
   const router = useRouter();
   const { currentColors, setTabBarVisible } = useApp();
 
@@ -106,14 +106,21 @@ export default function CheckoutScreen() {
       <View style={styles.container}>
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <IconSymbol name="shopping-cart" size={40} color={currentColors.primary} />
+            <IconSymbol name="phone-iphone" size={40} color={currentColors.primary} />
           </View>
           
-          <Text style={styles.title}>Checkout</Text>
+          <Text style={styles.title}>Mobile App Required</Text>
           
           <Text style={styles.message}>
-            Loading checkout...
+            Checkout is only available on the mobile app. Please download the Jagabans LA app on your iOS or Android device to place orders.
           </Text>
+
+          <Pressable
+            style={styles.button}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.buttonText}>Go Back</Text>
+          </Pressable>
         </View>
       </View>
     </SafeAreaView>

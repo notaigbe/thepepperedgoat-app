@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Ooosum Foods LLC",
@@ -36,13 +37,12 @@
       "expo-router",
       "expo-web-browser"
     ],
-    "scheme": "natively",
+    "scheme": "jagabansla",
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "router": {}
     }
-  },
-  "scheme": "Ooosum Foods LLC"
+  }
 }
