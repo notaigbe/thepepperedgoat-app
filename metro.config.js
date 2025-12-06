@@ -2,11 +2,27 @@ const { getDefaultConfig } = require('expo/metro-config');
 const { FileStore } = require('metro-cache');
 const path = require('path');
 
-const config = getDefaultConfig(__dirname);
+module.exports = (() => {
+  const config = getDefaultConfig(__dirname);
 
-// Use turborepo to restore the cache when possible
-config.cacheStores = [
-    new FileStore({ root: path.join(__dirname, 'node_modules', '.cache', 'metro') }),
+  // Turbo-compatible cache restore
+  config.cacheStores = [
+    new FileStore({
+      root: path.join(__dirname, 'node_modules', '.cache', 'metro'),
+    }),
   ];
 
-module.exports = config;
+  // Do NOT override sourceExts — Expo owns this
+  // Do NOT override platforms — Expo owns this
+
+  // Safe blockList override (preserves Expo defaults)
+  const nativeBlock = /\.native\.(tsx?|jsx?)$/;
+
+  if (config.resolver.blockList) {
+    config.resolver.blockList.push(nativeBlock);
+  } else {
+    config.resolver.blockList = [nativeBlock];
+  }
+
+  return config;
+})();

@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
   Pressable,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,8 +18,15 @@ export default function CheckoutScreen() {
 
   useEffect(() => {
     setTabBarVisible(false);
+    
+    Alert.alert(
+      'Platform Not Supported',
+      'Checkout is only available on iOS and Android mobile devices. Please use the mobile app to complete your purchase.',
+      [{ text: 'Go Back', onPress: () => router.back() }]
+    );
+
     return () => setTabBarVisible(true);
-  }, [setTabBarVisible]);
+  }, [router, setTabBarVisible]);
 
   const styles = StyleSheet.create({
     safeArea: {
@@ -31,90 +39,60 @@ export default function CheckoutScreen() {
       alignItems: 'center',
       padding: 20,
     },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-    },
-    backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: currentColors.card,
-      justifyContent: 'center',
-      alignItems: 'center',
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    },
-    content: {
-      alignItems: 'center',
-      maxWidth: 400,
-    },
-    iconContainer: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: currentColors.card,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 24,
-      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+    icon: {
+      marginBottom: 20,
     },
     title: {
       fontSize: 24,
       fontWeight: 'bold',
       color: currentColors.text,
-      marginBottom: 12,
       textAlign: 'center',
+      marginBottom: 12,
     },
     message: {
       fontSize: 16,
       color: currentColors.textSecondary,
       textAlign: 'center',
-      lineHeight: 24,
       marginBottom: 32,
+      lineHeight: 24,
     },
     button: {
       backgroundColor: currentColors.primary,
-      paddingVertical: 14,
+      paddingVertical: 16,
       paddingHorizontal: 32,
       borderRadius: 12,
-      boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.15)',
+      minWidth: 200,
+      alignItems: 'center',
     },
     buttonText: {
-      fontSize: 16,
-      fontWeight: '600',
       color: currentColors.card,
+      fontSize: 18,
+      fontWeight: 'bold',
     },
   });
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.header}>
+      <View style={styles.container}>
+        <IconSymbol 
+          name="exclamationmark.triangle.fill" 
+          size={80} 
+          color={currentColors.primary}
+          style={styles.icon}
+        />
+        <Text style={styles.title}>
+          Mobile Only Feature
+        </Text>
+        <Text style={styles.message}>
+          Checkout is only available on iOS and Android mobile devices.{'\n'}
+          Please download and use our mobile app to complete your purchase.
+        </Text>
         <Pressable
           onPress={() => router.back()}
-          style={styles.backButton}
+          style={styles.button}
         >
-          <IconSymbol name="chevron-left" size={24} color={currentColors.primary} />
+          <Text style={styles.buttonText}>Go Back</Text>
         </Pressable>
-      </View>
-
-      <View style={styles.container}>
-        <View style={styles.content}>
-          <View style={styles.iconContainer}>
-            <IconSymbol name="shopping-cart" size={40} color={currentColors.primary} />
-          </View>
-          
-          <Text style={styles.title}>Checkout</Text>
-          
-          <Text style={styles.message}>
-            Loading checkout...
-          </Text>
-        </View>
       </View>
     </SafeAreaView>
   );
