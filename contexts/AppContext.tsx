@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react';
 import { MenuItem, CartItem, Order, UserProfile, GiftCard, PaymentMethod, AppNotification, ThemeSettings, ThemeMode, ColorScheme, MerchRedemption, UserRole } from '@/types';
 import { useColorScheme } from 'react-native';
 import { useAuth } from './AuthContext';
@@ -77,88 +77,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
-  // Load menu items when the app starts (in useEffect):
-  useEffect(() => {
-    loadMenuItems();
+  const loadMenuItems = useCallback(async () => {
+    try {
+      console.log('Loading menu items from Supabase (AppContext)');
+      const { data, error } = await menuService.getMenuItems();
+      
+      if (error) {
+        console.error('Error loading menu items:', error);
+        return;
+      }
+
+      if (data) {
+        const items: MenuItem[] = data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          price: parseFloat(item.price),
+          category: item.category,
+          image: item.image,
+          popular: item.popular,
+          serial: item.serial,
+        }));
+        setMenuItems(items);
+        console.log('Loaded', items.length, 'menu items in context');
+      }
+    } catch (error) {
+      console.error('Exception loading menu items:', error);
+    }
   }, []);
-  
-  // Load user profile when authenticated
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      loadUserProfile();
-    } else {
-      setUserProfile(null);
-    }
-  }, [isAuthenticated, user]);
 
-  // Setup real-time order updates
-  useEffect(() => {
-    if (!isAuthenticated || !user) {
-      // Clean up existing subscription
-      if (orderChannelRef.current) {
-        supabase.removeChannel(orderChannelRef.current);
-        orderChannelRef.current = null;
-      }
-      return;
-    }
-
-    // Check if already subscribed
-    if ((orderChannelRef.current?.state as any) === 'subscribed') {
-      console.log('Already subscribed to order updates');
-      return;
-    }
-
-    const setupRealtimeSubscription = async () => {
-      console.log('Setting up real-time order subscription for user:', user.id);
-      
-      const channel = supabase.channel(`order:${user.id}`, {
-        config: { private: true }
-      });
-      
-      orderChannelRef.current = channel;
-
-      // Set auth before subscribing
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await supabase.realtime.setAuth(session.access_token);
-      }
-
-      channel
-        .on('broadcast', { event: 'INSERT' }, (payload) => {
-          console.log('New order created:', payload);
-          showToast('New order placed!', 'success');
-          loadUserProfile(); // Reload profile to get updated orders
-        })
-        .on('broadcast', { event: 'UPDATE' }, (payload) => {
-          console.log('Order updated:', payload);
-          const order = payload.new as any;
-          showToast(`Order status updated to: ${order.status}`, 'info');
-          loadUserProfile(); // Reload profile to get updated orders
-        })
-        .on('broadcast', { event: 'DELETE' }, (payload) => {
-          console.log('Order deleted:', payload);
-          loadUserProfile(); // Reload profile to get updated orders
-        })
-        .subscribe((status, err) => {
-          console.log('Order subscription status:', status);
-          if (err) {
-            console.error('Order subscription error:', err);
-          }
-        });
-    };
-
-    setupRealtimeSubscription();
-
-    return () => {
-      if (orderChannelRef.current) {
-        console.log('Cleaning up order subscription');
-        supabase.removeChannel(orderChannelRef.current);
-        orderChannelRef.current = null;
-      }
-    };
-  }, [isAuthenticated, user]);
-
-  const loadUserProfile = async () => {
+  const loadUserProfile = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -294,7 +242,88 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Error loading user profile:', error);
     }
-  };
+  }, [user]);
+  
+  // Load menu items when the app starts (in useEffect):
+  useEffect(() => {
+    loadMenuItems();
+  }, [loadMenuItems]);
+  
+  // Load user profile when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadUserProfile();
+    } else {
+      setUserProfile(null);
+    }
+  }, [isAuthenticated, user, loadUserProfile]);
+
+  // Setup real-time order updates
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      // Clean up existing subscription
+      if (orderChannelRef.current) {
+        supabase.removeChannel(orderChannelRef.current);
+        orderChannelRef.current = null;
+      }
+      return;
+    }
+
+    // Check if already subscribed
+    if ((orderChannelRef.current?.state as any) === 'subscribed') {
+      console.log('Already subscribed to order updates');
+      return;
+    }
+
+    const setupRealtimeSubscription = async () => {
+      console.log('Setting up real-time order subscription for user:', user.id);
+      
+      const channel = supabase.channel(`order:${user.id}`, {
+        config: { private: true }
+      });
+      
+      orderChannelRef.current = channel;
+
+      // Set auth before subscribing
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.realtime.setAuth(session.access_token);
+      }
+
+      channel
+        .on('broadcast', { event: 'INSERT' }, (payload) => {
+          console.log('New order created:', payload);
+          showToast('New order placed!', 'success');
+          loadUserProfile(); // Reload profile to get updated orders
+        })
+        .on('broadcast', { event: 'UPDATE' }, (payload) => {
+          console.log('Order updated:', payload);
+          const order = payload.new as any;
+          showToast(`Order status updated to: ${order.status}`, 'info');
+          loadUserProfile(); // Reload profile to get updated orders
+        })
+        .on('broadcast', { event: 'DELETE' }, (payload) => {
+          console.log('Order deleted:', payload);
+          loadUserProfile(); // Reload profile to get updated orders
+        })
+        .subscribe((status, err) => {
+          console.log('Order subscription status:', status);
+          if (err) {
+            console.error('Order subscription error:', err);
+          }
+        });
+    };
+
+    setupRealtimeSubscription();
+
+    return () => {
+      if (orderChannelRef.current) {
+        console.log('Cleaning up order subscription');
+        supabase.removeChannel(orderChannelRef.current);
+        orderChannelRef.current = null;
+      }
+    };
+  }, [isAuthenticated, user, loadUserProfile]);
 
   // Get current colors based on theme settings
   const getCurrentColors = () => {
@@ -744,35 +773,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Error updating color scheme:', error);
       showToast('Failed to save theme settings', 'error');
-    }
-  };
-
-  const loadMenuItems = async () => {
-    try {
-      console.log('Loading menu items from Supabase (AppContext)');
-      const { data, error } = await menuService.getMenuItems();
-      
-      if (error) {
-        console.error('Error loading menu items:', error);
-        return;
-      }
-
-      if (data) {
-        const items: MenuItem[] = data.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          price: parseFloat(item.price),
-          category: item.category,
-          image: item.image,
-          popular: item.popular,
-          serial: item.serial,
-        }));
-        setMenuItems(items);
-        console.log('Loaded', items.length, 'menu items in context');
-      }
-    } catch (error) {
-      console.error('Exception loading menu items:', error);
     }
   };
 

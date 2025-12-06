@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -47,11 +47,7 @@ export default function AdminMerchManagement() {
   });
   const [submitting, setSubmitting] = React.useState(false);
 
-  React.useEffect(() => {
-    fetchMerchItems();
-  }, []);
-
-  const fetchMerchItems = async () => {
+  const fetchMerchItems = useCallback(async () => {
     try {
       setLoading(true);
       const res = await merchService.getMerchItems();
@@ -75,7 +71,11 @@ export default function AdminMerchManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
+
+  React.useEffect(() => {
+    fetchMerchItems();
+  }, [fetchMerchItems]);
 
   const resetForm = () => {
     setFormData({

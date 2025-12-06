@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -77,7 +77,7 @@ export default function AdminDashboard() {
     setPassword("");
   };
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setStatsLoading(true);
       
@@ -119,13 +119,13 @@ export default function AdminDashboard() {
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, [isEffectivelyAdmin]);
 
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
       fetchStats();
     }
-  }, [isAuthenticated, isAdmin, viewAsAdmin]);
+  }, [isAuthenticated, isAdmin, viewAsAdmin, fetchStats]);
 
   const allAdminSections = [
     {

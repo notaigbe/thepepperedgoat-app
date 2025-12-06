@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -45,13 +45,6 @@ export default function PaymentMethodsScreen() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
-  useEffect(() => {
-    if (userProfile) {
-      loadStoredCards();
-      initializeSquare();
-    }
-  }, [userProfile]);
-
   const showToast = (type: 'success' | 'error' | 'info', message: string) => {
     setToastType(type);
     setToastMessage(message);
@@ -68,7 +61,7 @@ export default function PaymentMethodsScreen() {
     }
   };
 
-  const loadStoredCards = async () => {
+  const loadStoredCards = useCallback(async () => {
     if (!userProfile) return;
     
     setLoading(true);
@@ -105,7 +98,14 @@ export default function PaymentMethodsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userProfile]);
+
+  useEffect(() => {
+    if (userProfile) {
+      loadStoredCards();
+      initializeSquare();
+    }
+  }, [userProfile, loadStoredCards]);
 
   const handleAddCard = async () => {
     try {

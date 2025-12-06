@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -23,12 +24,16 @@ export default function MerchRedemptionScreen() {
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [pickupNotes, setPickupNotes] = useState('');
 
-  React.useEffect(() => {
+  const setTabBarVisibleCallback = useCallback(() => {
     setTabBarVisible(false);
     return () => {
       setTabBarVisible(true);
     };
-  }, []);
+  }, [setTabBarVisible]);
+
+  useEffect(() => {
+    return setTabBarVisibleCallback();
+  }, [setTabBarVisibleCallback]);
 
   // Use 0 points if userProfile is null
   const currentPoints = userProfile?.points || 0;
@@ -348,4 +353,3 @@ export default function MerchRedemptionScreen() {
     </SafeAreaView>
   );
 }
-

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -36,25 +36,7 @@ export default function AdminManagement() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Check if user is super admin
-    if (userProfile?.userRole !== 'super_admin') {
-      Alert.alert(
-        'Access Denied',
-        'Only super-admins can access this page.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
-      );
-      return;
-    }
-    fetchAdmins();
-  }, [userProfile]);
-
-  const fetchAdmins = async () => {
+  const fetchAdmins = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await userService.getAllUsers();
@@ -81,7 +63,25 @@ export default function AdminManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Check if user is super admin
+    if (userProfile?.userRole !== 'super_admin') {
+      Alert.alert(
+        'Access Denied',
+        'Only super-admins can access this page.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]
+      );
+      return;
+    }
+    fetchAdmins();
+  }, [userProfile, router, fetchAdmins]);
 
   const handleUpdateRole = async (userId: string, newRole: UserRole) => {
     try {
