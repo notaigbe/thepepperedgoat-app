@@ -10,15 +10,14 @@ config.cacheStores = [
   new FileStore({ root: path.join(__dirname, 'node_modules', '.cache', 'metro') }),
 ];
 
-// Ensure platform-specific extensions are resolved correctly
-// Order matters: more specific extensions should come first
-config.resolver.sourceExts = ['tsx', 'ts', 'jsx', 'js', 'json'];
+// Add .mjs and .cjs to source extensions to handle ESM modules
+config.resolver.sourceExts = ['tsx', 'ts', 'jsx', 'js', 'mjs', 'cjs', 'json'];
 config.resolver.platforms = ['ios', 'android', 'native', 'web'];
 
-// Add resolver configuration to handle platform-specific files
-config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];
+// Add resolver configuration to handle platform-specific files and ESM modules
+config.resolver.resolverMainFields = ['react-native', 'browser', 'main', 'module'];
 
-// Ensure proper resolution of platform-specific files
+// Ensure proper resolution of platform-specific files and ESM modules
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   // Let Metro handle the default resolution
   return context.resolveRequest(context, moduleName, platform);
