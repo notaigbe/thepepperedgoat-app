@@ -10,6 +10,18 @@ import { useColorScheme } from 'react-native';
 import { AppProvider } from '@/contexts/AppContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import Toast from '@/components/Toast';
+import {
+  useFonts as useGoogleFonts,
+  PlayfairDisplay_400Regular,
+  PlayfairDisplay_700Bold,
+  PlayfairDisplay_900Black,
+} from '@expo-google-fonts/playfair-display';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,20 +31,30 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
+  const [googleFontsLoaded] = useGoogleFonts({
+    PlayfairDisplay_400Regular,
+    PlayfairDisplay_700Bold,
+    PlayfairDisplay_900Black,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
   useEffect(() => {
-    if (loaded) {
+    if (loaded && googleFontsLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [loaded, googleFontsLoaded]);
 
-  if (!loaded) {
+  if (!loaded || !googleFontsLoaded) {
     return null;
   }
 
   return (
     <AuthProvider>
       <AppProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <ThemeProvider value={DarkTheme}>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="admin" options={{ headerShown: false }} />
@@ -122,7 +144,7 @@ export default function RootLayout() {
               }} 
             />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style="light" />
           <Toast />
         </ThemeProvider>
       </AppProvider>

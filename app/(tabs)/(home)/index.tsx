@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   View,
@@ -17,6 +18,7 @@ import { useApp } from "@/contexts/AppContext";
 import * as Haptics from "expo-haptics";
 import { imageService } from "@/services/supabaseService";
 import Toast from "@/components/Toast";
+import { LinearGradient } from "expo-linear-gradient";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -27,9 +29,9 @@ const menuCategories = [
   "Online Desserts",
   "Online Jollof Combos",
   "Online White Rice Combos",
-	"Online Soups x Dips",
-	"Online Special",
-	"Online Sides",
+  "Online Soups x Dips",
+  "Online Special",
+  "Online Sides",
 ];
 
 // Responsive font size calculation
@@ -48,8 +50,8 @@ const getResponsivePadding = (basePadding: number) => {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { currentColors, menuItems, loadMenuItems, addToCart, getUnreadNotificationCount } = useApp(); // Added addToCart and getUnreadNotificationCount from context
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const { currentColors, menuItems, loadMenuItems, addToCart, getUnreadNotificationCount } = useApp();
+  const [selectedCategory, setSelectedCategory] = useState("Online Special");
   const [loading, setLoading] = useState(false);
   const [headerImage, setHeaderImage] = useState<string | null>(null);
   // Toast state
@@ -117,46 +119,60 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: currentColors.background }]}
-      edges={["top"]}
-    >
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            {headerImage ? (
-              <Image source={{ uri: headerImage }} style={styles.logo} />
-            ) : (
-              <ActivityIndicator size="small" color={currentColors.primary} />
-            )}
-
-            <Text
-              style={[
-                styles.headerSubtitle,
-                { color: currentColors.textSecondary },
-              ]}
+    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={['#0D1A2B', '#1A2838', '#2A3848', '#D4AF37']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerGradient}
+      >
+        <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
+          <View style={styles.header}>
+            <View style={styles.headerContent}>
+              {headerImage ? (
+                <Image source={{ uri: headerImage }} style={styles.logo} />
+              ) : (
+                <View style={styles.logoPlaceholder}>
+                  <Text style={[styles.logoText, { color: currentColors.primary }]}>
+                    JAGABANS
+                  </Text>
+                  <Text style={[styles.logoSubtext, { color: currentColors.secondary }]}>
+                    LOS ANGELES
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Pressable 
+              onPress={() => router.push("/notifications")}
+              style={styles.menuButton}
             >
-              Authentic West African Cuisine
-            </Text>
+              <View style={styles.hamburgerLine} />
+              <View style={styles.hamburgerLine} />
+              <View style={styles.hamburgerLine} />
+              {unreadCount > 0 && (
+                <View style={[styles.notificationBadge, { backgroundColor: currentColors.primary }]}>
+                  <Text style={[styles.notificationBadgeText, { color: currentColors.background }]}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
           </View>
-          <Pressable 
-            onPress={() => router.push("/notifications")}
-            style={styles.notificationButton}
-          >
-            <IconSymbol
-              name="bell.fill"
-              size={24}
-              color={currentColors.primary}
-            />
-            {unreadCount > 0 && (
-              <View style={[styles.notificationBadge, { backgroundColor: currentColors.primary }]}>
-                <Text style={[styles.notificationBadgeText, { color: currentColors.card }]}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </Text>
-              </View>
-            )}
-          </Pressable>
+        </SafeAreaView>
+      </LinearGradient>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Online Special Section */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>
+            Online Special
+          </Text>
+          <View style={[styles.divider, { backgroundColor: currentColors.primary }]} />
         </View>
 
         {/* Categories */}
@@ -173,11 +189,13 @@ export default function HomeScreen() {
                 styles.categoryButton,
                 {
                   backgroundColor: currentColors.card,
+                  borderColor: currentColors.border,
                   paddingHorizontal: getResponsivePadding(16),
                   paddingVertical: getResponsivePadding(10),
                 },
                 selectedCategory === category && {
                   backgroundColor: currentColors.primary,
+                  borderColor: currentColors.primary,
                 },
               ]}
               onPress={() => handleCategoryPress(category)}
@@ -187,10 +205,10 @@ export default function HomeScreen() {
                   styles.categoryText,
                   {
                     color: currentColors.text,
-                    fontSize: getResponsiveFontSize(14),
+                    fontSize: getResponsiveFontSize(13),
                   },
                   selectedCategory === category && {
-                    color: currentColors.card,
+                    color: currentColors.background,
                   },
                 ]}
                 numberOfLines={1}
@@ -217,11 +235,7 @@ export default function HomeScreen() {
             </Text>
           </View>
         ) : (
-          <ScrollView
-            style={styles.menuContainer}
-            contentContainerStyle={styles.menuContent}
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={styles.menuContainer}>
             {filteredItems.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <IconSymbol
@@ -248,35 +262,13 @@ export default function HomeScreen() {
                   ]}
                   onPress={() => handleItemPress(item.id)}
                 >
-                  <Image
-                    source={{ uri: item.image }}
-                    style={[
-                      styles.menuItemImage,
-                      { backgroundColor: currentColors.accent },
-                    ]}
-                  />
-                  {item.popular && (
-                    <View
-                      style={[
-                        styles.popularBadge,
-                        { backgroundColor: currentColors.primary },
-                      ]}
-                    >
-                      <IconSymbol
-                        name="star.fill"
-                        size={12}
-                        color={currentColors.card}
-                      />
-                      <Text
-                        style={[
-                          styles.popularText,
-                          { color: currentColors.card },
-                        ]}
-                      >
-                        Popular
-                      </Text>
-                    </View>
-                  )}
+                  <View style={[styles.imageContainer, { borderColor: currentColors.border }]}>
+                    <Image
+                      source={{ uri: item.image }}
+                      style={styles.menuItemImage}
+                    />
+                    <View style={styles.imageOverlay} />
+                  </View>
                   <View style={styles.menuItemInfo}>
                     <Text
                       style={[
@@ -310,14 +302,14 @@ export default function HomeScreen() {
                           { backgroundColor: currentColors.primary },
                         ]}
                         onPress={(e) => {
-                          e.stopPropagation(); // Prevent triggering the parent Pressable
+                          e.stopPropagation();
                           handleAddToCart(item);
                         }}
                       >
                         <IconSymbol
                           name="plus"
                           size={20}
-                          color={currentColors.card}
+                          color={currentColors.background}
                         />
                       </Pressable>
                     </View>
@@ -325,9 +317,9 @@ export default function HomeScreen() {
                 </Pressable>
               ))
             )}
-          </ScrollView>
+          </View>
         )}
-      </View>
+      </ScrollView>
       <Toast
         visible={toastVisible}
         message={toastMessage}
@@ -335,49 +327,70 @@ export default function HomeScreen() {
         onHide={() => setToastVisible(false)}
         currentColors={currentColors}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
   container: {
     flex: 1,
+  },
+  headerGradient: {
+    paddingBottom: 16,
+  },
+  headerSafeArea: {
+    width: '100%',
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   headerContent: {
     flex: 1,
     alignItems: "center",
   },
   logo: {
-    width: 140,
-    height: 50,
+    width: 180,
+    height: 60,
     resizeMode: "contain",
-    marginBottom: 1,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    marginTop: 0,
+  logoPlaceholder: {
+    alignItems: 'center',
   },
-  notificationButton: {
+  logoText: {
+    fontSize: 28,
+    fontFamily: 'PlayfairDisplay_900Black',
+    letterSpacing: 2,
+  },
+  logoSubtext: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    letterSpacing: 4,
+    marginTop: -4,
+  },
+  menuButton: {
     position: 'relative',
     width: 40,
     height: 40,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-end',
+    paddingRight: 4,
+  },
+  hamburgerLine: {
+    width: 24,
+    height: 2,
+    backgroundColor: '#D4AF37',
+    marginVertical: 3,
+    borderRadius: 1,
   },
   notificationBadge: {
     position: 'absolute',
-    top: 0,
-    right: 0,
+    top: -4,
+    right: -4,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
@@ -388,9 +401,33 @@ const styles = StyleSheet.create({
   notificationBadgeText: {
     fontSize: 10,
     fontWeight: 'bold',
+    fontFamily: 'Inter_700Bold',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 120,
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 16,
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 32,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
+  divider: {
+    width: 80,
+    height: 1,
   },
   categoriesContainer: {
     maxHeight: 60,
+    marginBottom: 16,
   },
   categoriesContent: {
     paddingHorizontal: 20,
@@ -403,19 +440,23 @@ const styles = StyleSheet.create({
     minWidth: 80,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
   },
   categoryText: {
     fontWeight: "600",
     textAlign: "center",
+    fontFamily: 'Inter_600SemiBold',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     gap: 16,
+    paddingVertical: 60,
   },
   loadingText: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
   },
   emptyContainer: {
     flex: 1,
@@ -426,53 +467,54 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
   },
   menuContainer: {
-    flex: 1,
-  },
-  menuContent: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 120,
+    paddingTop: 8,
   },
   menuItem: {
     borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: 24,
     overflow: "hidden",
-    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
-    elevation: 3,
+    boxShadow: "0px 4px 16px rgba(74, 215, 194, 0.15)",
+    elevation: 5,
+  },
+  imageContainer: {
+    width: "100%",
+    height: 240,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 2,
+    position: 'relative',
   },
   menuItemImage: {
     width: "100%",
-    height: 200,
+    height: "100%",
+    resizeMode: 'cover',
   },
-  popularBadge: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    gap: 4,
-  },
-  popularText: {
-    fontSize: 12,
-    fontWeight: "600",
+  imageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
   },
   menuItemInfo: {
-    padding: 16,
+    padding: 20,
   },
   menuItemName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 4,
+    fontSize: 24,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   menuItemDescription: {
     fontSize: 14,
-    marginBottom: 12,
-    lineHeight: 20,
+    fontFamily: 'Inter_400Regular',
+    marginBottom: 16,
+    lineHeight: 22,
   },
   menuItemFooter: {
     flexDirection: "row",
@@ -480,14 +522,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuItemPrice: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontFamily: 'Inter_700Bold',
   },
   addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+    boxShadow: "0px 2px 8px rgba(74, 215, 194, 0.3)",
+    elevation: 3,
   },
 });

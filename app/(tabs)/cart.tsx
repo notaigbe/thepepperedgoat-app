@@ -65,7 +65,6 @@ export default function CartScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
-			
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -78,7 +77,7 @@ export default function CartScreen() {
         {cart.length === 0 ? (
           <View style={styles.emptyContainer}>
             <IconSymbol name="cart.fill" size={80} color={currentColors.textSecondary} />
-            <Text style={[styles.emptyText, { color: currentColors.textSecondary }]}>
+            <Text style={[styles.emptyText, { color: currentColors.text }]}>
               Your cart is empty
             </Text>
             <Text style={[styles.emptySubtext, { color: currentColors.textSecondary }]}>
@@ -88,7 +87,7 @@ export default function CartScreen() {
               style={[styles.browseButton, { backgroundColor: currentColors.primary }]}
               onPress={() => router.push('/')}
             >
-              <Text style={[styles.browseButtonText, { color: currentColors.card }]}>
+              <Text style={[styles.browseButtonText, { color: currentColors.background }]}>
                 Browse Menu
               </Text>
             </Pressable>
@@ -101,8 +100,10 @@ export default function CartScreen() {
               showsVerticalScrollIndicator={false}
             >
               {cart.map((item) => (
-                <View key={item.id} style={[styles.cartItem, { backgroundColor: currentColors.card }]}>
-                  <Image source={{ uri: item.image }} style={styles.itemImage} />
+                <View key={item.id} style={[styles.cartItem, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}>
+                  <View style={[styles.imageContainer, { borderColor: currentColors.border }]}>
+                    <Image source={{ uri: item.image }} style={styles.itemImage} />
+                  </View>
                   <View style={styles.itemDetails}>
                     <Text style={[styles.itemName, { color: currentColors.text }]}>{item.name}</Text>
                     <Text style={[styles.itemPrice, { color: currentColors.primary }]}>
@@ -110,17 +111,17 @@ export default function CartScreen() {
                     </Text>
                     <View style={styles.quantityContainer}>
                       <Pressable
-                        style={[styles.quantityButton, { backgroundColor: currentColors.accent }]}
+                        style={[styles.quantityButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
                         onPress={() => handleQuantityChange(item.id, -1)}
                       >
-                        <IconSymbol name="minus" size={16} color={currentColors.text} />
+                        <IconSymbol name="minus" size={16} color={currentColors.primary} />
                       </Pressable>
                       <Text style={[styles.quantity, { color: currentColors.text }]}>{item.quantity}</Text>
                       <Pressable
-                        style={[styles.quantityButton, { backgroundColor: currentColors.accent }]}
+                        style={[styles.quantityButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
                         onPress={() => handleQuantityChange(item.id, 1)}
                       >
-                        <IconSymbol name="plus" size={16} color={currentColors.text} />
+                        <IconSymbol name="plus" size={16} color={currentColors.primary} />
                       </Pressable>
                     </View>
                   </View>
@@ -135,7 +136,7 @@ export default function CartScreen() {
             </ScrollView>
 
             {/* Summary */}
-            <View style={[styles.summary, { backgroundColor: currentColors.card }]}>
+            <View style={[styles.summary, { backgroundColor: currentColors.card, borderTopColor: currentColors.border }]}>
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>Subtotal</Text>
                 <Text style={[styles.summaryValue, { color: currentColors.text }]}>${subtotal.toFixed(2)}</Text>
@@ -144,7 +145,7 @@ export default function CartScreen() {
                 <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>Tax (8%)</Text>
                 <Text style={[styles.summaryValue, { color: currentColors.text }]}>${tax.toFixed(2)}</Text>
               </View>
-              <View style={[styles.summaryRow, styles.totalRow]}>
+              <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: currentColors.border }]}>
                 <Text style={[styles.totalLabel, { color: currentColors.text }]}>Total</Text>
                 <Text style={[styles.totalValue, { color: currentColors.primary }]}>${total.toFixed(2)}</Text>
               </View>
@@ -152,10 +153,10 @@ export default function CartScreen() {
                 style={[styles.checkoutButton, { backgroundColor: currentColors.primary }]}
                 onPress={handleCheckout}
               >
-                <Text style={[styles.checkoutButtonText, { color: currentColors.card }]}>
+                <Text style={[styles.checkoutButtonText, { color: currentColors.background }]}>
                   Proceed to Checkout
                 </Text>
-                <IconSymbol name="arrow.right" size={20} color={currentColors.card} />
+                <IconSymbol name="arrow.right" size={20} color={currentColors.background} />
               </Pressable>
             </View>
           </>
@@ -210,17 +211,19 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    borderBottomColor: 'rgba(74, 215, 194, 0.2)',
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 4,
+    letterSpacing: 0.5,
   },
   itemCount: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
   },
   emptyContainer: {
     flex: 1,
@@ -229,13 +232,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyText: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontFamily: 'PlayfairDisplay_700Bold',
     marginTop: 20,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -246,7 +250,7 @@ const styles = StyleSheet.create({
   },
   browseButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   cartList: {
     flex: 1,
@@ -258,16 +262,22 @@ const styles = StyleSheet.create({
   },
   cartItem: {
     flexDirection: 'row',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 12,
-    marginBottom: 12,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
+    marginBottom: 16,
+    borderWidth: 1,
+    boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.1)',
+    elevation: 3,
+  },
+  imageContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 2,
   },
   itemImage: {
     width: 80,
     height: 80,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   itemDetails: {
     flex: 1,
@@ -276,12 +286,12 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 4,
   },
   itemPrice: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'Inter_700Bold',
     marginBottom: 8,
   },
   quantityContainer: {
@@ -295,10 +305,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
   quantity: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     minWidth: 24,
     textAlign: 'center',
   },
@@ -310,7 +321,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 120,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
   },
   summaryRow: {
     flexDirection: 'row',
@@ -319,24 +329,24 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
   },
   summaryValue: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   totalRow: {
     marginTop: 8,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
   },
   totalLabel: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
   },
   totalValue: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: 'Inter_700Bold',
   },
   checkoutButton: {
     flexDirection: 'row',
@@ -346,9 +356,11 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     marginTop: 20,
     gap: 8,
+    boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.3)',
+    elevation: 4,
   },
   checkoutButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'Inter_700Bold',
   },
 });

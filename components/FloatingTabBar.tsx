@@ -72,6 +72,7 @@ export default function FloatingTabBar({
               maxWidth: containerWidth,
               borderRadius,
               backgroundColor: currentColors.card,
+              borderColor: currentColors.border,
             },
           ]}
         >
@@ -94,7 +95,7 @@ export default function FloatingTabBar({
                   />
                   {isCartTab && cartItemCount > 0 && (
                     <View style={[styles.badge, { backgroundColor: currentColors.primary }]}>
-                      <Text style={[styles.badgeText, { color: currentColors.card }]}>
+                      <Text style={[styles.badgeText, { color: currentColors.background }]}>
                         {cartItemCount > 99 ? '99+' : cartItemCount}
                       </Text>
                     </View>
@@ -138,8 +139,9 @@ const styles = StyleSheet.create({
     width: '90%',
     justifyContent: 'space-around',
     alignItems: 'center',
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+    boxShadow: '0px 4px 16px rgba(74, 215, 194, 0.2)',
     elevation: 8,
+    borderWidth: 1,
   },
   tab: {
     flex: 1,

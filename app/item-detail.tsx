@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -201,7 +202,7 @@ export default function ItemDetailScreen() {
           styles.header,
           {
             backgroundColor: currentColors.background,
-            borderBottomColor: currentColors.accent,
+            borderBottomColor: currentColors.border,
           },
         ]}
       >
@@ -209,7 +210,7 @@ export default function ItemDetailScreen() {
           <IconSymbol
             name="chevron.left"
             size={24}
-            color={currentColors.text}
+            color={currentColors.primary}
           />
           <Text style={[styles.backButtonText, { color: currentColors.text }]}>
             Back
@@ -233,7 +234,7 @@ export default function ItemDetailScreen() {
             <View
               style={[
                 styles.notificationIcon,
-                { backgroundColor: currentColors.card },
+                { backgroundColor: currentColors.background },
               ]}
             >
               <IconSymbol
@@ -246,7 +247,7 @@ export default function ItemDetailScreen() {
               <Text
                 style={[
                   styles.notificationTitle,
-                  { color: currentColors.card },
+                  { color: currentColors.background },
                 ]}
               >
                 Added to Cart!
@@ -254,7 +255,7 @@ export default function ItemDetailScreen() {
               <Text
                 style={[
                   styles.notificationSubtitle,
-                  { color: currentColors.card },
+                  { color: currentColors.background },
                 ]}
               >
                 {lastAddedQuantity} {item.name}
@@ -265,10 +266,13 @@ export default function ItemDetailScreen() {
       )}
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Image
-          source={{ uri: item.image }}
-          style={[styles.image, { backgroundColor: currentColors.accent }]}
-        />
+        <View style={[styles.imageWrapper, { borderColor: currentColors.border }]}>
+          <Image
+            source={{ uri: item.image }}
+            style={styles.image}
+          />
+          <View style={styles.imageOverlay} />
+        </View>
 
         <View style={styles.content}>
           <View style={styles.headerInfo}>
@@ -286,10 +290,10 @@ export default function ItemDetailScreen() {
                   <IconSymbol
                     name="star.fill"
                     size={14}
-                    color={currentColors.card}
+                    color={currentColors.background}
                   />
                   <Text
-                    style={[styles.popularText, { color: currentColors.card }]}
+                    style={[styles.popularText, { color: currentColors.background }]}
                   >
                     Popular
                   </Text>
@@ -314,17 +318,17 @@ export default function ItemDetailScreen() {
             </Text>
           </View>
 
-          <Text style={[styles.description, { color: currentColors.text }]}>
+          <Text style={[styles.description, { color: currentColors.textSecondary }]}>
             {item.description}
           </Text>
 
           <View
-            style={[styles.infoCard, { backgroundColor: currentColors.card }]}
+            style={[styles.infoCard, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}
           >
             <IconSymbol
               name="star.fill"
               size={20}
-              color={currentColors.highlight}
+              color={currentColors.secondary}
             />
             <Text style={[styles.infoText, { color: currentColors.text }]}>
               Earn {Math.floor(item.price * quantity)} points with this order!
@@ -334,7 +338,7 @@ export default function ItemDetailScreen() {
           <View
             style={[
               styles.quantitySection,
-              { backgroundColor: currentColors.card },
+              { backgroundColor: currentColors.card, borderColor: currentColors.border },
             ]}
           >
             <Text style={[styles.quantityLabel, { color: currentColors.text }]}>
@@ -344,7 +348,7 @@ export default function ItemDetailScreen() {
               <Pressable
                 style={[
                   styles.quantityButton,
-                  { backgroundColor: currentColors.background },
+                  { backgroundColor: currentColors.background, borderColor: currentColors.border },
                 ]}
                 onPress={() => handleQuantityChange(-1)}
               >
@@ -362,7 +366,7 @@ export default function ItemDetailScreen() {
               <Pressable
                 style={[
                   styles.quantityButton,
-                  { backgroundColor: currentColors.background },
+                  { backgroundColor: currentColors.background, borderColor: currentColors.border },
                 ]}
                 onPress={() => handleQuantityChange(1)}
               >
@@ -382,7 +386,7 @@ export default function ItemDetailScreen() {
           styles.footer,
           {
             backgroundColor: currentColors.card,
-            borderTopColor: currentColors.background,
+            borderTopColor: currentColors.border,
           },
         ]}
       >
@@ -400,8 +404,8 @@ export default function ItemDetailScreen() {
           style={[styles.addButton, { backgroundColor: currentColors.primary }]}
           onPress={handleAddToCart}
         >
-          <IconSymbol name="cart.fill" size={20} color={currentColors.card} />
-          <Text style={[styles.addButtonText, { color: currentColors.card }]}>
+          <IconSymbol name="cart.fill" size={20} color={currentColors.background} />
+          <Text style={[styles.addButtonText, { color: currentColors.background }]}>
             Add to Cart
           </Text>
         </Pressable>
@@ -429,7 +433,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 17,
-    fontWeight: "600",
+    fontFamily: 'Inter_600SemiBold',
   },
   container: {
     flex: 1,
@@ -442,6 +446,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
+    fontFamily: 'Inter_400Regular',
     textAlign: "center",
   },
   // Notification styles
@@ -476,16 +481,32 @@ const styles = StyleSheet.create({
   },
   notificationTitle: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: 'Inter_700Bold',
     marginBottom: 2,
   },
   notificationSubtitle: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     opacity: 0.9,
+  },
+  imageWrapper: {
+    width: "100%",
+    height: 320,
+    borderBottomWidth: 2,
+    position: 'relative',
   },
   image: {
     width: "100%",
-    height: 300,
+    height: "100%",
+    resizeMode: 'cover',
+  },
+  imageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
   },
   content: {
     padding: 20,
@@ -502,8 +523,9 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 8,
+    letterSpacing: 0.5,
   },
   popularBadge: {
     flexDirection: "row",
@@ -516,11 +538,11 @@ const styles = StyleSheet.create({
   },
   popularText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: 'Inter_600SemiBold',
   },
   price: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontFamily: 'Inter_700Bold',
   },
   categoryContainer: {
     flexDirection: "row",
@@ -530,9 +552,11 @@ const styles = StyleSheet.create({
   },
   category: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
   },
   description: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
     lineHeight: 24,
     marginBottom: 20,
   },
@@ -543,23 +567,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 12,
     marginBottom: 24,
-    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+    borderWidth: 1,
+    boxShadow: "0px 2px 8px rgba(74, 215, 194, 0.15)",
     elevation: 2,
   },
   infoText: {
     flex: 1,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: 'Inter_600SemiBold',
   },
   quantitySection: {
     padding: 20,
     borderRadius: 12,
-    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+    borderWidth: 1,
+    boxShadow: "0px 2px 8px rgba(74, 215, 194, 0.15)",
     elevation: 2,
   },
   quantityLabel: {
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 12,
   },
   quantityControls: {
@@ -574,10 +600,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
   },
   quantityValue: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontFamily: 'Inter_700Bold',
     minWidth: 40,
     textAlign: "center",
   },
@@ -593,21 +620,24 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 18,
+    fontFamily: 'Inter_400Regular',
   },
   totalValue: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontFamily: 'Inter_700Bold',
   },
   addButton: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 25,
     gap: 8,
+    boxShadow: "0px 4px 12px rgba(74, 215, 194, 0.3)",
+    elevation: 4,
   },
   addButtonText: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: 'Inter_700Bold',
   },
 });
