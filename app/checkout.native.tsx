@@ -16,7 +16,8 @@ import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
 import { SUPABASE_URL, supabase } from '@/app/integrations/supabase/client';
-import { StripeProvider, useStripe } from '@stripe/stripe-react-native';
+import { StripeProvider, useStripe, PaymentSheet } from '@stripe/stripe-react-native';
+import Dialog from '@/components/Dialog';
 
 // ============================================================================
 // TYPES
@@ -54,12 +55,25 @@ interface Order {
   updated_at?: string;
 }
 
+interface StripePayment {
+  id: string;
+  user_id: string;
+  order_id: string;
+  payment_id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  payment_method?: string;
+  receipt_url?: string;
+  error_message?: string;
+  metadata?: Record<string, any>;
+  created_at?: string;
+  updated_at?: string;
+}
 
 // ============================================================================
 // STRIPE PUBLISHABLE KEY
 // ============================================================================
-// TODO: Replace with your actual Stripe publishable key
-// Get this from: https://dashboard.stripe.com/apikeys
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SbDvPKZwIF4J9pKEK6dHIGLWdMtwlgkTwzChNtA3BNvVFZY5UkdgpQoas4Tzu9jmYqhKgkVnMAWmtvl0ROvhNwd00kkEUh15y';
 
 // ============================================================================
@@ -100,6 +114,10 @@ function CheckoutContent() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
+  //Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogType, setDialogType] = useState<'remove' | 'empty'>('remove');
+  
   // Order state for realtime updates
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
 
@@ -204,269 +222,327 @@ function CheckoutContent() {
   }, [addressValidation]);
 
   // ============================================================================
-  // ORDER CREATION
+  // ORDER CREATION (STEP 1)
   // ============================================================================
 
-  const createOrder = useCallback(async (): Promise<string> => {
-    if (!userProfile) throw new Error('User profile not found');
+  const createOrder = useCallback(async () => {
+  if (!userProfile) throw new Error('User profile not found');
 
-    console.log('Creating order in Supabase...');
+  console.log('Creating order in Supabase...');
 
-    // Create order
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        user_id: userProfile.id,
-        total: total,
-        points_earned: pointsToEarn,
-        status: 'pending',
-        payment_status: 'pending',
-        delivery_address: orderType === 'delivery' ? (validatedAddress || deliveryAddress) : null,
-        pickup_notes: orderType === 'pickup' ? pickupNotes : null,
-      })
-      .select()
-      .single<Order>();
+  // Create order
+  const { data: order, error: orderError } = await supabase
+    .from('orders')
+    .insert({
+      user_id: userProfile.id,
+      total: total,
+      points_earned: pointsToEarn,
+      status: 'pending',
+      payment_status: 'pending',
+      delivery_address: orderType === 'delivery' ? (validatedAddress || deliveryAddress) : null,
+      pickup_notes: orderType === 'pickup' ? pickupNotes : null,
+      payment_gateway: 'square',
+    })
+    .select()
+    .single();
 
-    if (orderError || !order) {
-      console.error('Error creating order:', orderError);
-      throw new Error('Failed to create order');
+  if (orderError || !order) {
+    console.error('Error creating order:', orderError);
+    throw new Error('Failed to create order');
+  }
+
+  console.log('Order created:', order.id);
+
+  // Create order items
+  const orderItems = cart.map(item => ({
+    order_id: order.id,
+    menu_item_id: item.id,
+    name: item.name,
+    price: item.price,
+    quantity: item.quantity,
+  }));
+
+  const { error: itemsError } = await supabase
+    .from('order_items')
+    .insert(orderItems);
+
+  if (itemsError) {
+    console.error('Error creating order items:', itemsError);
+    throw new Error('Failed to create order items');
+  }
+
+  // Deduct points if used
+  if (usePoints && pointsDiscount > 0) {
+    const pointsToDeduct = Math.floor(pointsDiscount * 100);
+    const { error: pointsError } = await supabase
+      .from('user_profiles')
+      .update({ points: availablePoints - pointsToDeduct })
+      .eq('id', userProfile.id);
+
+    if (pointsError) {
+      console.error('Error deducting points:', pointsError);
     }
+  }
 
-    console.log('Order created:', order.id);
-
-    // Create order items
-    const orderItems = cart.map(item => ({
-      order_id: order.id,
-      menu_item_id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-    }));
-
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems);
-
-    if (itemsError) {
-      console.error('Error creating order items:', itemsError);
-      throw new Error('Failed to create order items');
-    }
-
-    // Deduct points if used
-    if (usePoints && pointsDiscount > 0) {
-      const pointsToDeduct = Math.floor(pointsDiscount * 100);
-      const { error: pointsError } = await supabase
-        .from('user_profiles')
-        .update({ points: availablePoints - pointsToDeduct })
-        .eq('id', userProfile.id);
-
-      if (pointsError) {
-        console.error('Error deducting points:', pointsError);
-      }
-    }
-
-    return order.id;
-  }, [userProfile, total, pointsToEarn, orderType, validatedAddress, deliveryAddress, pickupNotes, cart, usePoints, pointsDiscount, availablePoints]);
+  return order.id;
+}, [userProfile, total, pointsToEarn, orderType, validatedAddress, deliveryAddress, pickupNotes, cart, usePoints, pointsDiscount, availablePoints]);
 
   // ============================================================================
-  // STRIPE PAYMENT INITIALIZATION
+  // STRIPE PAYMENT INITIALIZATION (STEPS 2 & 3)
   // ============================================================================
 
   const initializePaymentSheet = useCallback(async (orderId: string) => {
-    try {
-      console.log('Initializing Stripe Payment Sheet for order:', orderId);
+  try {
+    console.log('Initializing Stripe Payment Sheet for order:', orderId);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
 
-      // Call create-payment-intent edge function
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+    // Call create-payment-intent edge function
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        orderId,
+        amount: Math.round(total * 100), // Convert to cents
+        currency: 'usd',
+        metadata: {
+          orderType,
+          itemCount: cart.length,
         },
-        body: JSON.stringify({
-          orderId,
-          amount: Math.round(total * 100), // Convert to cents
-          currency: 'usd',
-          metadata: {
-            orderType,
-            itemCount: cart.length,
-          },
-        }),
-      });
+      }),
+    });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error creating payment intent:', errorText);
-        throw new Error('Failed to create payment intent');
-      }
-
-      const { clientSecret, paymentIntentId } = await response.json();
-      console.log('Payment intent created:', paymentIntentId);
-
-      // Initialize payment sheet
-      const { error } = await initPaymentSheet({
-        merchantDisplayName: 'Jagabans LA',
-        paymentIntentClientSecret: clientSecret,
-        defaultBillingDetails: {
-          name: userProfile?.name,
-          email: userProfile?.email,
-        },
-        allowsDelayedPaymentMethods: false,
-        returnURL: 'jagabansla://checkout',
-      });
-
-      if (error) {
-        console.error('Error initializing payment sheet:', error);
-        throw new Error(error.message);
-      }
-
-      console.log('Payment sheet initialized successfully');
-      return true;
-    } catch (error) {
-      console.error('Error in initializePaymentSheet:', error);
-      throw error;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error creating payment intent:', errorText);
+      throw new Error('Failed to create payment intent');
     }
-  }, [total, orderType, cart, initPaymentSheet, userProfile]);
+
+    const { clientSecret, paymentIntentId, paymentId } = await response.json();
+    console.log('Payment intent created:', paymentIntentId, 'Payment ID:', paymentId);
+
+    // Update the order with the payment_id
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({ payment_id: paymentId })
+      .eq('id', orderId);
+
+    if (updateError) {
+      console.error('Error updating order with payment_id:', updateError);
+      throw new Error('Failed to link payment to order');
+    }
+
+    console.log('Order updated with payment_id:', paymentId);
+
+    // Initialize payment sheet
+    const { error } = await initPaymentSheet({
+      merchantDisplayName: 'Jagabans LA',
+      paymentIntentClientSecret: clientSecret,
+      defaultBillingDetails: {
+        name: userProfile?.name,
+        email: userProfile?.email,
+      },
+      allowsDelayedPaymentMethods: false,
+      returnURL: 'jagabansla://checkout',
+      billingDetailsCollectionConfiguration: {
+        name: PaymentSheet.CollectionMode.ALWAYS,
+        email: PaymentSheet.CollectionMode.ALWAYS,
+        phone: PaymentSheet.CollectionMode.NEVER,
+        // address: PaymentSheet.CollectionMode.NEVER,
+      },
+    });
+
+    if (error) {
+      console.error('Error initializing payment sheet:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('Payment sheet initialized successfully');
+    return true;
+  } catch (error) {
+    console.error('Error in initializePaymentSheet:', error);
+    throw error;
+  }
+}, [total, orderType, cart, initPaymentSheet, userProfile]);
 
   // ============================================================================
-  // PAYMENT PROCESSING
+  // PAYMENT PROCESSING (STEP 4)
   // ============================================================================
 
   const handlePayment = useCallback(async () => {
-    try {
-      console.log('Presenting payment sheet...');
-      
-      const { error } = await presentPaymentSheet();
+  try {
+    console.log('Presenting payment sheet...');
+    
+    const { error } = await presentPaymentSheet();
 
-      if (error) {
-        if (error.code === 'Canceled') {
-          console.log('Payment cancelled by user');
-          showToast('info', 'Payment cancelled');
-          return false;
-        }
-        console.error('Payment sheet error:', error);
-        throw new Error(error.message);
+    if (error) {
+      if (error.code === 'Canceled') {
+        console.log('Payment cancelled by user');
+        showToast('info', 'Payment cancelled');
+        return false;
       }
-
-      console.log('Payment completed successfully');
-      return true;
-    } catch (error) {
-      console.error('Error in handlePayment:', error);
-      throw error;
+      console.error('Payment sheet error:', error);
+      throw new Error(error.message);
     }
-  }, [presentPaymentSheet, showToast]);
+
+    console.log('Payment completed successfully');
+    return true;
+  } catch (error) {
+    console.error('Error in handlePayment:', error);
+    throw error;
+  }
+}, [presentPaymentSheet, showToast]);
 
   // ============================================================================
-  // REALTIME ORDER UPDATES
+  // REALTIME ORDER UPDATES (STEPS 5 & 6)
   // ============================================================================
 
   useEffect(() => {
-  if (!currentOrderId) return;
+    if (!currentOrderId) return;
 
-  console.log('Setting up realtime subscription for order:', currentOrderId);
-  let isSubscribed = true;
+    console.log('Setting up realtime subscriptions for order:', currentOrderId);
+    let isSubscribed = true;
 
-  const channel = supabase
-    .channel(`order-${currentOrderId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'orders',
-        filter: `id=eq.${currentOrderId}`,
-      },
-      (payload) => {
-        if (!isSubscribed) return; // Guard against stale updates
-        
-        console.log('Order updated:', payload);
-        const updatedOrder = payload.new as Order;
-
-        if (updatedOrder.payment_status === 'succeeded') {
-          console.log('Payment succeeded! Order confirmed.');
+    const ordersChannel = supabase
+      .channel(`order-${currentOrderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${currentOrderId}`,
+        },
+        (payload) => {
+          if (!isSubscribed) return;
           
-          // Unsubscribe immediately
-          isSubscribed = false;
-          supabase.removeChannel(channel);
-          
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          console.log('Orders table updated:', payload);
+          const updatedOrder = payload.new as Order;
 
-          clearCart();
-          loadUserProfile();
+          if (updatedOrder.payment_status === 'succeeded') {
+            console.log('✓ Payment succeeded! Order confirmed.');
+            console.log('Step 6: Navigating to order confirmation...');
+            
+            isSubscribed = false;
+            supabase.removeChannel(ordersChannel);
+            supabase.removeChannel(paymentsChannel);
+            
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-          // Navigate after cleanup
-          setTimeout(() => {
+            clearCart();
+            loadUserProfile();
+
+            setTimeout(() => {
+              setProcessing(false);
+              setCurrentOrderId(null);
+              
+              router.push({
+                pathname: '/order-confirmation',
+                params: { orderId: currentOrderId },
+              });
+            }, 100);
+            
+          } else if (updatedOrder.payment_status === 'failed') {
+            console.log('✗ Payment failed from orders table');
+            isSubscribed = false;
+            supabase.removeChannel(ordersChannel);
+            supabase.removeChannel(paymentsChannel);
+            
+            showToast('error', 'Payment failed. Please try again.');
             setProcessing(false);
             setCurrentOrderId(null);
-            
-            router.push({
-              pathname: '/order-confirmation',
-              params: { orderId: currentOrderId },
-            });
-          }, 100);
-          
-        } else if (updatedOrder.payment_status === 'failed') {
-          console.log('Payment failed');
-          showToast('error', 'Payment failed. Please try again.');
-          setProcessing(false);
-          setCurrentOrderId(null);
+          }
         }
-      }
-    )
-    .subscribe();
+      )
+      .subscribe();
 
-  return () => {
-    console.log('Cleaning up realtime subscription');
-    isSubscribed = false;
-    supabase.removeChannel(channel);
-  };
-}, [currentOrderId, clearCart, loadUserProfile, router, showToast]);
+    const paymentsChannel = supabase
+      .channel(`stripe-payment-${currentOrderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'stripe_payments',
+          filter: `order_id=eq.${currentOrderId}`,
+        },
+        (payload) => {
+          if (!isSubscribed) return;
+          
+          console.log('Stripe payments table updated:', payload);
+          const updatedPayment = payload.new as StripePayment;
+
+          if (updatedPayment?.status === 'succeeded') {
+            console.log('✓ Payment succeeded from stripe_payments!');
+            showToast('success', 'Payment succeeded!');
+          } else if (updatedPayment?.status === 'failed') {
+            console.log('✗ Payment failed from stripe_payments');
+            isSubscribed = false;
+            supabase.removeChannel(ordersChannel);
+            supabase.removeChannel(paymentsChannel);
+            
+            const errorMsg = updatedPayment.error_message || 'Payment failed. Please try again.';
+            showToast('error', errorMsg);
+            setProcessing(false);
+            setCurrentOrderId(null);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up realtime subscriptions');
+      isSubscribed = false;
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(paymentsChannel);
+    };
+  }, [currentOrderId, clearCart, loadUserProfile, router, showToast]);
 
   // ============================================================================
   // ORDER PLACEMENT
   // ============================================================================
 
   const proceedWithOrder = useCallback(async () => {
-    setProcessing(true);
+  setProcessing(true);
 
-    try {
-      // Step 1: Create order in Supabase
-      const orderId = await createOrder();
-      setCurrentOrderId(orderId);
+  try {
+    // Step 1: Create order in Supabase
+    const orderId = await createOrder();
+    setCurrentOrderId(orderId);
 
-      // Step 2: Initialize Stripe Payment Sheet
-      await initializePaymentSheet(orderId);
+    // Step 2: Initialize Stripe Payment Sheet (creates payment intent and updates order)
+    await initializePaymentSheet(orderId);
 
-      // Step 3: Present payment sheet
-      const paymentSuccess = await handlePayment();
+    // Step 3: Present payment sheet
+    const paymentSuccess = await handlePayment();
 
-      if (!paymentSuccess) {
-        setProcessing(false);
-        return;
-      }
-
-      // Step 4: Wait for webhook to update order status
-      // The realtime subscription will handle the success notification
-      showToast('info', 'Processing payment...');
-      
-    } catch (error) {
-      console.error('Order placement error:', error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Failed to place order. Please try again.';
-      showToast('error', errorMessage);
+    if (!paymentSuccess) {
       setProcessing(false);
-      setCurrentOrderId(null);
+      return;
     }
-  }, [createOrder, initializePaymentSheet, handlePayment, showToast]);
+
+    // Step 4: Wait for webhook to update order status
+    // The realtime subscription will handle the success notification
+    showToast('info', 'Processing payment...');
+    
+  } catch (error) {
+    console.error('Order placement error:', error);
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Failed to place order. Please try again.';
+    showToast('error', errorMessage);
+    setProcessing(false);
+    setCurrentOrderId(null);
+  }
+}, [createOrder, initializePaymentSheet, handlePayment, showToast]);
 
   const handlePlaceOrder = useCallback(async () => {
-    console.log('Placing order with Stripe...');
+    console.log('=== Starting Checkout Flow ===');
     
-    // Validate delivery address
     if (orderType === 'delivery') {
       if (!deliveryAddress.trim()) {
         showToast('error', 'Please enter a delivery address.');
@@ -819,7 +895,6 @@ function CheckoutContent() {
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          {/* Info Banner */}
           <View style={styles.infoBanner}>
             <IconSymbol name="info" size={20} color={currentColors.primary} />
             <Text style={styles.infoText}>
@@ -827,7 +902,6 @@ function CheckoutContent() {
             </Text>
           </View>
 
-          {/* Order Type Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Order Type</Text>
             <View style={styles.orderTypeSelector}>
@@ -891,7 +965,6 @@ function CheckoutContent() {
             </View>
           </View>
 
-          {/* Delivery Address (conditional) */}
           {orderType === 'delivery' && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Delivery Address *</Text>
@@ -971,7 +1044,6 @@ function CheckoutContent() {
             </View>
           )}
 
-          {/* Notes */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
               {orderType === 'pickup' ? 'Pickup Notes (Optional)' : 'Delivery Notes (Optional)'}
@@ -991,7 +1063,6 @@ function CheckoutContent() {
             />
           </View>
 
-          {/* Points Toggle */}
           <View style={styles.section}>
             <Pressable
               style={styles.pointsToggle}
@@ -1021,7 +1092,6 @@ function CheckoutContent() {
             </Pressable>
           </View>
 
-          {/* Order Summary */}
           <View style={styles.summaryCard}>
             <Text style={styles.summaryTitle}>Order Summary</Text>
             <View style={styles.summaryRow}>
@@ -1056,7 +1126,6 @@ function CheckoutContent() {
         </View>
       </ScrollView>
 
-      {/* Footer with Place Order Button */}
       <View style={styles.footer}>
         <Pressable 
           style={[
