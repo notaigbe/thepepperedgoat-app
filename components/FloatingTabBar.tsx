@@ -62,15 +62,10 @@ export default function FloatingTabBar({
         {/* Texture overlay */}
         <View style={styles.textureOverlay} />
         <LinearGradient
-          colors={['rgba(26, 40, 56, 0.95)', 'rgba(26, 40, 56, 0.95)']}
+          colors={['rgba(26, 40, 56, 0.93)', 'rgba(26, 40, 56, 0.93)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[
-            styles.tabBar,
-            {
-              borderTopColor: currentColors.border,
-            },
-          ]}
+          style={styles.tabBar}
         >
           {tabs.map((tab) => {
             const active = isActive(tab.route);
@@ -87,7 +82,7 @@ export default function FloatingTabBar({
                   <IconSymbol
                     name={tab.icon as any}
                     size={24}
-                    color={active ? currentColors.secondary : currentColors.textSecondary}
+                    color={active ? currentColors.secondary : '#E8E8E8'}
                   />
                   {isCartTab && cartItemCount > 0 && (
                     <LinearGradient
@@ -105,7 +100,7 @@ export default function FloatingTabBar({
                 <Text
                   style={[
                     styles.label,
-                    { color: active ? currentColors.secondary : currentColors.textSecondary },
+                    { color: active ? currentColors.secondary : '#E8E8E8' },
                   ]}
                 >
                   {tab.label}
@@ -151,7 +146,6 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'space-around',
     alignItems: 'center',
-    borderTopWidth: 2,
     boxShadow: '0px -6px 24px rgba(212, 175, 55, 0.4)',
     elevation: 12,
   },
