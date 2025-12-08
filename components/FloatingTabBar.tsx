@@ -12,6 +12,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '@/contexts/AppContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export interface TabBarItem {
   name: string;
@@ -30,8 +31,8 @@ interface FloatingTabBarProps {
 export default function FloatingTabBar({
   tabs,
   containerWidth = 350,
-  borderRadius = 25,
-  bottomMargin = 20,
+  borderRadius = 0,
+  bottomMargin = 0,
 }: FloatingTabBarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -57,63 +58,59 @@ export default function FloatingTabBar({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View 
+      <LinearGradient
+        colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={[
-          styles.container, 
-          { 
-            marginBottom: bottomMargin,
-          }
+          styles.tabBar,
+          {
+            borderTopColor: currentColors.border,
+          },
         ]}
       >
-        <View
-          style={[
-            styles.tabBar,
-            {
-              maxWidth: containerWidth,
-              borderRadius,
-              backgroundColor: currentColors.card,
-              borderColor: currentColors.border,
-            },
-          ]}
-        >
-          {tabs.map((tab) => {
-            const active = isActive(tab.route);
-            const isCartTab = tab.name === 'cart';
-            
-            return (
-              <TouchableOpacity
-                key={tab.name}
-                style={styles.tab}
-                onPress={() => handleTabPress(tab.route)}
-                activeOpacity={0.7}
+        {tabs.map((tab) => {
+          const active = isActive(tab.route);
+          const isCartTab = tab.name === 'cart';
+          
+          return (
+            <TouchableOpacity
+              key={tab.name}
+              style={styles.tab}
+              onPress={() => handleTabPress(tab.route)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.iconContainer}>
+                <IconSymbol
+                  name={tab.icon as any}
+                  size={24}
+                  color={active ? currentColors.secondary : currentColors.textSecondary}
+                />
+                {isCartTab && cartItemCount > 0 && (
+                  <LinearGradient
+                    colors={[currentColors.secondary, currentColors.highlight]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.badge}
+                  >
+                    <Text style={[styles.badgeText, { color: currentColors.background }]}>
+                      {cartItemCount > 99 ? '99+' : cartItemCount}
+                    </Text>
+                  </LinearGradient>
+                )}
+              </View>
+              <Text
+                style={[
+                  styles.label,
+                  { color: active ? currentColors.secondary : currentColors.textSecondary },
+                ]}
               >
-                <View style={styles.iconContainer}>
-                  <IconSymbol
-                    name={tab.icon as any}
-                    size={24}
-                    color={active ? currentColors.primary : currentColors.textSecondary}
-                  />
-                  {isCartTab && cartItemCount > 0 && (
-                    <View style={[styles.badge, { backgroundColor: currentColors.primary }]}>
-                      <Text style={[styles.badgeText, { color: currentColors.background }]}>
-                        {cartItemCount > 99 ? '99+' : cartItemCount}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-                <Text
-                  style={[
-                    styles.label,
-                    { color: active ? currentColors.primary : currentColors.textSecondary },
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -125,23 +122,17 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: 'transparent',
-    pointerEvents: 'box-none',
-  },
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'box-none',
   },
   tabBar: {
     flexDirection: 'row',
     paddingVertical: 12,
-    paddingHorizontal: 8,
-    width: '90%',
+    paddingHorizontal: 0,
+    width: '100%',
     justifyContent: 'space-around',
     alignItems: 'center',
-    boxShadow: '0px 4px 16px rgba(74, 215, 194, 0.2)',
-    elevation: 8,
-    borderWidth: 1,
+    borderTopWidth: 2,
+    boxShadow: '0px -4px 20px rgba(212, 175, 55, 0.3)',
+    elevation: 12,
   },
   tab: {
     flex: 1,
@@ -166,6 +157,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.5)',
+    elevation: 6,
   },
   badgeText: {
     fontSize: 10,

@@ -1,146 +1,198 @@
 import { StyleSheet, ViewStyle, TextStyle, useColorScheme } from 'react-native';
 import { ColorScheme, ThemeMode } from '@/types';
 
-// Jagabans LA Premium color scheme with Gold accents
+// Jagabans LA Website-inspired color scheme - Premium & Sophisticated
 const colorSchemes = {
   default: {
     light: {
-      background: '#0A0E27', // Deep navy (Jagabans primary)
-      text: '#FFFFFF', // Pure white text
-      textSecondary: '#E5C158', // Light gold for descriptions
-      primary: '#D4AF37', // Rich gold accent (primary)
-      secondary: '#4AD7C2', // Turquoise accent (secondary)
-      accent: '#E5C158', // Light gold
+      background: '#0D1A2B', // Deep navy (almost black-blue)
+      text: '#FFFFFF', // White text
+      textSecondary: '#B0B8C1', // Light gray for descriptions
+      primary: '#4AD7C2', // Turquoise/teal accent
+      secondary: '#D4AF37', // Gold accent
+      accent: '#D4AF37', // Gold accent
       card: '#1A2838', // Dark navy card
-      highlight: '#F5E6C8', // Pale gold highlight
-      border: '#B8975A', // Muted gold border
-      success: '#4AD7C2', // Turquoise for success states
-      cardDark: '#0D1117', // Darker card variant
+      highlight: '#E5C158', // Lighter gold
+      border: '#D4AF37', // Gold border
+      // Gradient colors
+      gradientStart: '#0D1A2B',
+      gradientMid: '#1A3A2E',
+      gradientEnd: '#2A4A3E',
+      headerGradientStart: '#0D1A2B',
+      headerGradientEnd: '#1A3A2E',
+      cardGradientStart: '#1A2838',
+      cardGradientEnd: '#243848',
     },
     dark: {
-      background: '#0A0E27', // Deep navy (Jagabans primary)
-      text: '#FFFFFF', // Pure white text
-      textSecondary: '#E5C158', // Light gold for descriptions
-      primary: '#D4AF37', // Rich gold accent (primary)
-      secondary: '#4AD7C2', // Turquoise accent (secondary)
-      accent: '#E5C158', // Light gold
+      background: '#0D1A2B', // Deep navy (almost black-blue)
+      text: '#FFFFFF', // White text
+      textSecondary: '#B0B8C1', // Light gray for descriptions
+      primary: '#4AD7C2', // Turquoise/teal accent
+      secondary: '#D4AF37', // Gold accent
+      accent: '#D4AF37', // Gold accent
       card: '#1A2838', // Dark navy card
-      highlight: '#F5E6C8', // Pale gold highlight
-      border: '#B8975A', // Muted gold border
-      success: '#4AD7C2', // Turquoise for success states
-      cardDark: '#0D1117', // Darker card variant
+      highlight: '#E5C158', // Lighter gold
+      border: '#D4AF37', // Gold border
+      // Gradient colors
+      gradientStart: '#0D1A2B',
+      gradientMid: '#1A3A2E',
+      gradientEnd: '#2A4A3E',
+      headerGradientStart: '#0D1A2B',
+      headerGradientEnd: '#1A3A2E',
+      cardGradientStart: '#1A2838',
+      cardGradientEnd: '#243848',
     },
   },
   warm: {
     light: {
       background: '#0D1117',
       text: '#FFFFFF',
-      textSecondary: '#F5E6C8',
-      primary: '#E5C158', // Lighter gold for warm
-      secondary: '#D4AF37', // Rich gold
-      accent: '#F5E6C8',
-      card: '#1A1F2E',
-      highlight: '#FFF8E7',
-      border: '#C9A961',
-      success: '#5FE3CE',
-      cardDark: '#0A0E27',
+      textSecondary: '#B0B8C1',
+      primary: '#4AD7C2',
+      secondary: '#D4AF37',
+      accent: '#D4AF37',
+      card: '#1A2838',
+      highlight: '#E5C158',
+      border: '#D4AF37',
+      gradientStart: '#0D1A2B',
+      gradientMid: '#1A3A2E',
+      gradientEnd: '#2A4A3E',
+      headerGradientStart: '#0D1A2B',
+      headerGradientEnd: '#1A3A2E',
+      cardGradientStart: '#1A2838',
+      cardGradientEnd: '#243848',
     },
     dark: {
       background: '#0D1117',
       text: '#FFFFFF',
-      textSecondary: '#F5E6C8',
-      primary: '#E5C158', // Lighter gold for warm
-      secondary: '#D4AF37', // Rich gold
-      accent: '#F5E6C8',
-      card: '#1A1F2E',
-      highlight: '#FFF8E7',
-      border: '#C9A961',
-      success: '#5FE3CE',
-      cardDark: '#0A0E27',
+      textSecondary: '#B0B8C1',
+      primary: '#4AD7C2',
+      secondary: '#D4AF37',
+      accent: '#D4AF37',
+      card: '#1A2838',
+      highlight: '#E5C158',
+      border: '#D4AF37',
+      gradientStart: '#0D1A2B',
+      gradientMid: '#1A3A2E',
+      gradientEnd: '#2A4A3E',
+      headerGradientStart: '#0D1A2B',
+      headerGradientEnd: '#1A3A2E',
+      cardGradientStart: '#1A2838',
+      cardGradientEnd: '#243848',
     },
   },
   cool: {
     light: {
       background: '#0A0E27',
       text: '#FFFFFF',
-      textSecondary: '#B0C4DE',
-      primary: '#4AD7C2', // Turquoise primary for cool
-      secondary: '#D4AF37', // Gold secondary
-      accent: '#5FE3CE',
+      textSecondary: '#B0B8C1',
+      primary: '#4AD7C2',
+      secondary: '#D4AF37',
+      accent: '#D4AF37',
       card: '#1A2838',
-      highlight: '#E0F2F1',
-      border: '#4AD7C2',
-      success: '#4AD7C2',
-      cardDark: '#0D1A2B',
+      highlight: '#E5C158',
+      border: '#D4AF37',
+      gradientStart: '#0D1A2B',
+      gradientMid: '#1A3A2E',
+      gradientEnd: '#2A4A3E',
+      headerGradientStart: '#0D1A2B',
+      headerGradientEnd: '#1A3A2E',
+      cardGradientStart: '#1A2838',
+      cardGradientEnd: '#243848',
     },
     dark: {
       background: '#0A0E27',
       text: '#FFFFFF',
-      textSecondary: '#B0C4DE',
-      primary: '#4AD7C2', // Turquoise primary for cool
-      secondary: '#D4AF37', // Gold secondary
-      accent: '#5FE3CE',
+      textSecondary: '#B0B8C1',
+      primary: '#4AD7C2',
+      secondary: '#D4AF37',
+      accent: '#D4AF37',
       card: '#1A2838',
-      highlight: '#E0F2F1',
-      border: '#4AD7C2',
-      success: '#4AD7C2',
-      cardDark: '#0D1A2B',
+      highlight: '#E5C158',
+      border: '#D4AF37',
+      gradientStart: '#0D1A2B',
+      gradientMid: '#1A3A2E',
+      gradientEnd: '#2A4A3E',
+      headerGradientStart: '#0D1A2B',
+      headerGradientEnd: '#1A3A2E',
+      cardGradientStart: '#1A2838',
+      cardGradientEnd: '#243848',
     },
   },
   vibrant: {
     light: {
       background: '#0D1A2B',
       text: '#FFFFFF',
-      textSecondary: '#FFD700',
-      primary: '#FFD700', // Bright gold for vibrant
-      secondary: '#00E5CC', // Bright turquoise
-      accent: '#FFA500', // Orange accent
+      textSecondary: '#B0B8C1',
+      primary: '#4AD7C2',
+      secondary: '#D4AF37',
+      accent: '#D4AF37',
       card: '#1A2838',
-      highlight: '#FFFACD',
-      border: '#FFD700',
-      success: '#00E5CC',
-      cardDark: '#121826',
+      highlight: '#E5C158',
+      border: '#D4AF37',
+      gradientStart: '#0D1A2B',
+      gradientMid: '#1A3A2E',
+      gradientEnd: '#2A4A3E',
+      headerGradientStart: '#0D1A2B',
+      headerGradientEnd: '#1A3A2E',
+      cardGradientStart: '#1A2838',
+      cardGradientEnd: '#243848',
     },
     dark: {
       background: '#0D1A2B',
       text: '#FFFFFF',
-      textSecondary: '#FFD700',
-      primary: '#FFD700', // Bright gold for vibrant
-      secondary: '#00E5CC', // Bright turquoise
-      accent: '#FFA500', // Orange accent
+      textSecondary: '#B0B8C1',
+      primary: '#4AD7C2',
+      secondary: '#D4AF37',
+      accent: '#D4AF37',
       card: '#1A2838',
-      highlight: '#FFFACD',
-      border: '#FFD700',
-      success: '#00E5CC',
-      cardDark: '#121826',
+      highlight: '#E5C158',
+      border: '#D4AF37',
+      gradientStart: '#0D1A2B',
+      gradientMid: '#1A3A2E',
+      gradientEnd: '#2A4A3E',
+      headerGradientStart: '#0D1A2B',
+      headerGradientEnd: '#1A3A2E',
+      cardGradientStart: '#1A2838',
+      cardGradientEnd: '#243848',
     },
   },
   minimal: {
     light: {
       background: '#0A0E27',
       text: '#FFFFFF',
-      textSecondary: '#B8975A',
-      primary: '#B8975A', // Muted gold for minimal
-      secondary: '#D4AF37', // Standard gold
-      accent: '#C9A961',
-      card: '#121826',
-      highlight: '#E5DCC8',
-      border: '#3A3F4F',
-      success: '#69C9BA',
-      cardDark: '#0D1117',
+      textSecondary: '#B0B8C1',
+      primary: '#4AD7C2',
+      secondary: '#D4AF37',
+      accent: '#D4AF37',
+      card: '#1A2838',
+      highlight: '#E5C158',
+      border: '#D4AF37',
+      gradientStart: '#0D1A2B',
+      gradientMid: '#1A3A2E',
+      gradientEnd: '#2A4A3E',
+      headerGradientStart: '#0D1A2B',
+      headerGradientEnd: '#1A3A2E',
+      cardGradientStart: '#1A2838',
+      cardGradientEnd: '#243848',
     },
     dark: {
       background: '#0A0E27',
       text: '#FFFFFF',
-      textSecondary: '#B8975A',
-      primary: '#B8975A', // Muted gold for minimal
-      secondary: '#D4AF37', // Standard gold
-      accent: '#C9A961',
-      card: '#121826',
-      highlight: '#E5DCC8',
-      border: '#3A3F4F',
-      success: '#69C9BA',
-      cardDark: '#0D1117',
+      textSecondary: '#B0B8C1',
+      primary: '#4AD7C2',
+      secondary: '#D4AF37',
+      accent: '#D4AF37',
+      card: '#1A2838',
+      highlight: '#E5C158',
+      border: '#D4AF37',
+      gradientStart: '#0D1A2B',
+      gradientMid: '#1A3A2E',
+      gradientEnd: '#2A4A3E',
+      headerGradientStart: '#0D1A2B',
+      headerGradientEnd: '#1A3A2E',
+      cardGradientStart: '#1A2838',
+      cardGradientEnd: '#243848',
     },
   },
 };
@@ -158,11 +210,8 @@ export const buttonStyles = StyleSheet.create({
     backgroundColor: colors.primary, // Gold
     alignSelf: 'center',
     width: '100%',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.35)',
+    elevation: 8,
   },
   secondaryButton: {
     backgroundColor: colors.secondary, // Turquoise
@@ -180,6 +229,8 @@ export const buttonStyles = StyleSheet.create({
     borderColor: colors.primary,
     alignSelf: 'center',
     width: '100%',
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.35)',
+    elevation: 8,
   },
 });
 
@@ -207,19 +258,10 @@ export const commonStyles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
     color: colors.text,
-    marginBottom: 12,
-    letterSpacing: 1,
-    fontFamily: 'PlayfairDisplay_700Bold', // Premium serif
-  },
-  subtitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    color: colors.textSecondary, // Gold
-    marginBottom: 8,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    fontFamily: 'Inter_600SemiBold',
+    marginBottom: 10,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   text: {
     fontSize: 16,
@@ -253,37 +295,12 @@ export const commonStyles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 10,
+    borderRadius: 0,
+    padding: 16,
+    marginVertical: 8,
     width: '100%',
-    shadowColor: colors.primary, // Gold shadow
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cardDark: {
-    backgroundColor: colors.cardDark,
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 10,
-    width: '100%',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  divider: {
-    height: 1.5,
-    width: 100,
-    backgroundColor: colors.primary, // Gold divider
-    marginVertical: 16,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.25)',
+    elevation: 8,
   },
   icon: {
     width: 60,
