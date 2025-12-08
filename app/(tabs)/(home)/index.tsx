@@ -33,7 +33,6 @@ const menuCategories = [
   "Online Jollof Combos",
   "Online White Rice Combos",
   "Online Soups x Dips",
-  "Online Special",
   "Online Sides",
 ];
 
@@ -54,7 +53,7 @@ const getResponsivePadding = (basePadding: number) => {
 export default function HomeScreen() {
   const router = useRouter();
   const { currentColors, menuItems, loadMenuItems, addToCart, getUnreadNotificationCount } = useApp();
-  const [selectedCategory, setSelectedCategory] = useState("Online Special");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState(false);
   const [headerImage, setHeaderImage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -475,7 +474,12 @@ export default function HomeScreen() {
                     />
                     <View style={styles.imageOverlay} />
                   </View>
-                  <View style={styles.menuItemInfo}>
+                  <LinearGradient
+                    colors={['rgba(26, 40, 56, 0.85)', 'rgba(26, 40, 56, 0.95)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.menuItemInfo}
+                  >
                     <Text
                       style={[
                         styles.menuItemName,
@@ -502,27 +506,22 @@ export default function HomeScreen() {
                       >
                         ${item.price.toFixed(2)}
                       </Text>
-                      <View style={styles.menuItemFooter}>
-                        <Text style={styles.menuItemPrice}>
-                          ${item.price.toFixed(2)}
-                        </Text>
-                        <Pressable
-                          style={styles.addButton}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            handleAddToCart(item);
-                          }}
-                        >
-                          <IconSymbol
-                            ios_icon_name="plus"
-                            android_material_icon_name="add"
-                            size={20}
-                            color="#5FE8D0"
-                          />
-                        </Pressable>
-                      </View>
-                    </LinearGradient>
-                  </View>
+                      <Pressable
+                        style={[styles.addButton, { backgroundColor: currentColors.card }]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(item);
+                        }}
+                      >
+                        <IconSymbol
+                          ios_icon_name="plus"
+                          android_material_icon_name="add"
+                          size={20}
+                          color="#5FE8D0"
+                        />
+                      </Pressable>
+                    </View>
+                  </LinearGradient>
                 </Pressable>
               ))
             )}
@@ -536,13 +535,21 @@ export default function HomeScreen() {
         onHide={() => setToastVisible(false)}
         currentColors={currentColors}
       />
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  headerBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 999,
+    backgroundColor: '#0D1A2B',
   },
   headerGradient: {
     paddingBottom: 16,
@@ -818,7 +825,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.15)',
   },
   menuItemInfo: {
-    padding: 10,
+    padding: 16,
+    borderRadius: 16,
   },
   menuItemName: {
     fontSize: 24,
