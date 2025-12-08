@@ -147,11 +147,14 @@ export default function HomeScreen() {
             </View>
             <Pressable 
               onPress={() => router.push("/notifications")}
-              style={styles.menuButton}
+              style={styles.notificationButton}
             >
-              <View style={styles.hamburgerLine} />
-              <View style={styles.hamburgerLine} />
-              <View style={styles.hamburgerLine} />
+              <IconSymbol
+                ios_icon_name="bell.fill"
+                android_material_icon_name="notifications"
+                size={28}
+                color="#FFFFFF"
+              />
               {unreadCount > 0 && (
                 <View style={styles.notificationBadge}>
                   <Text style={styles.notificationBadgeText}>
@@ -255,7 +258,12 @@ export default function HomeScreen() {
                       style={styles.menuItemImage}
                     />
                   </View>
-                  <View style={styles.menuItemInfo}>
+                  <LinearGradient
+                    colors={['#1A3A2E', '#1A3A2EE6', '#1A3A2ECC']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.menuItemInfo}
+                  >
                     <Text style={styles.menuItemName}>
                       {item.name}
                     </Text>
@@ -283,7 +291,7 @@ export default function HomeScreen() {
                         />
                       </Pressable>
                     </View>
-                  </View>
+                  </LinearGradient>
                 </Pressable>
               ))
             )}
@@ -346,20 +354,12 @@ const styles = StyleSheet.create({
     marginTop: -2,
     color: '#5FE8D0',
   },
-  menuButton: {
+  notificationButton: {
     position: 'relative',
     width: 40,
     height: 40,
     justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingRight: 4,
-  },
-  hamburgerLine: {
-    width: 28,
-    height: 3,
-    marginVertical: 3,
-    borderRadius: 0,
-    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
   },
   notificationBadge: {
     position: 'absolute',
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   categoryButton: {
-    borderRadius: 0,
+    borderRadius: 12,
     marginRight: 6,
     minWidth: 80,
     alignItems: "center",
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   menuItem: {
-    borderRadius: 0,
+    borderRadius: 16,
     marginBottom: 28,
     overflow: "hidden",
     boxShadow: "0px 6px 20px rgba(95, 232, 208, 0.2)",
@@ -464,7 +464,8 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: "100%",
     height: 260,
-    borderRadius: 0,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -475,7 +476,8 @@ const styles = StyleSheet.create({
   },
   menuItemInfo: {
     padding: 24,
-    backgroundColor: '#1A3A2E',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   menuItemName: {
     fontSize: 26,
@@ -504,7 +506,7 @@ const styles = StyleSheet.create({
   addButton: {
     width: 44,
     height: 44,
-    borderRadius: 0,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     boxShadow: "0px 3px 10px rgba(95, 232, 208, 0.4)",
