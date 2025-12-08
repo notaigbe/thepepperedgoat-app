@@ -2,7 +2,7 @@
 import { StyleSheet, ViewStyle, TextStyle, useColorScheme } from 'react-native';
 import { ColorScheme, ThemeMode } from '@/types';
 
-// Jagabans LA Website-inspired color scheme
+// Jagabans LA Website-inspired color scheme - Premium & Sophisticated
 const colorSchemes = {
   default: {
     light: {
@@ -11,10 +11,10 @@ const colorSchemes = {
       textSecondary: '#B0B8C1', // Light gray for descriptions
       primary: '#4AD7C2', // Turquoise/teal accent
       secondary: '#D4AF37', // Gold accent
-      accent: '#D4AF37', // Gold accent (changed from turquoise)
+      accent: '#D4AF37', // Gold accent
       card: '#1A2838', // Dark navy card
       highlight: '#E5C158', // Lighter gold
-      border: '#D4AF37', // Gold border (changed from turquoise)
+      border: '#D4AF37', // Gold border
     },
     dark: {
       background: '#0D1A2B', // Deep navy (almost black-blue)
@@ -22,10 +22,10 @@ const colorSchemes = {
       textSecondary: '#B0B8C1', // Light gray for descriptions
       primary: '#4AD7C2', // Turquoise/teal accent
       secondary: '#D4AF37', // Gold accent
-      accent: '#D4AF37', // Gold accent (changed from turquoise)
+      accent: '#D4AF37', // Gold accent
       card: '#1A2838', // Dark navy card
       highlight: '#E5C158', // Lighter gold
-      border: '#D4AF37', // Gold border (changed from turquoise)
+      border: '#D4AF37', // Gold border
     },
   },
   warm: {
@@ -193,12 +193,12 @@ export const commonStyles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 0,
     padding: 16,
     marginVertical: 8,
     width: '100%',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
+    boxShadow: '0px 4px 16px rgba(212, 175, 55, 0.15)',
+    elevation: 5,
   },
   icon: {
     width: 60,

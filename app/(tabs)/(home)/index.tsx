@@ -122,7 +122,7 @@ export default function HomeScreen() {
     <View style={[styles.container, { backgroundColor: currentColors.background }]}>
       {/* Header with Gradient */}
       <LinearGradient
-        colors={['#0D1A2B', '#1A2838', '#2A3848', '#D4AF37']}
+        colors={['#0D1A2B', '#1A2838', '#2A3848', '#3A4858', '#D4AF37']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.headerGradient}
@@ -135,9 +135,9 @@ export default function HomeScreen() {
               ) : (
                 <View style={styles.logoPlaceholder}>
                   <Text style={[styles.logoText, { color: currentColors.primary }]}>
-                    JAGABANS
+                    Jagabans
                   </Text>
-                  <Text style={[styles.logoSubtext, { color: currentColors.secondary }]}>
+                  <Text style={[styles.logoSubtext, { color: currentColors.text }]}>
                     LOS ANGELES
                   </Text>
                 </View>
@@ -147,9 +147,9 @@ export default function HomeScreen() {
               onPress={() => router.push("/notifications")}
               style={styles.menuButton}
             >
-              <View style={styles.hamburgerLine} />
-              <View style={styles.hamburgerLine} />
-              <View style={styles.hamburgerLine} />
+              <View style={[styles.hamburgerLine, { backgroundColor: currentColors.secondary }]} />
+              <View style={[styles.hamburgerLine, { backgroundColor: currentColors.secondary }]} />
+              <View style={[styles.hamburgerLine, { backgroundColor: currentColors.secondary }]} />
               {unreadCount > 0 && (
                 <View style={[styles.notificationBadge, { backgroundColor: currentColors.secondary }]}>
                   <Text style={[styles.notificationBadgeText, { color: currentColors.background }]}>
@@ -172,7 +172,7 @@ export default function HomeScreen() {
           <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>
             Online Special
           </Text>
-          <View style={[styles.divider, { backgroundColor: currentColors.secondary }]} />
+          <View style={[styles.divider, { backgroundColor: currentColors.primary }]} />
         </View>
 
         {/* Categories */}
@@ -258,7 +258,10 @@ export default function HomeScreen() {
                   key={item.id}
                   style={[
                     styles.menuItem,
-                    { backgroundColor: currentColors.card },
+                    { 
+                      backgroundColor: currentColors.card,
+                      borderColor: currentColors.border,
+                    },
                   ]}
                   onPress={() => handleItemPress(item.id)}
                 >
@@ -290,7 +293,7 @@ export default function HomeScreen() {
                       <Text
                         style={[
                           styles.menuItemPrice,
-                          { color: currentColors.secondary },
+                          { color: currentColors.text },
                         ]}
                       >
                         ${item.price.toFixed(2)}
@@ -335,7 +338,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerGradient: {
-    paddingBottom: 16,
+    paddingBottom: 20,
   },
   headerSafeArea: {
     width: '100%',
@@ -345,31 +348,32 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   headerContent: {
     flex: 1,
     alignItems: "center",
   },
   logo: {
-    width: 180,
-    height: 60,
+    width: 200,
+    height: 70,
     resizeMode: "contain",
   },
   logoPlaceholder: {
     alignItems: 'center',
   },
   logoText: {
-    fontSize: 28,
+    fontSize: 32,
     fontFamily: 'PlayfairDisplay_900Black',
-    letterSpacing: 2,
+    letterSpacing: 3,
+    fontStyle: 'italic',
   },
   logoSubtext: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: 'Inter_400Regular',
-    letterSpacing: 4,
-    marginTop: -4,
+    letterSpacing: 5,
+    marginTop: -2,
   },
   menuButton: {
     position: 'relative',
@@ -380,11 +384,10 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   hamburgerLine: {
-    width: 24,
-    height: 2,
-    backgroundColor: '#D4AF37',
+    width: 28,
+    height: 3,
     marginVertical: 3,
-    borderRadius: 1,
+    borderRadius: 0,
   },
   notificationBadge: {
     position: 'absolute',
@@ -410,23 +413,23 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
-    alignItems: 'center',
+    paddingTop: 32,
+    paddingBottom: 20,
+    alignItems: 'flex-start',
   },
   sectionTitle: {
-    fontSize: 32,
+    fontSize: 36,
     fontFamily: 'PlayfairDisplay_700Bold',
     letterSpacing: 1,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   divider: {
-    width: 80,
-    height: 1,
+    width: 100,
+    height: 2,
   },
   categoriesContainer: {
     maxHeight: 60,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   categoriesContent: {
     paddingHorizontal: 20,
@@ -434,12 +437,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryButton: {
-    borderRadius: 20,
+    borderRadius: 0,
     marginRight: 8,
     minWidth: 80,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    borderWidth: 2,
   },
   categoryText: {
     fontWeight: "600",
@@ -474,17 +477,18 @@ const styles = StyleSheet.create({
   },
   menuItem: {
     borderRadius: 0,
-    marginBottom: 24,
+    marginBottom: 28,
     overflow: "hidden",
-    boxShadow: "0px 4px 16px rgba(212, 175, 55, 0.15)",
-    elevation: 5,
+    boxShadow: "0px 6px 20px rgba(212, 175, 55, 0.2)",
+    elevation: 6,
+    borderWidth: 2,
   },
   imageContainer: {
     width: "100%",
-    height: 240,
+    height: 260,
     borderRadius: 0,
     overflow: 'hidden',
-    borderWidth: 2,
+    borderBottomWidth: 3,
     position: 'relative',
   },
   menuItemImage: {
@@ -493,19 +497,19 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   menuItemInfo: {
-    padding: 20,
+    padding: 24,
   },
   menuItemName: {
-    fontSize: 24,
+    fontSize: 26,
     fontFamily: 'PlayfairDisplay_700Bold',
-    marginBottom: 8,
+    marginBottom: 10,
     letterSpacing: 0.5,
   },
   menuItemDescription: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    marginBottom: 16,
-    lineHeight: 22,
+    marginBottom: 18,
+    lineHeight: 24,
   },
   menuItemFooter: {
     flexDirection: "row",
@@ -513,16 +517,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuItemPrice: {
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: 'Inter_700Bold',
   },
   addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 0,
     justifyContent: "center",
     alignItems: "center",
-    boxShadow: "0px 2px 8px rgba(212, 175, 55, 0.3)",
-    elevation: 3,
+    boxShadow: "0px 3px 10px rgba(212, 175, 55, 0.4)",
+    elevation: 4,
   },
 });

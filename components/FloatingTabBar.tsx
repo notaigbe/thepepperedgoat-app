@@ -30,7 +30,7 @@ interface FloatingTabBarProps {
 export default function FloatingTabBar({
   tabs,
   containerWidth = 350,
-  borderRadius = 25,
+  borderRadius = 0,
   bottomMargin = 20,
 }: FloatingTabBarProps) {
   const router = useRouter();
@@ -134,14 +134,14 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 8,
     width: '90%',
     justifyContent: 'space-around',
     alignItems: 'center',
-    boxShadow: '0px 4px 16px rgba(212, 175, 55, 0.2)',
-    elevation: 8,
-    borderWidth: 1,
+    boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
+    elevation: 10,
+    borderWidth: 2,
   },
   tab: {
     flex: 1,

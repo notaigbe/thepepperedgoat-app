@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   View,
@@ -119,7 +120,7 @@ export default function GiftCardsScreen() {
     >
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: currentColors.border }]}>
           <Text style={[styles.headerTitle, { color: currentColors.text }]}>
             Gift Cards
           </Text>
@@ -132,15 +133,15 @@ export default function GiftCardsScreen() {
             <View
               style={[
                 styles.pointsBadge,
-                { backgroundColor: currentColors.primary },
+                { backgroundColor: currentColors.secondary },
               ]}
             >
               <IconSymbol
                 name="star.fill"
                 size={14}
-                color={currentColors.card}
+                color={currentColors.background}
               />
-              <Text style={[styles.pointsText, { color: currentColors.card }]}>
+              <Text style={[styles.pointsText, { color: currentColors.background }]}>
                 {userPoints}
               </Text>
             </View>
@@ -166,9 +167,13 @@ export default function GiftCardsScreen() {
             <Pressable
               style={[
                 styles.typeButton,
-                { backgroundColor: currentColors.card },
+                { 
+                  backgroundColor: currentColors.card,
+                  borderColor: currentColors.border,
+                },
                 giftType === "money" && {
-                  backgroundColor: currentColors.primary,
+                  backgroundColor: currentColors.secondary,
+                  borderColor: currentColors.secondary,
                 },
               ]}
               onPress={() => {
@@ -182,14 +187,14 @@ export default function GiftCardsScreen() {
                 name="dollarsign.circle.fill"
                 size={24}
                 color={
-                  giftType === "money" ? currentColors.card : currentColors.text
+                  giftType === "money" ? currentColors.background : currentColors.text
                 }
               />
               <Text
                 style={[
                   styles.typeButtonText,
                   { color: currentColors.text },
-                  giftType === "money" && { color: currentColors.card },
+                  giftType === "money" && { color: currentColors.background },
                 ]}
               >
                 Money Gift Card
@@ -198,9 +203,13 @@ export default function GiftCardsScreen() {
             <Pressable
               style={[
                 styles.typeButton,
-                { backgroundColor: currentColors.card },
+                { 
+                  backgroundColor: currentColors.card,
+                  borderColor: currentColors.border,
+                },
                 giftType === "points" && {
-                  backgroundColor: currentColors.primary,
+                  backgroundColor: currentColors.secondary,
+                  borderColor: currentColors.secondary,
                 },
               ]}
               onPress={() => {
@@ -215,7 +224,7 @@ export default function GiftCardsScreen() {
                 size={24}
                 color={
                   giftType === "points"
-                    ? currentColors.card
+                    ? currentColors.background
                     : currentColors.text
                 }
               />
@@ -223,7 +232,7 @@ export default function GiftCardsScreen() {
                 style={[
                   styles.typeButtonText,
                   { color: currentColors.text },
-                  giftType === "points" && { color: currentColors.card },
+                  giftType === "points" && { color: currentColors.background },
                 ]}
               >
                 Points Gift Card
@@ -243,11 +252,15 @@ export default function GiftCardsScreen() {
                     key={value}
                     style={[
                       styles.amountButton,
-                      { backgroundColor: currentColors.card },
+                      { 
+                        backgroundColor: currentColors.card,
+                        borderColor: currentColors.border,
+                      },
                       (giftType === "money"
                         ? selectedAmount === value
                         : selectedPoints === value) && {
-                        backgroundColor: currentColors.primary,
+                        backgroundColor: currentColors.secondary,
+                        borderColor: currentColors.secondary,
                       },
                     ]}
                     onPress={() =>
@@ -263,7 +276,7 @@ export default function GiftCardsScreen() {
                         (giftType === "money"
                           ? selectedAmount === value
                           : selectedPoints === value) && {
-                          color: currentColors.card,
+                          color: currentColors.background,
                         },
                       ]}
                     >
@@ -286,6 +299,7 @@ export default function GiftCardsScreen() {
                 {
                   backgroundColor: currentColors.card,
                   color: currentColors.text,
+                  borderColor: currentColors.border,
                 },
               ]}
               placeholder="Enter recipient's name"
@@ -306,6 +320,7 @@ export default function GiftCardsScreen() {
                   {
                     backgroundColor: currentColors.card,
                     color: currentColors.text,
+                    borderColor: currentColors.border,
                   },
                 ]}
                 placeholder="Enter recipient's email"
@@ -327,6 +342,7 @@ export default function GiftCardsScreen() {
                   {
                     backgroundColor: currentColors.card,
                     color: currentColors.text,
+                    borderColor: currentColors.border,
                   },
                 ]}
                 placeholder="Enter recipient's user ID"
@@ -355,6 +371,7 @@ export default function GiftCardsScreen() {
                 {
                   backgroundColor: currentColors.card,
                   color: currentColors.text,
+                  borderColor: currentColors.border,
                 },
               ]}
               placeholder="Add a personal message..."
@@ -369,7 +386,13 @@ export default function GiftCardsScreen() {
 
           {/* Summary */}
           <View
-            style={[styles.summary, { backgroundColor: currentColors.card }]}
+            style={[
+              styles.summary, 
+              { 
+                backgroundColor: currentColors.card,
+                borderColor: currentColors.border,
+              }
+            ]}
           >
             {giftType === "money" ? (
               <>
@@ -388,7 +411,7 @@ export default function GiftCardsScreen() {
                     ${selectedAmount.toFixed(2)}
                   </Text>
                 </View>
-                <View style={[styles.summaryRow, styles.totalRow]}>
+                <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: currentColors.border }]}>
                   <Text
                     style={[styles.totalLabel, { color: currentColors.text }]}
                   >
@@ -397,7 +420,7 @@ export default function GiftCardsScreen() {
                   <Text
                     style={[
                       styles.totalValue,
-                      { color: currentColors.primary },
+                      { color: currentColors.secondary },
                     ]}
                   >
                     ${selectedAmount.toFixed(2)}
@@ -433,13 +456,13 @@ export default function GiftCardsScreen() {
                   <Text
                     style={[
                       styles.summaryValue,
-                      { color: currentColors.primary },
+                      { color: currentColors.secondary },
                     ]}
                   >
                     {selectedPoints} pts
                   </Text>
                 </View>
-                <View style={[styles.summaryRow, styles.totalRow]}>
+                <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: currentColors.border }]}>
                   <Text
                     style={[styles.totalLabel, { color: currentColors.text }]}
                   >
@@ -448,7 +471,7 @@ export default function GiftCardsScreen() {
                   <Text
                     style={[
                       styles.totalValue,
-                      { color: currentColors.primary },
+                      { color: currentColors.secondary },
                     ]}
                   >
                     {userPoints - selectedPoints} pts
@@ -461,17 +484,17 @@ export default function GiftCardsScreen() {
           <Pressable
             style={[
               styles.purchaseButton,
-              { backgroundColor: currentColors.primary },
+              { backgroundColor: currentColors.secondary },
             ]}
             onPress={handlePurchase}
           >
             <IconSymbol
               name={giftType === "money" ? "gift.fill" : "star.fill"}
               size={20}
-              color={currentColors.card}
+              color={currentColors.background}
             />
             <Text
-              style={[styles.purchaseButtonText, { color: currentColors.card }]}
+              style={[styles.purchaseButtonText, { color: currentColors.background }]}
             >
               {giftType === "money"
                 ? "Purchase Gift Card"
@@ -496,13 +519,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+    paddingVertical: 20,
+    borderBottomWidth: 2,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 32,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 0.5,
   },
   headerRight: {
     flexDirection: "row",
@@ -514,23 +537,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 0,
     gap: 4,
   },
   pointsText: {
     fontSize: 12,
-    fontWeight: "bold",
+    fontFamily: 'Inter_700Bold',
   },
   content: {
     flex: 1,
   },
   contentContainer: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 20,
     paddingBottom: 120,
   },
   sectionTitle: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     marginBottom: 24,
   },
   typeSelector: {
@@ -545,20 +569,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingVertical: 16,
-    borderRadius: 12,
-    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
-    elevation: 2,
+    borderRadius: 0,
+    boxShadow: "0px 4px 12px rgba(212, 175, 55, 0.15)",
+    elevation: 3,
+    borderWidth: 2,
   },
   typeButtonText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: 'Inter_600SemiBold',
   },
   section: {
     marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: 'Inter_600SemiBold',
     marginBottom: 8,
   },
   amountGrid: {
@@ -569,44 +594,51 @@ const styles = StyleSheet.create({
   amountButton: {
     width: "30%",
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 0,
     alignItems: "center",
-    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
-    elevation: 2,
+    boxShadow: "0px 4px 12px rgba(212, 175, 55, 0.15)",
+    elevation: 3,
+    borderWidth: 2,
   },
   amountText: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: 'Inter_700Bold',
   },
   input: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 0,
     fontSize: 16,
-    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
-    elevation: 2,
+    fontFamily: 'Inter_400Regular',
+    boxShadow: "0px 4px 12px rgba(212, 175, 55, 0.15)",
+    elevation: 3,
+    borderWidth: 2,
   },
   helperText: {
     fontSize: 12,
+    fontFamily: 'Inter_400Regular',
     marginTop: 6,
     fontStyle: "italic",
   },
   textArea: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 0,
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
     minHeight: 100,
-    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
-    elevation: 2,
+    boxShadow: "0px 4px 12px rgba(212, 175, 55, 0.15)",
+    elevation: 3,
+    borderWidth: 2,
   },
   summary: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 0,
     marginTop: 8,
     marginBottom: 20,
-    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
-    elevation: 3,
+    boxShadow: "0px 4px 16px rgba(212, 175, 55, 0.15)",
+    elevation: 4,
+    borderWidth: 2,
   },
   summaryRow: {
     flexDirection: "row",
@@ -615,35 +647,37 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
   },
   summaryValue: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: 'Inter_600SemiBold',
   },
   totalRow: {
     marginTop: 8,
     paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0, 0, 0, 0.1)",
+    borderTopWidth: 2,
   },
   totalLabel: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: 'PlayfairDisplay_700Bold',
   },
   totalValue: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontFamily: 'Inter_700Bold',
   },
   purchaseButton: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 16,
-    borderRadius: 25,
+    borderRadius: 0,
     gap: 8,
+    boxShadow: "0px 4px 16px rgba(212, 175, 55, 0.3)",
+    elevation: 5,
   },
   purchaseButtonText: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: 'Inter_700Bold',
   },
 });

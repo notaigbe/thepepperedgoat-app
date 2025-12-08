@@ -104,7 +104,6 @@ export default function MerchScreen() {
           item.pointsCost - userPoints
         } more points.`
       );
-      // setToastVisible(true);
       return;
     }
 
@@ -119,7 +118,7 @@ export default function MerchScreen() {
     >
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: currentColors.border }]}>
           <Text style={[styles.title, { color: currentColors.text }]}>
             Merch Store
           </Text>
@@ -182,18 +181,23 @@ export default function MerchScreen() {
                     key={item.id}
                     style={[
                       styles.merchCard,
-                      { backgroundColor: currentColors.card },
+                      { 
+                        backgroundColor: currentColors.card,
+                        borderColor: currentColors.border,
+                      },
                     ]}
                     onPress={() => handleItemPress(item)}
                     disabled={!item.inStock}
                   >
-                    <Image
-                      source={{ uri: item.image }}
-                      style={styles.merchImage}
-                    />
+                    <View style={[styles.imageContainer, { borderColor: currentColors.border }]}>
+                      <Image
+                        source={{ uri: item.image }}
+                        style={styles.merchImage}
+                      />
+                    </View>
                     {!item.inStock && (
-                      <View style={styles.outOfStockBadge}>
-                        <Text style={styles.outOfStockText}>Out of Stock</Text>
+                      <View style={[styles.outOfStockBadge, { backgroundColor: currentColors.background }]}>
+                        <Text style={[styles.outOfStockText, { color: currentColors.text }]}>Out of Stock</Text>
                       </View>
                     )}
                     <View style={styles.merchInfo}>
@@ -225,7 +229,7 @@ export default function MerchScreen() {
                           <Text
                             style={[
                               styles.pointsCost,
-                              { color: currentColors.secondary },
+                              { color: currentColors.text },
                             ]}
                           >
                             {item.pointsCost}
@@ -242,7 +246,7 @@ export default function MerchScreen() {
                             <Text
                               style={[
                                 styles.redeemButtonText,
-                                { color: currentColors.card },
+                                { color: currentColors.background },
                               ]}
                             >
                               Redeem
@@ -281,20 +285,23 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
+    borderBottomWidth: 2,
   },
   title: {
     fontSize: 32,
-    fontWeight: "bold",
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 0.5,
   },
   pointsContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    marginTop: 8,
   },
   pointsText: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: 'Inter_600SemiBold',
   },
   loadingContainer: {
     flex: 1,
@@ -304,6 +311,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
   },
   emptyContainer: {
     flex: 1,
@@ -314,16 +322,19 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
   },
   scrollView: {
     flex: 1,
   },
   content: {
     paddingHorizontal: 20,
+    paddingTop: 20,
     paddingBottom: 120,
   },
   subtitle: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
     marginBottom: 24,
   },
   grid: {
@@ -336,40 +347,47 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 0,
     overflow: "hidden",
-    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
-    elevation: 3,
+    boxShadow: "0px 4px 16px rgba(212, 175, 55, 0.15)",
+    elevation: 4,
+    borderWidth: 2,
+  },
+  imageContainer: {
+    width: "100%",
+    height: 180,
+    borderRadius: 0,
+    overflow: 'hidden',
+    borderBottomWidth: 2,
   },
   merchImage: {
     width: "100%",
-    height: 150,
-    backgroundColor: "#f0f0f0",
+    height: "100%",
+    resizeMode: 'cover',
   },
   outOfStockBadge: {
     position: "absolute",
     top: 12,
     right: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 0,
   },
   outOfStockText: {
-    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: 'Inter_600SemiBold',
   },
   merchInfo: {
-    padding: 12,
+    padding: 16,
   },
   merchName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 4,
+    fontSize: 18,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    marginBottom: 6,
   },
   merchDescription: {
-    fontSize: 12,
-    marginBottom: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    marginBottom: 14,
+    lineHeight: 18,
   },
   merchFooter: {
     flexDirection: "row",
@@ -383,15 +401,15 @@ const styles = StyleSheet.create({
   },
   pointsCost: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: 'Inter_700Bold',
   },
   redeemButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 0,
   },
   redeemButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 13,
+    fontFamily: 'Inter_600SemiBold',
   },
 });

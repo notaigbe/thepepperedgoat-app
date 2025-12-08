@@ -67,7 +67,7 @@ export default function CartScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: currentColors.border }]}>
           <Text style={[styles.headerTitle, { color: currentColors.text }]}>Shopping Cart</Text>
           <Text style={[styles.itemCount, { color: currentColors.textSecondary }]}>
             {cart.length} {cart.length === 1 ? 'item' : 'items'}
@@ -106,7 +106,7 @@ export default function CartScreen() {
                   </View>
                   <View style={styles.itemDetails}>
                     <Text style={[styles.itemName, { color: currentColors.text }]}>{item.name}</Text>
-                    <Text style={[styles.itemPrice, { color: currentColors.secondary }]}>
+                    <Text style={[styles.itemPrice, { color: currentColors.text }]}>
                       ${item.price.toFixed(2)}
                     </Text>
                     <View style={styles.quantityContainer}>
@@ -211,9 +211,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(212, 175, 55, 0.2)',
+    paddingVertical: 24,
+    borderBottomWidth: 2,
   },
   headerTitle: {
     fontSize: 32,
@@ -246,7 +245,7 @@ const styles = StyleSheet.create({
   browseButton: {
     paddingHorizontal: 32,
     paddingVertical: 14,
-    borderRadius: 25,
+    borderRadius: 0,
   },
   browseButtonText: {
     fontSize: 16,
@@ -265,9 +264,9 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     padding: 12,
     marginBottom: 16,
-    borderWidth: 1,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.1)',
-    elevation: 3,
+    borderWidth: 2,
+    boxShadow: '0px 4px 16px rgba(212, 175, 55, 0.15)',
+    elevation: 4,
   },
   imageContainer: {
     borderRadius: 0,
@@ -302,10 +301,10 @@ const styles = StyleSheet.create({
   quantityButton: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 2,
   },
   quantity: {
     fontSize: 16,
@@ -320,7 +319,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 120,
-    borderTopWidth: 1,
+    borderTopWidth: 2,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -338,7 +337,7 @@ const styles = StyleSheet.create({
   totalRow: {
     marginTop: 8,
     paddingTop: 12,
-    borderTopWidth: 1,
+    borderTopWidth: 2,
   },
   totalLabel: {
     fontSize: 18,
@@ -353,11 +352,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 16,
-    borderRadius: 25,
+    borderRadius: 0,
     marginTop: 20,
     gap: 8,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.3)',
-    elevation: 4,
+    boxShadow: '0px 4px 16px rgba(212, 175, 55, 0.3)',
+    elevation: 5,
   },
   checkoutButtonText: {
     fontSize: 16,
