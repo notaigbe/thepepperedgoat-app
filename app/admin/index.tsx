@@ -8,7 +8,6 @@ import {
   Pressable,
   Platform,
   TextInput,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Switch,
@@ -22,6 +21,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { orderService } from "@/services/supabaseService";
 import { supabase } from "@/app/integrations/supabase/client";
 import { useApp } from "@/contexts/AppContext";
+import Dialog from "@/components/Dialog";
+import Toast from "@/components/Toast";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -38,6 +39,30 @@ export default function AdminDashboard() {
   });
   const [viewAsAdmin, setViewAsAdmin] = useState(false);
 
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    title: '',
+    message: '',
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+  });
+
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+
+  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
+    setDialogConfig({ title, message, buttons });
+    setDialogVisible(true);
+  };
+
+  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
+    setToastType(type);
+    setToastMessage(message);
+    setToastVisible(true);
+  };
+
   const isAdmin = userProfile?.userRole === 'admin' || userProfile?.userRole === 'super_admin';
   const isSuperAdmin = userProfile?.userRole === 'super_admin';
   
@@ -52,7 +77,9 @@ export default function AdminDashboard() {
     }
 
     if (!username || !password) {
-      Alert.alert("Login Failed", "Please enter both email and password.");
+      showDialog('Login Failed', 'Please enter both email and password.', [
+        { text: 'OK', onPress: () => {}, style: 'default' }
+      ]);
       return;
     }
 
@@ -63,7 +90,9 @@ export default function AdminDashboard() {
     setLoading(false);
 
     if (error) {
-      Alert.alert("Login Failed", "Invalid credentials. Please try again.");
+      showDialog('Login Failed', 'Invalid credentials. Please try again.', [
+        { text: 'OK', onPress: () => {}, style: 'default' }
+      ]);
     }
   };
 
@@ -340,6 +369,14 @@ export default function AdminDashboard() {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
+        <Dialog
+          visible={dialogVisible}
+          title={dialogConfig.title}
+          message={dialogConfig.message}
+          buttons={dialogConfig.buttons}
+          onHide={() => setDialogVisible(false)}
+          currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
+        />
       </SafeAreaView>
     );
   }
@@ -498,6 +535,21 @@ export default function AdminDashboard() {
           </Text>
         </View>
       </ScrollView>
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onHide={() => setToastVisible(false)}
+        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
+      />
+      <Dialog
+        visible={dialogVisible}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        buttons={dialogConfig.buttons}
+        onHide={() => setDialogVisible(false)}
+        currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
+      />
     </SafeAreaView>
   );
 }

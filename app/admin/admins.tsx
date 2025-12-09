@@ -9,7 +9,6 @@ import {
   Platform,
   TextInput,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -19,6 +18,8 @@ import * as Haptics from 'expo-haptics';
 import { userService } from '@/services/supabaseService';
 import { useApp } from '@/contexts/AppContext';
 import { UserRole } from '@/types';
+import Dialog from '@/components/Dialog';
+import Toast from '@/components/Toast';
 
 interface AdminUser {
   id: string;
@@ -35,6 +36,30 @@ export default function AdminManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    title: '',
+    message: '',
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+  });
+
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+
+  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
+    setDialogConfig({ title, message, buttons });
+    setDialogVisible(true);
+  };
+
+  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
+    setToastType(type);
+    setToastMessage(message);
+    setToastVisible(true);
+  };
 
   const fetchAdmins = useCallback(async () => {
     try {
@@ -58,7 +83,7 @@ export default function AdminManagement() {
       setAdmins(adminUsers);
     } catch (error) {
       console.error('Error fetching admins:', error);
-      Alert.alert('Error', 'Failed to load admin users');
+      showToast('error', 'Failed to load admin users');
       setAdmins([]);
     } finally {
       setLoading(false);
@@ -68,13 +93,14 @@ export default function AdminManagement() {
   useEffect(() => {
     // Check if user is super admin
     if (userProfile?.userRole !== 'super_admin') {
-      Alert.alert(
+      showDialog(
         'Access Denied',
         'Only super-admins can access this page.',
         [
           {
             text: 'OK',
             onPress: () => router.back(),
+            style: 'default'
           },
         ]
       );
@@ -91,11 +117,11 @@ export default function AdminManagement() {
 
       // Confirm before granting super-admin
       if (newRole === 'super_admin') {
-        Alert.alert(
+        showDialog(
           'Confirm Super-Admin',
           'Are you sure you want to grant super-admin privileges? This will give full control over all admin functions.',
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: 'Cancel', style: 'cancel', onPress: () => {} },
             {
               text: 'Confirm',
               style: 'destructive',
@@ -104,7 +130,7 @@ export default function AdminManagement() {
 
                 if (error) throw error;
 
-                Alert.alert('Success', 'User role updated successfully');
+                showToast('success', 'User role updated successfully');
                 fetchAdmins();
               },
             },
@@ -115,12 +141,12 @@ export default function AdminManagement() {
 
         if (error) throw error;
 
-        Alert.alert('Success', 'User role updated successfully');
+        showToast('success', 'User role updated successfully');
         fetchAdmins();
       }
     } catch (error) {
       console.error('Error updating user role:', error);
-      Alert.alert('Error', 'Failed to update user role');
+      showToast('error', 'Failed to update user role');
     }
   };
 
@@ -130,11 +156,11 @@ export default function AdminManagement() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       }
 
-      Alert.alert(
+      showDialog(
         'Delete Admin',
         `Are you sure you want to delete ${userName}? This action cannot be undone.`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: 'Cancel', style: 'cancel', onPress: () => {} },
           {
             text: 'Delete',
             style: 'destructive',
@@ -143,7 +169,7 @@ export default function AdminManagement() {
 
               if (error) throw error;
 
-              Alert.alert('Success', 'Admin deleted successfully');
+              showToast('success', 'Admin deleted successfully');
               fetchAdmins();
             },
           },
@@ -151,7 +177,7 @@ export default function AdminManagement() {
       );
     } catch (error) {
       console.error('Error deleting admin:', error);
-      Alert.alert('Error', 'Failed to delete admin');
+      showToast('error', 'Failed to delete admin');
     }
   };
 
@@ -159,15 +185,16 @@ export default function AdminManagement() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    Alert.alert(
+    showDialog(
       'Promote User',
       'To promote a user to admin, go to User Management and select the user you want to promote.',
       [
         {
           text: 'Go to Users',
           onPress: () => router.push('/admin/users' as any),
+          style: 'default'
         },
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel', onPress: () => {} },
       ]
     );
   };
@@ -403,6 +430,21 @@ export default function AdminManagement() {
           </View>
         )}
       </ScrollView>
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onHide={() => setToastVisible(false)}
+        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
+      />
+      <Dialog
+        visible={dialogVisible}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        buttons={dialogConfig.buttons}
+        onHide={() => setDialogVisible(false)}
+        currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
+      />
     </SafeAreaView>
   );
 }

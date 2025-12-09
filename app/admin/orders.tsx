@@ -7,7 +7,6 @@ import {
   ScrollView,
   Pressable,
   Platform,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +17,8 @@ import { Order, CartItem } from '@/types';
 import { orderService, notificationService } from '@/services/supabaseService';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '@/app/integrations/supabase/client';
+import Dialog from '@/components/Dialog';
+import Toast from '@/components/Toast';
 
 interface OrderWithItems extends Order {
   items: CartItem[];
@@ -30,6 +31,30 @@ export default function AdminOrderManagement() {
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    title: '',
+    message: '',
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+  });
+
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+
+  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
+    setDialogConfig({ title, message, buttons });
+    setDialogVisible(true);
+  };
+
+  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
+    setToastType(type);
+    setToastMessage(message);
+    setToastVisible(true);
+  };
 
   useEffect(() => {
     fetchOrders();
@@ -140,10 +165,10 @@ export default function AdminOrderManagement() {
           console.log('Notification sent to user:', userId);
         }
 
-        Alert.alert('Success', 'Order status updated and notification sent to customer');
+        showToast('success', 'Order status updated and notification sent to customer');
       } catch (err) {
         console.error('Update order status failed', err);
-        Alert.alert('Error', 'Unable to update order status');
+        showToast('error', 'Unable to update order status');
       }
     })();
   };
@@ -311,6 +336,21 @@ export default function AdminOrderManagement() {
           )}
         </View>
       </ScrollView>
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onHide={() => setToastVisible(false)}
+        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
+      />
+      <Dialog
+        visible={dialogVisible}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        buttons={dialogConfig.buttons}
+        onHide={() => setDialogVisible(false)}
+        currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
+      />
     </SafeAreaView>
   );
 }

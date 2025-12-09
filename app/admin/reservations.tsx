@@ -8,7 +8,6 @@ import {
   Pressable,
   Platform,
   ActivityIndicator,
-  Alert,
   TextInput,
   Modal,
 } from 'react-native';
@@ -19,6 +18,8 @@ import { colors } from '@/styles/commonStyles';
 import * as Haptics from 'expo-haptics';
 import { reservationService } from '@/services/supabaseService';
 import { Reservation } from '@/types';
+import Dialog from '@/components/Dialog';
+import Toast from '@/components/Toast';
 
 export default function AdminReservations() {
   const router = useRouter();
@@ -29,6 +30,30 @@ export default function AdminReservations() {
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [editingTableNumber, setEditingTableNumber] = useState('');
+
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    title: '',
+    message: '',
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+  });
+
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+
+  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
+    setDialogConfig({ title, message, buttons });
+    setDialogVisible(true);
+  };
+
+  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
+    setToastType(type);
+    setToastMessage(message);
+    setToastVisible(true);
+  };
 
   useEffect(() => {
     fetchReservations();
@@ -41,7 +66,7 @@ export default function AdminReservations() {
       
       if (error) {
         console.error('Error fetching reservations:', error);
-        Alert.alert('Error', 'Failed to load reservations');
+        showToast('error', 'Failed to load reservations');
         return;
       }
 
@@ -63,7 +88,7 @@ export default function AdminReservations() {
       }
     } catch (error) {
       console.error('Error fetching reservations:', error);
-      Alert.alert('Error', 'Failed to load reservations');
+      showToast('error', 'Failed to load reservations');
     } finally {
       setLoading(false);
     }
@@ -78,7 +103,7 @@ export default function AdminReservations() {
       const { error } = await reservationService.updateReservationStatus(reservationId, newStatus);
       
       if (error) {
-        Alert.alert('Error', 'Failed to update reservation status');
+        showToast('error', 'Failed to update reservation status');
         return;
       }
 
@@ -92,10 +117,10 @@ export default function AdminReservations() {
         setSelectedReservation(prev => prev ? { ...prev, status: newStatus } : null);
       }
 
-      Alert.alert('Success', 'Reservation status updated');
+      showToast('success', 'Reservation status updated');
     } catch (error) {
       console.error('Error updating status:', error);
-      Alert.alert('Error', 'Failed to update reservation status');
+      showToast('error', 'Failed to update reservation status');
     }
   };
 
@@ -113,7 +138,7 @@ export default function AdminReservations() {
       );
       
       if (error) {
-        Alert.alert('Error', 'Failed to update table number');
+        showToast('error', 'Failed to update table number');
         return;
       }
 
@@ -129,19 +154,19 @@ export default function AdminReservations() {
         prev ? { ...prev, tableNumber: editingTableNumber } : null
       );
 
-      Alert.alert('Success', 'Table number updated');
+      showToast('success', 'Table number updated');
     } catch (error) {
       console.error('Error updating table number:', error);
-      Alert.alert('Error', 'Failed to update table number');
+      showToast('error', 'Failed to update table number');
     }
   };
 
   const handleDeleteReservation = async (reservationId: string) => {
-    Alert.alert(
+    showDialog(
       'Delete Reservation',
       'Are you sure you want to delete this reservation?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel', onPress: () => {} },
         {
           text: 'Delete',
           style: 'destructive',
@@ -150,16 +175,16 @@ export default function AdminReservations() {
               const { error } = await reservationService.deleteReservation(reservationId);
               
               if (error) {
-                Alert.alert('Error', 'Failed to delete reservation');
+                showToast('error', 'Failed to delete reservation');
                 return;
               }
 
               setReservations(prev => prev.filter(res => res.id !== reservationId));
               setShowDetailModal(false);
-              Alert.alert('Success', 'Reservation deleted');
+              showToast('success', 'Reservation deleted');
             } catch (error) {
               console.error('Error deleting reservation:', error);
-              Alert.alert('Error', 'Failed to delete reservation');
+              showToast('error', 'Failed to delete reservation');
             }
           },
         },
@@ -521,6 +546,21 @@ export default function AdminReservations() {
           </View>
         </View>
       </Modal>
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onHide={() => setToastVisible(false)}
+        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
+      />
+      <Dialog
+        visible={dialogVisible}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        buttons={dialogConfig.buttons}
+        onHide={() => setDialogVisible(false)}
+        currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
+      />
     </SafeAreaView>
   );
 }

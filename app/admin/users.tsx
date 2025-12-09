@@ -9,7 +9,6 @@ import {
   Platform,
   TextInput,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -19,6 +18,8 @@ import * as Haptics from 'expo-haptics';
 import { supabase } from '@/app/integrations/supabase/client';
 import { userService } from '@/services/supabaseService';
 import { useApp } from '@/contexts/AppContext';
+import Dialog from '@/components/Dialog';
+import Toast from '@/components/Toast';
 
 interface User {
   id: string;
@@ -39,6 +40,30 @@ export default function AdminUserManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    title: '',
+    message: '',
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+  });
+
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+
+  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
+    setDialogConfig({ title, message, buttons });
+    setDialogVisible(true);
+  };
+
+  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
+    setToastType(type);
+    setToastMessage(message);
+    setToastVisible(true);
+  };
 
   const isSuperAdmin = userProfile?.userRole === 'super_admin';
 
@@ -104,22 +129,22 @@ export default function AdminUserManagement() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }
 
-      Alert.alert(
+      showDialog(
         'Promote to Admin',
         `Are you sure you want to promote ${userName} to admin?`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: 'Cancel', style: 'cancel', onPress: () => {} },
           {
             text: 'Promote',
             onPress: async () => {
               const { error } = await userService.updateUserRole(userId, 'admin');
 
               if (error) {
-                Alert.alert('Error', 'Failed to promote user to admin');
+                showToast('error', 'Failed to promote user to admin');
                 return;
               }
 
-              Alert.alert('Success', `${userName} has been promoted to admin`);
+              showToast('success', `${userName} has been promoted to admin`);
               fetchUsers();
             },
           },
@@ -127,7 +152,7 @@ export default function AdminUserManagement() {
       );
     } catch (error) {
       console.error('Error promoting user:', error);
-      Alert.alert('Error', 'Failed to promote user to admin');
+      showToast('error', 'Failed to promote user to admin');
     }
   };
 
@@ -137,11 +162,11 @@ export default function AdminUserManagement() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }
 
-      Alert.alert(
+      showDialog(
         'Revoke Admin',
         `Are you sure you want to revoke admin privileges from ${userName}?`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: 'Cancel', style: 'cancel', onPress: () => {} },
           {
             text: 'Revoke',
             style: 'destructive',
@@ -149,11 +174,11 @@ export default function AdminUserManagement() {
               const { error } = await userService.updateUserRole(userId, 'user');
 
               if (error) {
-                Alert.alert('Error', 'Failed to revoke admin privileges');
+                showToast('error', 'Failed to revoke admin privileges');
                 return;
               }
 
-              Alert.alert('Success', `Admin privileges revoked from ${userName}`);
+              showToast('success', `Admin privileges revoked from ${userName}`);
               fetchUsers();
             },
           },
@@ -161,7 +186,7 @@ export default function AdminUserManagement() {
       );
     } catch (error) {
       console.error('Error revoking admin:', error);
-      Alert.alert('Error', 'Failed to revoke admin privileges');
+      showToast('error', 'Failed to revoke admin privileges');
     }
   };
 
@@ -343,6 +368,21 @@ export default function AdminUserManagement() {
           </View>
         )}
       </ScrollView>
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onHide={() => setToastVisible(false)}
+        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
+      />
+      <Dialog
+        visible={dialogVisible}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        buttons={dialogConfig.buttons}
+        onHide={() => setDialogVisible(false)}
+        currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
+      />
     </SafeAreaView>
   );
 }
