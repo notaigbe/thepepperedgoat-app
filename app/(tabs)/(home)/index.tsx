@@ -163,23 +163,27 @@ export default function HomeScreen() {
       end={{ x: 0, y: 1 }}
       style={styles.container}
     >
-      {/* Header with Gradient and 3% Translucency */}
-      <LinearGradient
-        colors={[
-          'rgba(13, 26, 43, 0.97)',
-          'rgba(20, 35, 50, 0.97)',
-          'rgba(30, 50, 65, 0.97)',
-          'rgba(45, 70, 85, 0.97)',
-          'rgba(70, 90, 100, 0.97)',
-          'rgba(100, 120, 110, 0.97)',
-          'rgba(150, 140, 90, 0.97)',
-          'rgba(180, 160, 80, 0.97)',
-          'rgba(200, 180, 70, 0.97)',
-        ]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.headerBackground}
-      >
+      {/* Header with Gradient and 3% Translucency - Background Only */}
+      <View style={styles.headerContainer}>
+        {/* Translucent Background Layer */}
+        <LinearGradient
+          colors={[
+            'rgba(13, 26, 43, 0.97)',
+            'rgba(20, 35, 50, 0.97)',
+            'rgba(30, 50, 65, 0.97)',
+            'rgba(45, 70, 85, 0.97)',
+            'rgba(70, 90, 100, 0.97)',
+            'rgba(100, 120, 110, 0.97)',
+            'rgba(150, 140, 90, 0.97)',
+            'rgba(180, 160, 80, 0.97)',
+            'rgba(200, 180, 70, 0.97)',
+          ]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerBackground}
+        />
+        
+        {/* Content Layer (Logo and Notification Bell) - Fully Opaque */}
         <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
           <View style={styles.header}>
             <View style={styles.headerContent}>
@@ -220,7 +224,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </View>
 
       {/* Search Bar with Category Dropdown */}
       <View style={styles.searchContainer}>
@@ -503,10 +507,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerBackground: {
-    paddingBottom: 10,
+  headerContainer: {
+    position: 'relative',
     boxShadow: '0px 4px 20px rgba(212, 175, 55, 0.4)',
     elevation: 8,
+  },
+  headerBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingBottom: 10,
   },
   headerSafeArea: {
     width: '100%',
@@ -517,7 +529,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 4,
+    paddingBottom: 14,
   },
   headerContent: {
     flex: 1,
