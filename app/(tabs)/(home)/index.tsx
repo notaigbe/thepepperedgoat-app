@@ -212,7 +212,7 @@ export default function HomeScreen() {
                 name={Platform.OS === 'ios' ? "bell.fill" : "notifications"}
                 // name="notifications"
                 size={28}
-                color="#D4AF37"
+                color="#947d33ff"
               />
               {unreadCount > 0 && (
                 <View style={styles.notificationBadge}>
@@ -351,7 +351,7 @@ export default function HomeScreen() {
                 style={[
                   styles.categoryButton,
                   {
-                    backgroundColor: selectedCategory === category ? '#F5A623' : '#1A3A2E',
+                    backgroundColor: selectedCategory === category ? '#F5A623' : '#1a303aff',
                     borderColor: selectedCategory === category ? '#F5A623' : '#4AD7C2',
                     paddingHorizontal: getResponsivePadding(16),
                     paddingVertical: getResponsivePadding(10),
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
   searchBarWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A3A2E',
+    backgroundColor: '#1a303aff',
     borderRadius: 0,
     borderWidth: 1,
     borderColor: '#4AD7C2',
@@ -626,12 +626,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   dropdownContainer: {
-    backgroundColor: '#1A3A2E',
+    backgroundColor: '#1a303aff',
     borderRadius: 0,
-    borderWidth: 2,
+    borderWidth: 0.5,
     borderColor: '#4AD7C2',
     maxHeight: 400,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.5)',
+    boxShadow: '0px 8px 24px rgba(48, 41, 18, 0.5)',
     elevation: 8,
   },
   dropdownHeader: {
@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(74, 215, 194, 0.2)',
   },
   dropdownItemSelected: {
-    backgroundColor: 'rgba(245, 166, 35, 0.15)',
+    backgroundColor: 'rgba(35, 245, 210, 0.15)',
   },
   dropdownItemText: {
     fontSize: 16,
@@ -679,6 +679,10 @@ const styles = StyleSheet.create({
   },
   categoriesContainer: {
     maxHeight: 60,
+    borderTopColor: '#d4af3765',
+    borderTopWidth: 0.2,
+    borderBottomColor: '#d4af3773',
+    borderBottomWidth: 0.2,
   },
   categoriesContent: {
     paddingHorizontal: 20,
@@ -736,7 +740,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     boxShadow: "0px 8px 24px rgba(212, 175, 55, 0.5)",
     elevation: 8,
-    backgroundColor: '#1A3A2E',
+    backgroundColor: '#1a303aff',
   },
   imageContainer: {
     width: "100%",
@@ -751,8 +755,6 @@ const styles = StyleSheet.create({
   },
   menuItemInfoWrapper: {
     position: 'relative',
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
     overflow: 'hidden',
   },
   textureOverlay: {
@@ -767,8 +769,6 @@ const styles = StyleSheet.create({
   },
   menuItemInfo: {
     padding: 24,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
   },
   menuItemName: {
     fontSize: 26,
