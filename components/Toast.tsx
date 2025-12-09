@@ -40,13 +40,26 @@ export default function Toast({
   const getIconColor = () => {
     switch (type) {
       case 'success':
-        return currentColors.primary;
+        return '#4CAF50';
       case 'error':
         return '#EF5350';
       case 'info':
-        return currentColors.secondary;
+        return currentColors.primary || '#2196F3';
       default:
-        return currentColors.primary;
+        return '#4CAF50';
+    }
+  };
+
+  const getBackgroundColor = () => {
+    switch (type) {
+      case 'success':
+        return '#4CAF50';
+      case 'error':
+        return '#EF5350';
+      case 'info':
+        return currentColors.primary || '#2196F3';
+      default:
+        return '#4CAF50';
     }
   };
 
@@ -110,23 +123,18 @@ export default function Toast({
       ]}
       pointerEvents="none"
     >
-      {Platform.OS === 'ios' ? (
-        <BlurView intensity={80} tint="light" style={styles.blurContainer}>
-          <View style={[styles.content, { backgroundColor: 'rgba(255, 255, 255, 0.7)' }]}>
-            <IconSymbol name={getIconName()} size={24} color={getIconColor()} />
-            <Text style={[styles.message, { color: currentColors.text }]} numberOfLines={2}>
-              {message}
-            </Text>
-          </View>
-        </BlurView>
-      ) : (
-        <View style={[styles.content, styles.androidContent, { backgroundColor: currentColors.card }]}>
-          <IconSymbol name={getIconName()} size={24} color={getIconColor()} />
-          <Text style={[styles.message, { color: currentColors.text }]} numberOfLines={2}>
-            {message}
-          </Text>
-        </View>
-      )}
+      <View style={[
+        styles.content, 
+        { 
+          backgroundColor: getBackgroundColor(),
+          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.25)',
+        }
+      ]}>
+        <IconSymbol name={getIconName()} size={24} color="#FFFFFF" />
+        <Text style={styles.message} numberOfLines={2}>
+          {message}
+        </Text>
+      </View>
     </Animated.View>
   );
 }
@@ -140,11 +148,6 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     elevation: 9999,
   },
-  blurContainer: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
-  },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -152,16 +155,13 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     gap: 12,
     borderRadius: 16,
-  },
-  androidContent: {
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
     elevation: 8,
-    opacity: 0.95,
   },
   message: {
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
     lineHeight: 20,
+    color: '#FFFFFF',
   },
 });
