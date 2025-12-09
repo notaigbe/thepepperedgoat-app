@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   View,
@@ -20,6 +21,7 @@ import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
 import { imageService, userService } from '@/services/supabaseService';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -153,68 +155,266 @@ export default function EditProfileScreen() {
     }
   };
 
-// Updated uploadImage function:
-const uploadImage = async (asset: ImagePicker.ImagePickerAsset) => {
-  if (!user?.id) {
-    showToast('error', 'User not authenticated');
-    return;
-  }
-  setUploadingImage(true);
-  
-  try {
-    // Generate unique filename
-    const fileExt = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
-    const fileName = `${user.id}_${Date.now()}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
-    console.log('Uploading image:', filePath);
-
-    // For React Native, we need to use ArrayBuffer instead of Blob
-    const response = await fetch(asset.uri);
-    const arrayBuffer = await response.arrayBuffer();
-    
-    console.log('ArrayBuffer size:', arrayBuffer.byteLength);
-
-    // Determine MIME type
-    const mimeType = asset.mimeType || `image/${fileExt}`;
-    
-    // Upload to Supabase Storage using ArrayBuffer
-    const { data, error } = await imageService.uploadImage(
-      'profile', // bucket name
-      filePath,
-      arrayBuffer,
-      {
-        contentType: mimeType,
-        upsert: true
-      }
-    );
-
-    if (error) {
-      console.error('Upload error:', error);
-      throw error;
+  const uploadImage = async (asset: ImagePicker.ImagePickerAsset) => {
+    if (!user?.id) {
+      showToast('error', 'User not authenticated');
+      return;
     }
-
-    console.log('Upload successful:', data);
-
-    // For private bucket, we'll store the path and generate signed URLs when needed
-    // Store the full path (not a signed URL since those expire)
-    const imageUrl = filePath; // Store path, not URL
+    setUploadingImage(true);
     
-    console.log('Image path stored:', imageUrl);
+    try {
+      // Generate unique filename
+      const fileExt = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+      console.log('Uploading image:', filePath);
 
-    // Update local state
-    setProfileImage(imageUrl);
-    showToast('success', 'Image uploaded successfully');
-    
-    // Note: The image URL will be saved to the database when user clicks Save
-  } catch (error: any) {
-    console.error('Upload error:', error);
-    showToast('error', `Failed to upload image: ${error.message || 'Unknown error'}`);
-  } finally {
-    setUploadingImage(false);
-  }
-};
+      // For React Native, we need to use ArrayBuffer instead of Blob
+      const response = await fetch(asset.uri);
+      const arrayBuffer = await response.arrayBuffer();
+      
+      console.log('ArrayBuffer size:', arrayBuffer.byteLength);
+
+      // Determine MIME type
+      const mimeType = asset.mimeType || `image/${fileExt}`;
+      
+      // Upload to Supabase Storage using ArrayBuffer
+      const { data, error } = await imageService.uploadImage(
+        'profile', // bucket name
+        filePath,
+        arrayBuffer,
+        {
+          contentType: mimeType,
+          upsert: true
+        }
+      );
+
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
+
+      console.log('Upload successful:', data);
+
+      // For private bucket, we'll store the path and generate signed URLs when needed
+      // Store the full path (not a signed URL since those expire)
+      const imageUrl = filePath; // Store path, not URL
+      
+      console.log('Image path stored:', imageUrl);
+
+      // Update local state
+      setProfileImage(imageUrl);
+      showToast('success', 'Image uploaded successfully');
+      
+      // Note: The image URL will be saved to the database when user clicks Save
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      showToast('error', `Failed to upload image: ${error.message || 'Unknown error'}`);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  return (
+    <LinearGradient
+      colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.container}>
+          {/* Header with Gradient */}
+          <LinearGradient
+            colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.header, { borderBottomColor: currentColors.border }]}
+          >
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                router.back();
+              }}
+              style={[styles.backButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
+            >
+              <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
+            </Pressable>
+            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Edit Profile</Text>
+            <Pressable 
+              onPress={handleSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator size="small" color={currentColors.secondary} />
+              ) : (
+                <Text style={[styles.saveButton, { color: currentColors.secondary }]}>Save</Text>
+              )}
+            </Pressable>
+          </LinearGradient>
+
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Profile Image Section */}
+            <View style={styles.imageSection}>
+              <View style={styles.imageContainer}>
+                {uploadingImage ? (
+                  <View style={[styles.imagePlaceholder, { backgroundColor: currentColors.secondary + '20' }]}>
+                    <ActivityIndicator size="large" color={currentColors.secondary} />
+                  </View>
+                ) : profileImage ? (
+                  <Image 
+                    source={{ uri: profileImage }} 
+                    style={styles.profileImage}
+                    onError={() => {
+                      console.error('Failed to load image:', profileImage);
+                      setProfileImage(null);
+                      showToast('error', 'Failed to load image');
+                    }}
+                  />
+                ) : (
+                  <LinearGradient
+                    colors={[currentColors.secondary, currentColors.highlight]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.imagePlaceholder}
+                  >
+                    <IconSymbol name="person" size={48} color={currentColors.background} />
+                  </LinearGradient>
+                )}
+              </View>
+              
+              <View style={styles.imageButtons}>
+                <LinearGradient
+                  colors={[currentColors.secondary, currentColors.highlight]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.imageButton, uploadingImage && { opacity: 0.6 }]}
+                >
+                  <Pressable
+                    style={styles.imageButtonInner}
+                    onPress={handleImagePick}
+                    disabled={uploadingImage}
+                  >
+                    <IconSymbol name="photo.fill" size={20} color={currentColors.background} />
+                    <Text style={[styles.imageButtonText, { color: currentColors.background }]}>Gallery</Text>
+                  </Pressable>
+                </LinearGradient>
+                
+                <LinearGradient
+                  colors={[currentColors.secondary, currentColors.highlight]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.imageButton, uploadingImage && { opacity: 0.6 }]}
+                >
+                  <Pressable
+                    style={styles.imageButtonInner}
+                    onPress={handleTakePhoto}
+                    disabled={uploadingImage}
+                  >
+                    <IconSymbol name="camera" size={20} color={currentColors.background} />
+                    <Text style={[styles.imageButtonText, { color: currentColors.background }]}>Camera</Text>
+                  </Pressable>
+                </LinearGradient>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: currentColors.text }]}>Full Name</Text>
+              <TextInput
+                style={[
+                  styles.input, 
+                  { 
+                    backgroundColor: currentColors.card, 
+                    color: currentColors.text, 
+                    borderColor: currentColors.border
+                  }
+                ]}
+                value={name}
+                onChangeText={setName}
+                placeholder="Enter your name"
+                placeholderTextColor={currentColors.textSecondary}
+                editable={!saving}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: currentColors.text }]}>Email</Text>
+              <TextInput
+                style={[
+                  styles.input, 
+                  { 
+                    backgroundColor: currentColors.card, 
+                    color: currentColors.text, 
+                    borderColor: currentColors.border
+                  }
+                ]}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter your email"
+                placeholderTextColor={currentColors.textSecondary}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                editable={!saving}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: currentColors.text }]}>Phone</Text>
+              <TextInput
+                style={[
+                  styles.input, 
+                  { 
+                    backgroundColor: currentColors.card, 
+                    color: currentColors.text, 
+                    borderColor: currentColors.border
+                  }
+                ]}
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="Enter your phone"
+                placeholderTextColor={currentColors.textSecondary}
+                keyboardType="phone-pad"
+                editable={!saving}
+              />
+            </View>
+
+            {/* Info note about saving */}
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.infoBox, { borderColor: currentColors.border }]}
+            >
+              <IconSymbol name="info.circle.fill" size={20} color={currentColors.secondary} />
+              <Text style={[styles.infoText, { color: currentColors.text }]}>
+                Changes will be saved to your profile when you tap Save
+              </Text>
+            </LinearGradient>
+          </ScrollView>
+        </View>
+        
+        <Toast
+          visible={toastVisible}
+          message={toastMessage}
+          type={toastType}
+          onHide={() => setToastVisible(false)}
+          currentColors={currentColors}
+        />
+      </SafeAreaView>
+    </LinearGradient>
+  );
+}
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
   },
@@ -226,31 +426,39 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 24,
+    borderBottomWidth: 2,
+    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    elevation: 8,
   },
-   backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: currentColors.card,
-      justifyContent: 'center',
-      alignItems: 'center',
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
-    },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
+  },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   saveButton: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 40,
   },
   inputGroup: {
@@ -258,14 +466,17 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginBottom: 8,
   },
   input: {
-    borderRadius: 12,
+    borderRadius: 0,
     padding: 16,
     fontSize: 16,
-    borderWidth: 1,
+    fontFamily: 'Inter_400Regular',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
   },
   imageSection: {
     alignItems: 'center',
@@ -278,12 +489,12 @@ const styles = StyleSheet.create({
   profileImage: {
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: 0,
   },
   imagePlaceholder: {
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -292,196 +503,36 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   imageButton: {
+    borderRadius: 0,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
+    elevation: 8,
+  },
+  imageButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 12,
     gap: 8,
   },
   imageButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   infoBox: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 0,
     gap: 12,
     marginTop: 8,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
   },
   infoText: {
     flex: 1,
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     lineHeight: 20,
   },
 });
-
-  return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Pressable
-                                onPress={() => {
-                                  if (Platform.OS !== 'web') {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                  }
-                                  router.back();
-                                }}
-                                style={styles.backButton}
-                              >
-                                <IconSymbol name="chevron.left" size={24} color={currentColors.primary} />
-                              </Pressable>
-          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Edit Profile</Text>
-          <Pressable 
-            onPress={handleSave}
-            disabled={saving}
-          >
-            {saving ? (
-              <ActivityIndicator size="small" color={currentColors.primary} />
-            ) : (
-              <Text style={[styles.saveButton, { color: currentColors.primary }]}>Save</Text>
-            )}
-          </Pressable>
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Profile Image Section */}
-          <View style={styles.imageSection}>
-            <View style={styles.imageContainer}>
-              {uploadingImage ? (
-                <View style={[styles.imagePlaceholder, { backgroundColor: currentColors.primary + '20' }]}>
-                  <ActivityIndicator size="large" color={currentColors.primary} />
-                </View>
-              ) : profileImage ? (
-                <Image 
-                  source={{ uri: profileImage }} 
-                  style={styles.profileImage}
-                  onError={() => {
-                    console.error('Failed to load image:', profileImage);
-                    setProfileImage(null);
-                    showToast('error', 'Failed to load image');
-                  }}
-                />
-              ) : (
-                <View style={[styles.imagePlaceholder, { backgroundColor: currentColors.primary }]}>
-                  <IconSymbol name="person" size={48} color={currentColors.card} />
-                </View>
-              )}
-            </View>
-            
-            <View style={styles.imageButtons}>
-              <Pressable
-                style={[
-                  styles.imageButton, 
-                  { backgroundColor: currentColors.primary },
-                  uploadingImage && { opacity: 0.6 }
-                ]}
-                onPress={handleImagePick}
-                disabled={uploadingImage}
-              >
-                <IconSymbol name="photo.fill" size={20} color={currentColors.card} />
-                <Text style={[styles.imageButtonText, { color: currentColors.card }]}>Gallery</Text>
-              </Pressable>
-              
-              <Pressable
-                style={[
-                  styles.imageButton, 
-                  { backgroundColor: currentColors.primary },
-                  uploadingImage && { opacity: 0.6 }
-                ]}
-                onPress={handleTakePhoto}
-                disabled={uploadingImage}
-              >
-                <IconSymbol name="camera" size={20} color={currentColors.card} />
-                <Text style={[styles.imageButtonText, { color: currentColors.card }]}>Camera</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: currentColors.text }]}>Full Name</Text>
-            <TextInput
-              style={[
-                styles.input, 
-                { 
-                  backgroundColor: currentColors.card, 
-                  color: currentColors.text, 
-                  borderColor: currentColors.textSecondary + '30' 
-                }
-              ]}
-              value={name}
-              onChangeText={setName}
-              placeholder="Enter your name"
-              placeholderTextColor={currentColors.textSecondary}
-              editable={!saving}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: currentColors.text }]}>Email</Text>
-            <TextInput
-              style={[
-                styles.input, 
-                { 
-                  backgroundColor: currentColors.card, 
-                  color: currentColors.text, 
-                  borderColor: currentColors.textSecondary + '30' 
-                }
-              ]}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
-              placeholderTextColor={currentColors.textSecondary}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!saving}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: currentColors.text }]}>Phone</Text>
-            <TextInput
-              style={[
-                styles.input, 
-                { 
-                  backgroundColor: currentColors.card, 
-                  color: currentColors.text, 
-                  borderColor: currentColors.textSecondary + '30' 
-                }
-              ]}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Enter your phone"
-              placeholderTextColor={currentColors.textSecondary}
-              keyboardType="phone-pad"
-              editable={!saving}
-            />
-          </View>
-
-          {/* Info note about saving */}
-          <View style={[styles.infoBox, { backgroundColor: currentColors.highlight + '20' }]}>
-            <IconSymbol name="info.circle.fill" size={20} color={currentColors.primary} />
-            <Text style={[styles.infoText, { color: currentColors.text }]}>
-              Changes will be saved to your profile when you tap Save
-            </Text>
-          </View>
-        </ScrollView>
-      </View>
-      
-      <Toast
-        visible={toastVisible}
-        message={toastMessage}
-        type={toastType}
-        onHide={() => setToastVisible(false)}
-        currentColors={currentColors}
-      />
-    </SafeAreaView>
-  );
-}
-

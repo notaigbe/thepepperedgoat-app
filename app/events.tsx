@@ -20,6 +20,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import { Event } from '@/types';
 import { eventService } from '@/services/supabaseService';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function EventsScreen() {
   const router = useRouter();
@@ -226,7 +227,201 @@ export default function EventsScreen() {
     ...accessedInviteEvents,
   ];
 
-  const styles = StyleSheet.create({
+  return (
+    <LinearGradient
+      colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.container}>
+          {/* Header with Gradient */}
+          <LinearGradient
+            colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.header, { borderBottomColor: currentColors.border }]}
+          >
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                router.back();
+              }}
+              style={[styles.backButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
+            >
+              <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
+            </Pressable>
+            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Events</Text>
+            <View style={{ width: 40 }} />
+          </LinearGradient>
+
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={currentColors.secondary} />
+              <Text style={[styles.loadingText, { color: currentColors.textSecondary }]}>
+                Loading events...
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <LinearGradient
+                colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.infoCard, { borderColor: currentColors.border }]}
+              >
+                <IconSymbol name="star.fill" size={24} color={currentColors.highlight} />
+                <View style={styles.infoTextContainer}>
+                  <Text style={[styles.infoText, { color: currentColors.text }]}>
+                    <Text style={{ fontFamily: 'Inter_700Bold' }}>Private Events:</Text> Open to all app members
+                  </Text>
+                  <Text style={[styles.infoText, { color: currentColors.text }]}>
+                    <Text style={{ fontFamily: 'Inter_700Bold' }}>Invite Only:</Text> Accessible via shared link only
+                  </Text>
+                </View>
+              </LinearGradient>
+
+              {allVisibleEvents.length === 0 && (
+                <View style={styles.emptyState}>
+                  <IconSymbol name="calendar" size={80} color={currentColors.textSecondary} />
+                  <Text style={[styles.emptyStateText, { color: currentColors.text }]}>
+                    No events available at the moment
+                  </Text>
+                  <Text style={[styles.emptyStateSubtext, { color: currentColors.textSecondary }]}>
+                    Check back later or ask for an invite link to exclusive events!
+                  </Text>
+                </View>
+              )}
+
+              {allVisibleEvents.map((event) => {
+                const spotsLeft = event.capacity - event.attendees.length;
+                const isRSVPd = userProfile?.rsvpEvents?.some((rsvp: any) => 
+                  rsvp.event_id === event.id || rsvp.eventId === event.id
+                );
+                const isRSVPing = rsvpLoading === event.id;
+
+                return (
+                  <LinearGradient
+                    key={event.id}
+                    colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[styles.eventCard, { borderColor: currentColors.border }]}
+                  >
+                    <View style={[styles.imageContainer, { borderColor: currentColors.border }]}>
+                      <Image
+                        source={{ uri: event.image }}
+                        style={styles.eventImage}
+                      />
+                      <View style={styles.badgeContainer}>
+                        {event.isPrivate && !event.isInviteOnly && (
+                          <LinearGradient
+                            colors={[currentColors.secondary, currentColors.highlight]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.badge}
+                          >
+                            <IconSymbol name="lock.fill" size={12} color={currentColors.background} />
+                            <Text style={[styles.badgeText, { color: currentColors.background }]}>Private Event</Text>
+                          </LinearGradient>
+                        )}
+                        {event.isInviteOnly && (
+                          <LinearGradient
+                            colors={[currentColors.primary, currentColors.highlight]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.badge}
+                          >
+                            <IconSymbol name="envelope.fill" size={12} color={currentColors.background} />
+                            <Text style={[styles.badgeText, { color: currentColors.background }]}>Invite Only</Text>
+                          </LinearGradient>
+                        )}
+                      </View>
+                    </View>
+                    <View style={styles.eventContent}>
+                      <Text style={[styles.eventTitle, { color: currentColors.text }]}>{event.title}</Text>
+                      <Text style={[styles.eventDescription, { color: currentColors.textSecondary }]}>
+                        {event.description}
+                      </Text>
+
+                      <View style={styles.eventDetails}>
+                        <View style={styles.eventDetail}>
+                          <IconSymbol name="calendar" size={16} color={currentColors.secondary} />
+                          <Text style={[styles.eventDetailText, { color: currentColors.text }]}>
+                            {new Date(event.date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </Text>
+                        </View>
+                        <View style={styles.eventDetail}>
+                          <IconSymbol name="location.fill" size={16} color={currentColors.secondary} />
+                          <Text style={[styles.eventDetailText, { color: currentColors.text }]}>
+                            {event.location}
+                          </Text>
+                        </View>
+                        <View style={styles.eventDetail}>
+                          <IconSymbol name="person.2.fill" size={16} color={currentColors.secondary} />
+                          <Text style={[styles.eventDetailText, { color: currentColors.text }]}>
+                            {spotsLeft} spots left
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.buttonRow}>
+                        <LinearGradient
+                          colors={isRSVPd ? [currentColors.primary, currentColors.highlight] : spotsLeft <= 0 ? [currentColors.textSecondary, currentColors.textSecondary] : [currentColors.secondary, currentColors.highlight]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={styles.rsvpButton}
+                        >
+                          <Pressable
+                            style={styles.rsvpButtonInner}
+                            onPress={() => handleRSVP(event)}
+                            disabled={spotsLeft <= 0 || isRSVPing}
+                          >
+                            {isRSVPing ? (
+                              <ActivityIndicator size="small" color={currentColors.background} />
+                            ) : (
+                              <Text style={[styles.rsvpButtonText, { color: currentColors.background }]}>
+                                {isRSVPd ? 'RSVP Confirmed' : spotsLeft <= 0 ? 'Event Full' : 'RSVP Now'}
+                              </Text>
+                            )}
+                          </Pressable>
+                        </LinearGradient>
+                        {event.isInviteOnly && (
+                          <Pressable
+                            style={[styles.shareButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
+                            onPress={() => handleShareEvent(event)}
+                          >
+                            <IconSymbol name="square.and.arrow.up" size={20} color={currentColors.secondary} />
+                          </Pressable>
+                        )}
+                      </View>
+                    </View>
+                  </LinearGradient>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
   },
@@ -238,21 +433,28 @@ export default function EventsScreen() {
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 24,
+    borderBottomWidth: 2,
+    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    elevation: 8,
   },
   backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: currentColors.card,
-      justifyContent: 'center',
-      alignItems: 'center',
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
-    },
+    width: 40,
+    height: 40,
+    borderRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
+  },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   loadingContainer: {
     flex: 1,
@@ -262,21 +464,26 @@ export default function EventsScreen() {
   },
   loadingText: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 40,
   },
   infoCard: {
-    borderRadius: 12,
+    borderRadius: 0,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
     marginBottom: 20,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
   },
   infoTextContainer: {
     flex: 1,
@@ -284,6 +491,7 @@ export default function EventsScreen() {
   },
   infoText: {
     fontSize: 13,
+    fontFamily: 'Inter_400Regular',
     lineHeight: 18,
   },
   emptyState: {
@@ -293,20 +501,26 @@ export default function EventsScreen() {
     gap: 12,
   },
   emptyStateText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 20,
+    fontFamily: 'PlayfairDisplay_700Bold',
     textAlign: 'center',
   },
   emptyStateSubtext: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     textAlign: 'center',
   },
   eventCard: {
     borderRadius: 0,
     marginBottom: 20,
     overflow: 'hidden',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
+  },
+  imageContainer: {
+    borderBottomWidth: 2,
+    overflow: 'hidden',
   },
   eventImage: {
     width: '100%',
@@ -325,22 +539,25 @@ export default function EventsScreen() {
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 0,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
   },
   badgeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   eventContent: {
     padding: 20,
   },
   eventTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 8,
   },
   eventDescription: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     lineHeight: 20,
     marginBottom: 16,
   },
@@ -355,6 +572,7 @@ export default function EventsScreen() {
   },
   eventDetailText: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -362,7 +580,11 @@ export default function EventsScreen() {
   },
   rsvpButton: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 0,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
+    elevation: 8,
+  },
+  rsvpButtonInner: {
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -370,166 +592,16 @@ export default function EventsScreen() {
   },
   rsvpButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_700Bold',
   },
   shareButton: {
-    borderRadius: 12,
+    borderRadius: 0,
     padding: 16,
     width: 56,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
   },
 });
-
-  return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]} edges={['top']}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Pressable
-                      onPress={() => {
-                        if (Platform.OS !== 'web') {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        }
-                        router.back();
-                      }}
-                      style={styles.backButton}
-                    >
-                      <IconSymbol name="chevron.left" size={24} color={currentColors.primary} />
-                    </Pressable>
-          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Events</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={currentColors.primary} />
-            <Text style={[styles.loadingText, { color: currentColors.textSecondary }]}>
-              Loading events...
-            </Text>
-          </View>
-        ) : (
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={[styles.infoCard, { backgroundColor: currentColors.highlight + '20' }]}>
-              <IconSymbol name="star.fill" size={24} color={currentColors.highlight} />
-              <View style={styles.infoTextContainer}>
-                <Text style={[styles.infoText, { color: currentColors.text }]}>
-                  <Text style={{ fontWeight: 'bold' }}>Private Events:</Text> Open to all app members
-                </Text>
-                <Text style={[styles.infoText, { color: currentColors.text }]}>
-                  <Text style={{ fontWeight: 'bold' }}>Invite Only:</Text> Accessible via shared link only
-                </Text>
-              </View>
-            </View>
-
-            {allVisibleEvents.length === 0 && (
-              <View style={[styles.emptyState, { backgroundColor: currentColors.card }]}>
-                <IconSymbol name="calendar" size={48} color={currentColors.textSecondary} />
-                <Text style={[styles.emptyStateText, { color: currentColors.textSecondary }]}>
-                  No events available at the moment
-                </Text>
-                <Text style={[styles.emptyStateSubtext, { color: currentColors.textSecondary }]}>
-                  Check back later or ask for an invite link to exclusive events!
-                </Text>
-              </View>
-            )}
-
-            {allVisibleEvents.map((event) => {
-              const spotsLeft = event.capacity - event.attendees.length;
-              const isRSVPd = userProfile?.rsvpEvents?.some((rsvp: any) => 
-                rsvp.event_id === event.id || rsvp.eventId === event.id
-              );
-              const isRSVPing = rsvpLoading === event.id;
-
-              return (
-                <View key={event.id} style={[styles.eventCard, { backgroundColor: currentColors.card }]}>
-                  <Image
-                    source={{ uri: event.image }}
-                    style={[styles.eventImage, { backgroundColor: currentColors.textSecondary + '20' }]}
-                  />
-                  <View style={styles.badgeContainer}>
-                    {event.isPrivate && !event.isInviteOnly && (
-                      <View style={[styles.badge, { backgroundColor: currentColors.primary }]}>
-                        <IconSymbol name="lock.fill" size={12} color={currentColors.card} />
-                        <Text style={[styles.badgeText, { color: currentColors.card }]}>Private Event</Text>
-                      </View>
-                    )}
-                    {event.isInviteOnly && (
-                      <View style={[styles.badge, { backgroundColor: currentColors.secondary }]}>
-                        <IconSymbol name="envelope.fill" size={12} color={currentColors.card} />
-                        <Text style={[styles.badgeText, { color: currentColors.card }]}>Invite Only</Text>
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.eventContent}>
-                    <Text style={[styles.eventTitle, { color: currentColors.text }]}>{event.title}</Text>
-                    <Text style={[styles.eventDescription, { color: currentColors.textSecondary }]}>
-                      {event.description}
-                    </Text>
-
-                    <View style={styles.eventDetails}>
-                      <View style={styles.eventDetail}>
-                        <IconSymbol name="calendar" size={16} color={currentColors.primary} />
-                        <Text style={[styles.eventDetailText, { color: currentColors.text }]}>
-                          {new Date(event.date).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </Text>
-                      </View>
-                      <View style={styles.eventDetail}>
-                        <IconSymbol name="location.fill" size={16} color={currentColors.primary} />
-                        <Text style={[styles.eventDetailText, { color: currentColors.text }]}>
-                          {event.location}
-                        </Text>
-                      </View>
-                      <View style={styles.eventDetail}>
-                        <IconSymbol name="person.2.fill" size={16} color={currentColors.primary} />
-                        <Text style={[styles.eventDetailText, { color: currentColors.text }]}>
-                          {spotsLeft} spots left
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.buttonRow}>
-                      <Pressable
-                        style={[
-                          styles.rsvpButton,
-                          { backgroundColor: currentColors.primary },
-                          isRSVPd && { backgroundColor: currentColors.accent },
-                          spotsLeft <= 0 && { backgroundColor: currentColors.textSecondary + '40' },
-                        ]}
-                        onPress={() => handleRSVP(event)}
-                        disabled={spotsLeft <= 0 || isRSVPing}
-                      >
-                        {isRSVPing ? (
-                          <ActivityIndicator size="small" color={currentColors.card} />
-                        ) : (
-                          <Text style={[styles.rsvpButtonText, { color: currentColors.card }]}>
-                            {isRSVPd ? 'RSVP Confirmed' : spotsLeft <= 0 ? 'Event Full' : 'RSVP Now'}
-                          </Text>
-                        )}
-                      </Pressable>
-                      {event.isInviteOnly && (
-                        <Pressable
-                          style={[styles.shareButton, { backgroundColor: currentColors.secondary }]}
-                          onPress={() => handleShareEvent(event)}
-                        >
-                          <IconSymbol name="square.and.arrow.up" size={20} color={currentColors.card} />
-                        </Pressable>
-                      )}
-                    </View>
-                  </View>
-                </View>
-              );
-            })}
-          </ScrollView>
-        )}
-      </View>
-    </SafeAreaView>
-  );
-}

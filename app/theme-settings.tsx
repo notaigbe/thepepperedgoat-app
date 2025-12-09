@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -15,6 +16,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import { ThemeMode, ColorScheme } from '@/types';
 import { themeService } from '@/services/supabaseService';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ThemeSettingsScreen() {
   const router = useRouter();
@@ -78,302 +80,332 @@ export default function ThemeSettingsScreen() {
     await updateColorScheme(scheme);
   };
 
-  const styles = StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: currentColors.background,
-    },
-    container: {
-      flex: 1,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      gap: 16,
-    },
-    backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: currentColors.card,
-      justifyContent: 'center',
-      alignItems: 'center',
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
-    },
-    headerTitle: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: currentColors.text,
-      flex: 1,
-    },
-    savingIndicator: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    savingText: {
-      fontSize: 12,
-      color: currentColors.textSecondary,
-    },
-    scrollView: {
-      flex: 1,
-    },
-    scrollContent: {
-      paddingHorizontal: 20,
-      paddingBottom: 40,
-    },
-    section: {
-      marginBottom: 32,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: currentColors.text,
-      marginBottom: 16,
-    },
-    sectionDescription: {
-      fontSize: 14,
-      color: currentColors.textSecondary,
-      marginBottom: 16,
-      lineHeight: 20,
-    },
-    optionCard: {
-      backgroundColor: currentColors.card,
-      borderRadius: 0,
-      padding: 16,
-      marginBottom: 12,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 16,
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
-    },
-    optionCardSelected: {
-      borderWidth: 2,
-      borderColor: currentColors.primary,
-    },
-    optionIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: currentColors.background,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    optionContent: {
-      flex: 1,
-    },
-    optionLabel: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: currentColors.text,
-      marginBottom: 4,
-    },
-    optionDescription: {
-      fontSize: 14,
-      color: currentColors.textSecondary,
-      lineHeight: 18,
-    },
-    checkIcon: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: currentColors.primary,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    colorSchemeCard: {
-      backgroundColor: currentColors.card,
-      borderRadius: 0,
-      padding: 16,
-      marginBottom: 12,
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
-    },
-    colorSchemeCardSelected: {
-      borderWidth: 2,
-      borderColor: currentColors.primary,
-    },
-    colorSchemeHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 12,
-    },
-    colorSchemeInfo: {
-      flex: 1,
-    },
-    colorSchemeLabel: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: currentColors.text,
-      marginBottom: 4,
-    },
-    colorSchemeDescription: {
-      fontSize: 14,
-      color: currentColors.textSecondary,
-      lineHeight: 18,
-    },
-    colorPreview: {
-      flexDirection: 'row',
-      gap: 8,
-    },
-    colorCircle: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      borderWidth: 2,
-      borderColor: currentColors.background,
-    },
-    previewSection: {
-      marginTop: 8,
-      padding: 16,
-      backgroundColor: currentColors.background,
-      borderRadius: 8,
-    },
-    previewTitle: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: currentColors.text,
-      marginBottom: 8,
-    },
-    previewRow: {
-      flexDirection: 'row',
-      gap: 8,
-      flexWrap: 'wrap',
-    },
-    previewChip: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 16,
-      backgroundColor: currentColors.primary,
-    },
-    previewChipText: {
-      fontSize: 12,
-      color: currentColors.card,
-      fontWeight: '600',
-    },
-  });
-
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Pressable
-            style={styles.backButton}
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              router.back();
-            }}
+    <LinearGradient
+      colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.container}>
+          {/* Header with Gradient */}
+          <LinearGradient
+            colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.header, { borderBottomColor: currentColors.border }]}
           >
-            <IconSymbol name="chevron.left" size={20} color={currentColors.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Theme Settings</Text>
-          {isSaving && (
-            <View style={styles.savingIndicator}>
-              <ActivityIndicator size="small" color={currentColors.primary} />
-              <Text style={styles.savingText}>Saving...</Text>
-            </View>
-          )}
-        </View>
+            <Pressable
+              style={[styles.backButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                router.back();
+              }}
+            >
+              <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
+            </Pressable>
+            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Theme Settings</Text>
+            {isSaving ? (
+              <ActivityIndicator size="small" color={currentColors.secondary} />
+            ) : (
+              <View style={{ width: 40 }} />
+            )}
+          </LinearGradient>
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Theme Mode Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Theme Mode</Text>
-            <Text style={styles.sectionDescription}>
-              Choose how the app looks. Auto mode follows your device settings.
-            </Text>
-            {themeModes.map((mode) => (
-              <Pressable
-                key={mode.value}
-                style={[
-                  styles.optionCard,
-                  themeSettings.mode === mode.value && styles.optionCardSelected,
-                ]}
-                onPress={() => handleThemeModeChange(mode.value)}
-                disabled={isSaving}
-              >
-                <View style={styles.optionIcon}>
-                  <IconSymbol 
-                    name={mode.icon} 
-                    size={24} 
-                    color={themeSettings.mode === mode.value ? currentColors.primary : currentColors.textSecondary} 
-                  />
-                </View>
-                <View style={styles.optionContent}>
-                  <Text style={styles.optionLabel}>{mode.label}</Text>
-                  <Text style={styles.optionDescription}>{mode.description}</Text>
-                </View>
-                {themeSettings.mode === mode.value && (
-                  <View style={styles.checkIcon}>
-                    <IconSymbol name="checkmark" size={16} color={currentColors.card} />
-                  </View>
-                )}
-              </Pressable>
-            ))}
-          </View>
-
-          {/* Color Scheme Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Color Scheme</Text>
-            <Text style={styles.sectionDescription}>
-              Select a color palette that matches your style.
-            </Text>
-            {colorSchemes.map((scheme) => (
-              <Pressable
-                key={scheme.value}
-                style={[
-                  styles.colorSchemeCard,
-                  themeSettings.colorScheme === scheme.value && styles.colorSchemeCardSelected,
-                ]}
-                onPress={() => handleColorSchemeChange(scheme.value)}
-                disabled={isSaving}
-              >
-                <View style={styles.colorSchemeHeader}>
-                  <View style={styles.colorSchemeInfo}>
-                    <Text style={styles.colorSchemeLabel}>{scheme.label}</Text>
-                    <Text style={styles.colorSchemeDescription}>{scheme.description}</Text>
-                  </View>
-                  <View style={styles.colorPreview}>
-                    {scheme.colors.map((color, index) => (
-                      <View
-                        key={index}
-                        style={[styles.colorCircle, { backgroundColor: color }]}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Theme Mode Section */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Theme Mode</Text>
+              <Text style={[styles.sectionDescription, { color: currentColors.textSecondary }]}>
+                Choose how the app looks. Auto mode follows your device settings.
+              </Text>
+              {themeModes.map((mode) => (
+                <Pressable
+                  key={mode.value}
+                  onPress={() => handleThemeModeChange(mode.value)}
+                  disabled={isSaving}
+                >
+                  <LinearGradient
+                    colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[
+                      styles.optionCard,
+                      { borderColor: themeSettings.mode === mode.value ? currentColors.secondary : currentColors.border },
+                    ]}
+                  >
+                    <View style={[styles.optionIcon, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}>
+                      <IconSymbol 
+                        name={mode.icon} 
+                        size={24} 
+                        color={themeSettings.mode === mode.value ? currentColors.secondary : currentColors.textSecondary} 
                       />
-                    ))}
-                  </View>
-                </View>
-                {themeSettings.colorScheme === scheme.value && (
-                  <View style={styles.previewSection}>
-                    <Text style={styles.previewTitle}>Preview</Text>
-                    <View style={styles.previewRow}>
-                      <View style={styles.previewChip}>
-                        <Text style={styles.previewChipText}>Primary</Text>
+                    </View>
+                    <View style={styles.optionContent}>
+                      <Text style={[styles.optionLabel, { color: currentColors.text }]}>{mode.label}</Text>
+                      <Text style={[styles.optionDescription, { color: currentColors.textSecondary }]}>{mode.description}</Text>
+                    </View>
+                    {themeSettings.mode === mode.value && (
+                      <LinearGradient
+                        colors={[currentColors.secondary, currentColors.highlight]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.checkIcon}
+                      >
+                        <IconSymbol name="checkmark" size={16} color={currentColors.background} />
+                      </LinearGradient>
+                    )}
+                  </LinearGradient>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Color Scheme Section */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Color Scheme</Text>
+              <Text style={[styles.sectionDescription, { color: currentColors.textSecondary }]}>
+                Select a color palette that matches your style.
+              </Text>
+              {colorSchemes.map((scheme) => (
+                <Pressable
+                  key={scheme.value}
+                  onPress={() => handleColorSchemeChange(scheme.value)}
+                  disabled={isSaving}
+                >
+                  <LinearGradient
+                    colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[
+                      styles.colorSchemeCard,
+                      { borderColor: themeSettings.colorScheme === scheme.value ? currentColors.secondary : currentColors.border },
+                    ]}
+                  >
+                    <View style={styles.colorSchemeHeader}>
+                      <View style={styles.colorSchemeInfo}>
+                        <Text style={[styles.colorSchemeLabel, { color: currentColors.text }]}>{scheme.label}</Text>
+                        <Text style={[styles.colorSchemeDescription, { color: currentColors.textSecondary }]}>{scheme.description}</Text>
                       </View>
-                      <View style={[styles.previewChip, { backgroundColor: currentColors.secondary }]}>
-                        <Text style={styles.previewChipText}>Secondary</Text>
-                      </View>
-                      <View style={[styles.previewChip, { backgroundColor: currentColors.accent }]}>
-                        <Text style={styles.previewChipText}>Accent</Text>
+                      <View style={styles.colorPreview}>
+                        {scheme.colors.map((color, index) => (
+                          <View
+                            key={index}
+                            style={[styles.colorCircle, { backgroundColor: color, borderColor: currentColors.border }]}
+                          />
+                        ))}
                       </View>
                     </View>
-                  </View>
-                )}
-              </Pressable>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+                    {themeSettings.colorScheme === scheme.value && (
+                      <View style={[styles.previewSection, { backgroundColor: currentColors.background }]}>
+                        <Text style={[styles.previewTitle, { color: currentColors.text }]}>Preview</Text>
+                        <View style={styles.previewRow}>
+                          <LinearGradient
+                            colors={[currentColors.secondary, currentColors.highlight]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.previewChip}
+                          >
+                            <Text style={[styles.previewChipText, { color: currentColors.background }]}>Primary</Text>
+                          </LinearGradient>
+                          <LinearGradient
+                            colors={[currentColors.primary, currentColors.highlight]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.previewChip}
+                          >
+                            <Text style={[styles.previewChipText, { color: currentColors.background }]}>Secondary</Text>
+                          </LinearGradient>
+                          <View style={[styles.previewChip, { backgroundColor: currentColors.accent }]}>
+                            <Text style={[styles.previewChipText, { color: currentColors.background }]}>Accent</Text>
+                          </View>
+                        </View>
+                      </View>
+                    )}
+                  </LinearGradient>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
+
+const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    gap: 16,
+    borderBottomWidth: 2,
+    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    elevation: 8,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    flex: 1,
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    marginBottom: 16,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  optionCard: {
+    borderRadius: 0,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
+  },
+  optionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
+  },
+  optionContent: {
+    flex: 1,
+  },
+  optionLabel: {
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
+    marginBottom: 4,
+  },
+  optionDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 18,
+  },
+  checkIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
+  },
+  colorSchemeCard: {
+    borderRadius: 0,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
+  },
+  colorSchemeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  colorSchemeInfo: {
+    flex: 1,
+  },
+  colorSchemeLabel: {
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
+    marginBottom: 4,
+  },
+  colorSchemeDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 18,
+  },
+  colorPreview: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  colorCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 0,
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
+    elevation: 4,
+  },
+  previewSection: {
+    marginTop: 8,
+    padding: 16,
+    borderRadius: 0,
+  },
+  previewTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+    marginBottom: 8,
+  },
+  previewRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  previewChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 0,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
+  },
+  previewChipText: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+  },
+});
