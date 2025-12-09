@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   Dimensions,
   ActivityIndicator,
   TextInput,
+  Modal,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -25,7 +27,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const menuCategories = [
   "All",
-  "Online Special",
   "Online Appetizers",
   "Online Jollof Combos",
   "Online Beverages",
@@ -54,6 +55,11 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const [headerImage, setHeaderImage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [categoriesCollapsed, setCategoriesCollapsed] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const categoryScrollY = useRef(0);
+  
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -109,6 +115,7 @@ export default function HomeScreen() {
     console.log("Category selected:", category);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedCategory(category);
+    setShowCategoryDropdown(false);
   };
 
   const handleItemPress = (itemId: string) => {
@@ -129,6 +136,23 @@ export default function HomeScreen() {
     console.log("Clearing search");
     setSearchQuery("");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleScroll = (event: any) => {
+    const currentScrollY = event.nativeEvent.contentOffset.y;
+    
+    // Collapse categories when scrolled past them (approximately 80px)
+    if (currentScrollY > 80 && !categoriesCollapsed) {
+      setCategoriesCollapsed(true);
+    } else if (currentScrollY <= 80 && categoriesCollapsed) {
+      setCategoriesCollapsed(false);
+    }
+  };
+
+  const toggleCategoryDropdown = () => {
+    console.log("Toggle category dropdown");
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowCategoryDropdown(!showCategoryDropdown);
   };
 
   return (
@@ -182,7 +206,7 @@ export default function HomeScreen() {
         </SafeAreaView>
       </View>
 
-      {/* Search Bar */}
+      {/* Search Bar with Category Dropdown */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBarWrapper}>
           <IconSymbol
@@ -210,60 +234,128 @@ export default function HomeScreen() {
               />
             </Pressable>
           )}
+          
+          {/* Category Dropdown Button (visible when collapsed) */}
+          {categoriesCollapsed && (
+            <Pressable 
+              onPress={toggleCategoryDropdown}
+              style={styles.categoryDropdownButton}
+            >
+              <IconSymbol
+                ios_icon_name="line.3.horizontal.decrease.circle.fill"
+                android_material_icon_name="filter_list"
+                size={24}
+                color="#5FE8D0"
+              />
+            </Pressable>
+          )}
         </View>
       </View>
 
+      {/* Category Dropdown Modal */}
+      <Modal
+        visible={showCategoryDropdown}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCategoryDropdown(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setShowCategoryDropdown(false)}
+        >
+          <View style={styles.dropdownContainer}>
+            <View style={styles.dropdownHeader}>
+              <Text style={styles.dropdownTitle}>Categories</Text>
+              <Pressable onPress={() => setShowCategoryDropdown(false)}>
+                <IconSymbol
+                  ios_icon_name="xmark.circle.fill"
+                  android_material_icon_name="cancel"
+                  size={24}
+                  color="#B0B8C1"
+                />
+              </Pressable>
+            </View>
+            <ScrollView style={styles.dropdownScroll}>
+              {menuCategories.map((category) => (
+                <Pressable
+                  key={category}
+                  style={[
+                    styles.dropdownItem,
+                    selectedCategory === category && styles.dropdownItemSelected
+                  ]}
+                  onPress={() => handleCategoryPress(category)}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      selectedCategory === category && styles.dropdownItemTextSelected
+                    ]}
+                  >
+                    {category}
+                  </Text>
+                  {selectedCategory === category && (
+                    <IconSymbol
+                      ios_icon_name="checkmark.circle.fill"
+                      android_material_icon_name="check_circle"
+                      size={20}
+                      color="#5FE8D0"
+                    />
+                  )}
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
+
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
-        {/* Categories */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoriesContainer}
-          contentContainerStyle={styles.categoriesContent}
-        >
-          {menuCategories.map((category) => (
-            <Pressable
-              key={category}
-              style={[
-                styles.categoryButton,
-                {
-                  backgroundColor: selectedCategory === category ? '#F5A623' : '#1A3A2E',
-                  borderColor: selectedCategory === category ? '#F5A623' : '#4AD7C2',
-                  paddingHorizontal: getResponsivePadding(16),
-                  paddingVertical: getResponsivePadding(10),
-                },
-              ]}
-              onPress={() => handleCategoryPress(category)}
-            >
-              <Text
+        {/* Categories - Hidden when collapsed */}
+        {!categoriesCollapsed && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoriesContainer}
+            contentContainerStyle={styles.categoriesContent}
+          >
+            {menuCategories.map((category) => (
+              <Pressable
+                key={category}
                 style={[
-                  styles.categoryText,
+                  styles.categoryButton,
                   {
-                    color: selectedCategory === category ? '#1A5A3E' : '#FFFFFF',
-                    fontSize: getResponsiveFontSize(13),
+                    backgroundColor: selectedCategory === category ? '#F5A623' : '#1A3A2E',
+                    borderColor: selectedCategory === category ? '#F5A623' : '#4AD7C2',
+                    paddingHorizontal: getResponsivePadding(16),
+                    paddingVertical: getResponsivePadding(10),
                   },
                 ]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
+                onPress={() => handleCategoryPress(category)}
               >
-                {category}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        {/* Online Special Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            {searchQuery ? 'Search Results' : 'Online Special'}
-          </Text>
-          <View style={styles.divider} />
-        </View>
+                <Text
+                  style={[
+                    styles.categoryText,
+                    {
+                      color: selectedCategory === category ? '#1A5A3E' : '#FFFFFF',
+                      fontSize: getResponsiveFontSize(13),
+                    },
+                  ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  {category}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
 
         {/* Menu Items */}
         {loading || menuItems.length === 0 ? (
@@ -463,6 +555,63 @@ const styles = StyleSheet.create({
     padding: 4,
     marginLeft: 8,
   },
+  categoryDropdownButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-start',
+    paddingTop: 120,
+    paddingHorizontal: 20,
+  },
+  dropdownContainer: {
+    backgroundColor: '#1A3A2E',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#4AD7C2',
+    maxHeight: 400,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.5)',
+    elevation: 8,
+  },
+  dropdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#4AD7C2',
+  },
+  dropdownTitle: {
+    fontSize: 20,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    color: '#5FE8D0',
+  },
+  dropdownScroll: {
+    maxHeight: 320,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(74, 215, 194, 0.2)',
+  },
+  dropdownItemSelected: {
+    backgroundColor: 'rgba(245, 166, 35, 0.15)',
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#FFFFFF',
+  },
+  dropdownItemTextSelected: {
+    color: '#5FE8D0',
+  },
   scrollView: {
     flex: 1,
   },
@@ -471,7 +620,7 @@ const styles = StyleSheet.create({
   },
   categoriesContainer: {
     maxHeight: 60,
-    marginBottom: 20,
+    marginBottom: 12,
     marginTop: 12,
   },
   categoriesContent: {
@@ -491,24 +640,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
     fontFamily: 'Inter_600SemiBold',
-  },
-  sectionHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20,
-    alignItems: 'flex-start',
-  },
-  sectionTitle: {
-    fontSize: 36,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    letterSpacing: 1,
-    marginBottom: 16,
-    color: '#5FE8D0',
-  },
-  divider: {
-    width: 100,
-    height: 2,
-    backgroundColor: '#5FE8D0',
   },
   loadingContainer: {
     flex: 1,
