@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,9 +10,6 @@ import {
   Platform,
   Dimensions,
   ActivityIndicator,
-  TextInput,
-  Animated,
-  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -27,13 +24,12 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const menuCategories = [
   "All",
+  "Online Special",
   "Online Appetizers",
-  "Online Beverages",
-  "Online Desserts",
   "Online Jollof Combos",
-  "Online White Rice Combos",
-  "Online Soups x Dips",
+  "Online Beverages",
   "Online Sides",
+  "Online Soups x Dips",
 ];
 
 // Responsive font size calculation
@@ -56,13 +52,6 @@ export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState(false);
   const [headerImage, setHeaderImage] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  
-  // Animation values
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const searchBarSticky = useRef(new Animated.Value(0)).current;
-  
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -102,43 +91,15 @@ export default function HomeScreen() {
     }
   }, [menuItems.length, loadMenuItems]);
 
-  // Handle scroll animations
-  useEffect(() => {
-    const listener = scrollY.addListener(({ value }) => {
-      // Make search bar sticky when scrolling down past 50px
-      if (value > 50) {
-        Animated.timing(searchBarSticky, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: false,
-        }).start();
-      } else {
-        Animated.timing(searchBarSticky, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: false,
-        }).start();
-      }
-    });
-
-    return () => {
-      scrollY.removeListener(listener);
-    };
-  }, [scrollY, searchBarSticky]);
-
-  const filteredItems = menuItems.filter((item) => {
-    const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
-    const matchesSearch = searchQuery === "" || 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredItems =
+    selectedCategory === "All"
+      ? menuItems
+      : menuItems.filter((item) => item.category === selectedCategory);
 
   const handleCategoryPress = (category: string) => {
     console.log("Category selected:", category);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedCategory(category);
-    setShowCategoryDropdown(false);
   };
 
   const handleItemPress = (itemId: string) => {
@@ -162,19 +123,23 @@ export default function HomeScreen() {
       end={{ x: 0, y: 1 }}
       style={styles.container}
     >
-      {/* Fixed Header */}
+      {/* Header with Dark Green Background */}
       <View style={styles.headerBackground}>
         <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
           <View style={styles.header}>
             <View style={styles.headerContent}>
               {headerImage ? (
-                <Image source={{ uri: headerImage }} style={styles.logo} />
+                <Image 
+                  source={{ uri: headerImage }} 
+                  style={styles.logo}
+                  tintColor="#5FE8D0"
+                />
               ) : (
                 <View style={styles.logoPlaceholder}>
-                  <Text style={[styles.logoText, { color: currentColors.primary }]}>
-                    JAGABANS
+                  <Text style={styles.logoText}>
+                    Jagabans
                   </Text>
-                  <Text style={[styles.logoSubtext, { color: currentColors.secondary }]}>
+                  <Text style={styles.logoSubtext}>
                     LOS ANGELES
                   </Text>
                 </View>
@@ -182,14 +147,17 @@ export default function HomeScreen() {
             </View>
             <Pressable 
               onPress={() => router.push("/notifications")}
-              style={styles.menuButton}
+              style={styles.notificationButton}
             >
-              <View style={styles.hamburgerLine} />
-              <View style={styles.hamburgerLine} />
-              <View style={styles.hamburgerLine} />
+              <IconSymbol
+                ios_icon_name="bell.fill"
+                android_material_icon_name="notifications"
+                size={28}
+                color="#FFFFFF"
+              />
               {unreadCount > 0 && (
-                <View style={[styles.notificationBadge, { backgroundColor: currentColors.primary }]}>
-                  <Text style={[styles.notificationBadgeText, { color: currentColors.background }]}>
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </Text>
                 </View>
@@ -199,212 +167,63 @@ export default function HomeScreen() {
         </SafeAreaView>
       </View>
 
-      {/* Sticky Search Bar - positioned below header */}
-      <Animated.View 
-        style={[
-          styles.stickySearchContainer,
-          {
-            top: searchBarSticky.interpolate({
-              inputRange: [0, 1],
-              outputRange: [120, 0],
-            }),
-          }
-        ]}
-      >
-        <SafeAreaView edges={searchBarSticky.interpolate({
-          inputRange: [0, 1],
-          outputRange: [[], ['top']],
-        }) as any} style={styles.searchSafeArea}>
-          <View style={styles.searchBarWrapper}>
-            <View style={styles.searchBarContainer}>
-              <IconSymbol
-                ios_icon_name="magnifyingglass"
-                android_material_icon_name="search"
-                size={20}
-                color="#B0B8C1"
-                style={styles.searchIcon}
-              />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search menu items..."
-                placeholderTextColor="#B0B8C1"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              {searchQuery.length > 0 && (
-                <Pressable onPress={() => setSearchQuery("")}>
-                  <IconSymbol
-                    ios_icon_name="xmark.circle.fill"
-                    android_material_icon_name="cancel"
-                    size={20}
-                    color="#B0B8C1"
-                  />
-                </Pressable>
-              )}
-            </View>
-            
-            {/* Category Dropdown Button (visible when sticky) */}
-            <Animated.View
-              style={{
-                opacity: searchBarSticky,
-                width: searchBarSticky.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 50],
-                }),
-                overflow: 'hidden',
-              }}
-            >
-              <Pressable
-                style={styles.categoryDropdownButton}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowCategoryDropdown(!showCategoryDropdown);
-                }}
-              >
-                <IconSymbol
-                  ios_icon_name="line.3.horizontal.decrease.circle"
-                  android_material_icon_name="filter_list"
-                  size={24}
-                  color="#5FE8D0"
-                />
-              </Pressable>
-            </Animated.View>
-          </View>
-        </SafeAreaView>
-      </Animated.View>
-
-      {/* Category Dropdown Modal */}
-      <Modal
-        visible={showCategoryDropdown}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowCategoryDropdown(false)}
-      >
-        <Pressable 
-          style={styles.modalOverlay}
-          onPress={() => setShowCategoryDropdown(false)}
-        >
-          <View style={styles.dropdownContainer}>
-            <View style={styles.dropdownHeader}>
-              <Text style={styles.dropdownTitle}>Categories</Text>
-              <Pressable onPress={() => setShowCategoryDropdown(false)}>
-                <IconSymbol
-                  ios_icon_name="xmark.circle.fill"
-                  android_material_icon_name="cancel"
-                  size={24}
-                  color="#5FE8D0"
-                />
-              </Pressable>
-            </View>
-            <ScrollView style={styles.dropdownScroll}>
-              {menuCategories.map((category) => (
-                <Pressable
-                  key={category}
-                  style={[
-                    styles.dropdownItem,
-                    selectedCategory === category && styles.dropdownItemSelected,
-                  ]}
-                  onPress={() => handleCategoryPress(category)}
-                >
-                  <Text
-                    style={[
-                      styles.dropdownItemText,
-                      selectedCategory === category && styles.dropdownItemTextSelected,
-                    ]}
-                  >
-                    {category}
-                  </Text>
-                  {selectedCategory === category && (
-                    <IconSymbol
-                      ios_icon_name="checkmark.circle.fill"
-                      android_material_icon_name="check_circle"
-                      size={20}
-                      color="#F5A623"
-                    />
-                  )}
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-        </Pressable>
-      </Modal>
-
-      <Animated.ScrollView
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false }
-        )}
-        scrollEventThrottle={16}
       >
-        {/* Categories - Below search bar when at top, hidden when sticky */}
-        <Animated.View
-          style={{
-            opacity: searchBarSticky.interpolate({
-              inputRange: [0, 1],
-              outputRange: [1, 0],
-            }),
-            height: searchBarSticky.interpolate({
-              inputRange: [0, 1],
-              outputRange: [80, 0],
-            }),
-            overflow: 'hidden',
-          }}
+        {/* Categories */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoriesContainer}
+          contentContainerStyle={styles.categoriesContent}
         >
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.categoriesContainer}
-            contentContainerStyle={styles.categoriesContent}
-          >
-            {menuCategories.map((category) => (
-              <Pressable
-                key={category}
+          {menuCategories.map((category) => (
+            <Pressable
+              key={category}
+              style={[
+                styles.categoryButton,
+                {
+                  backgroundColor: selectedCategory === category ? '#F5A623' : '#1A3A2E',
+                  borderColor: selectedCategory === category ? '#F5A623' : '#4AD7C2',
+                  paddingHorizontal: getResponsivePadding(16),
+                  paddingVertical: getResponsivePadding(10),
+                },
+              ]}
+              onPress={() => handleCategoryPress(category)}
+            >
+              <Text
                 style={[
-                  styles.categoryButton,
+                  styles.categoryText,
                   {
-                    backgroundColor: selectedCategory === category ? '#F5A623' : '#1A3A2E',
-                    borderColor: selectedCategory === category ? '#F5A623' : '#4AD7C2',
-                    paddingHorizontal: getResponsivePadding(16),
-                    paddingVertical: getResponsivePadding(10),
-                  },
-                  selectedCategory === category && {
-                    color: currentColors.background,
+                    color: selectedCategory === category ? '#1A5A3E' : '#FFFFFF',
+                    fontSize: getResponsiveFontSize(13),
                   },
                 ]}
-                onPress={() => handleCategoryPress(category)}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
-                <Text
-                  style={[
-                    styles.categoryText,
-                    {
-                      color: selectedCategory === category ? '#1A5A3E' : '#FFFFFF',
-                      fontSize: getResponsiveFontSize(13),
-                    },
-                  ]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
-                >
-                  {category}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </Animated.View>
+                {category}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        {/* Online Special Section */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            Online Special
+          </Text>
+          <View style={styles.divider} />
+        </View>
 
         {/* Menu Items */}
         {loading || menuItems.length === 0 ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={currentColors.primary} />
-            <Text
-              style={[
-                styles.loadingText,
-                { color: currentColors.textSecondary },
-              ]}
-            >
+            <ActivityIndicator size="large" color="#5FE8D0" />
+            <Text style={styles.loadingText}>
               Loading menu...
             </Text>
           </View>
@@ -413,86 +232,76 @@ export default function HomeScreen() {
             {filteredItems.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <IconSymbol
-                  ios_icon_name="magnifyingglass"
-                  android_material_icon_name="search_off"
+                  name="restaurant"
                   size={64}
-                  color="#B0B8C1"
+                  color={currentColors.textSecondary}
                 />
-                <Text style={styles.emptyText}>
-                  {searchQuery ? "No items match your search" : "No items in this category"}
+                <Text
+                  style={[
+                    styles.emptyText,
+                    { color: currentColors.textSecondary },
+                  ]}
+                >
+                  No items in this category
                 </Text>
               </View>
             ) : (
               filteredItems.map((item) => (
                 <Pressable
                   key={item.id}
-                  style={[
-                    styles.menuItem,
-                    { backgroundColor: currentColors.card },
-                  ]}
+                  style={styles.menuItem}
                   onPress={() => handleItemPress(item.id)}
                 >
-                  <View style={[styles.imageContainer, { borderColor: currentColors.border }]}>
+                  <View style={styles.imageContainer}>
                     <Image
                       source={{ uri: item.image }}
                       style={styles.menuItemImage}
                     />
-                    <View style={styles.imageOverlay} />
                   </View>
-                  <LinearGradient
-                    colors={['rgba(26, 40, 56, 0.85)', 'rgba(26, 40, 56, 0.95)']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={styles.menuItemInfo}
-                  >
-                    <Text
-                      style={[
-                        styles.menuItemName,
-                        { color: currentColors.text },
-                      ]}
+                  <View style={styles.menuItemInfoWrapper}>
+                    {/* Texture overlay */}
+                    <View style={styles.textureOverlay} />
+                    <LinearGradient
+                      colors={['rgba(26, 58, 46, 0.85)', 'rgba(26, 58, 46, 0.85)', 'rgba(26, 58, 46, 0.85)']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={styles.menuItemInfo}
                     >
-                      {item.name}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.menuItemDescription,
-                        { color: currentColors.textSecondary },
-                      ]}
-                      numberOfLines={2}
-                    >
-                      {item.description}
-                    </Text>
-                    <View style={styles.menuItemFooter}>
-                      <Text
-                        style={[
-                          styles.menuItemPrice,
-                          { color: currentColors.primary },
-                        ]}
-                      >
-                        ${item.price.toFixed(2)}
+                      <Text style={styles.menuItemName}>
+                        {item.name}
                       </Text>
-                      <Pressable
-                        style={[styles.addButton, { backgroundColor: currentColors.card }]}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleAddToCart(item);
-                        }}
+                      <Text
+                        style={styles.menuItemDescription}
+                        numberOfLines={2}
                       >
-                        <IconSymbol
-                          ios_icon_name="plus"
-                          android_material_icon_name="add"
-                          size={20}
-                          color="#5FE8D0"
-                        />
-                      </Pressable>
-                    </View>
-                  </LinearGradient>
+                        {item.description}
+                      </Text>
+                      <View style={styles.menuItemFooter}>
+                        <Text style={styles.menuItemPrice}>
+                          ${item.price.toFixed(2)}
+                        </Text>
+                        <Pressable
+                          style={styles.addButton}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(item);
+                          }}
+                        >
+                          <IconSymbol
+                            name="plus"
+                            size={20}
+                            color="#5FE8D0"
+                          />
+                        </Pressable>
+                      </View>
+                    </LinearGradient>
+                  </View>
                 </Pressable>
               ))
             )}
           </View>
         )}
-      </Animated.ScrollView>
+      </ScrollView>
       <Toast
         visible={toastVisible}
         message={toastMessage}
@@ -509,13 +318,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
     backgroundColor: '#0D1A2B',
-    height: 120,
+    paddingBottom: 20,
   },
   headerSafeArea: {
     width: '100%',
@@ -525,46 +329,41 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   headerContent: {
     flex: 1,
     alignItems: "center",
   },
   logo: {
-    width: 180,
-    height: 60,
+    width: 200,
+    height: 70,
     resizeMode: "contain",
   },
   logoPlaceholder: {
     alignItems: 'center',
   },
   logoText: {
-    fontSize: 28,
+    fontSize: 32,
     fontFamily: 'PlayfairDisplay_900Black',
-    letterSpacing: 2,
+    letterSpacing: 3,
+    fontStyle: 'italic',
+    color: '#5FE8D0',
   },
   logoSubtext: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: 'Inter_400Regular',
-    letterSpacing: 4,
-    marginTop: -4,
+    letterSpacing: 5,
+    marginTop: -2,
+    color: '#5FE8D0',
   },
-  menuButton: {
+  notificationButton: {
     position: 'relative',
     width: 40,
     height: 40,
     justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingRight: 4,
-  },
-  hamburgerLine: {
-    width: 24,
-    height: 2,
-    backgroundColor: '#D4AF37',
-    marginVertical: 3,
-    borderRadius: 1,
+    alignItems: 'center',
   },
   notificationBadge: {
     position: 'absolute',
@@ -576,144 +375,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
+    backgroundColor: '#D4AF37',
   },
   notificationBadgeText: {
     fontSize: 10,
     fontWeight: 'bold',
     fontFamily: 'Inter_700Bold',
-  },
-  stickySearchContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 999,
-    backgroundColor: '#0D1A2B',
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.3)',
-    elevation: 8,
-  },
-  searchSafeArea: {
-    width: '100%',
-  },
-  searchBarWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 10,
-  },
-  searchBarContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A2838',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 2,
-    borderColor: '#4AD7C2',
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: 'Inter_400Regular',
-    color: '#FFFFFF',
-  },
-  categoryDropdownButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: '#1A2838',
-    borderWidth: 2,
-    borderColor: '#4AD7C2',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-start',
-    paddingTop: Platform.OS === 'ios' ? 100 : 80,
-  },
-  dropdownContainer: {
-    backgroundColor: '#1A2838',
-    marginHorizontal: 20,
-    borderRadius: 16,
-    maxHeight: 400,
-    borderWidth: 2,
-    borderColor: '#4AD7C2',
-    boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.3)',
-    elevation: 8,
-  },
-  dropdownHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#4AD7C2',
-  },
-  dropdownTitle: {
-    fontSize: 20,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#5FE8D0',
-  },
-  dropdownScroll: {
-    maxHeight: 320,
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(74, 215, 194, 0.2)',
-  },
-  dropdownItemSelected: {
-    backgroundColor: 'rgba(245, 166, 35, 0.15)',
-  },
-  dropdownItemText: {
-    fontSize: 16,
-    fontFamily: 'Inter_400Regular',
-    color: '#FFFFFF',
-  },
-  dropdownItemTextSelected: {
-    fontFamily: 'Inter_600SemiBold',
-    color: '#F5A623',
+    color: '#0D1A2B',
   },
   scrollView: {
     flex: 1,
-    marginTop: 190,
   },
   scrollContent: {
     paddingBottom: 120,
-    paddingTop: 0,
   },
   categoriesContainer: {
-    maxHeight: 80,
+    maxHeight: 60,
     marginBottom: 20,
+    marginTop: 20,
   },
   categoriesContent: {
     paddingHorizontal: 20,
     paddingVertical: 8,
-    gap: 8,
+    gap: 6,
   },
   categoryButton: {
-    borderRadius: 20,
-    borderColor: '#ccccccff',
-    marginRight: 8,
+    borderRadius: 12,
+    marginRight: 6,
     minWidth: 80,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    borderWidth: 2,
   },
   categoryText: {
     fontWeight: "600",
     textAlign: "center",
     fontFamily: 'Inter_600SemiBold',
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+    alignItems: 'flex-start',
+  },
+  sectionTitle: {
+    fontSize: 36,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 1,
+    marginBottom: 16,
+    color: '#5FE8D0',
+  },
+  divider: {
+    width: 100,
+    height: 2,
+    backgroundColor: '#5FE8D0',
   },
   loadingContainer: {
     flex: 1,
@@ -725,6 +440,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
+    color: '#B0B8C1',
   },
   emptyContainer: {
     flex: 1,
@@ -736,7 +452,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
-    color: '#B0B8C1',
   },
   menuContainer: {
     paddingHorizontal: 20,
@@ -744,17 +459,18 @@ const styles = StyleSheet.create({
   },
   menuItem: {
     borderRadius: 16,
-    marginBottom: 24,
+    marginBottom: 28,
     overflow: "hidden",
-    boxShadow: "0px 4px 16px rgba(74, 215, 194, 0.15)",
-    elevation: 5,
+    boxShadow: "0px 8px 24px rgba(212, 175, 55, 0.5)",
+    elevation: 8,
+    backgroundColor: '#1A3A2E',
   },
   imageContainer: {
     width: "100%",
-    height: 240,
-    borderRadius: 16,
+    height: 260,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     overflow: 'hidden',
-    borderWidth: 2,
     position: 'relative',
   },
   menuItemImage: {
@@ -762,29 +478,40 @@ const styles = StyleSheet.create({
     height: "100%",
     resizeMode: 'cover',
   },
-  imageOverlay: {
+  menuItemInfoWrapper: {
+    position: 'relative',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    overflow: 'hidden',
+  },
+  textureOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    backgroundColor: 'transparent',
+    opacity: 0.15,
+    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,.05) 2px, rgba(255,255,255,.05) 4px)',
   },
   menuItemInfo: {
-    padding: 16,
-    borderRadius: 16,
+    padding: 24,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   menuItemName: {
-    fontSize: 24,
+    fontSize: 26,
     fontFamily: 'PlayfairDisplay_700Bold',
-    marginBottom: 8,
+    marginBottom: 10,
     letterSpacing: 0.5,
+    color: '#FFFFFF',
   },
   menuItemDescription: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    marginBottom: 16,
-    lineHeight: 22,
+    marginBottom: 18,
+    lineHeight: 24,
+    color: '#FFFFFF',
   },
   menuItemFooter: {
     flexDirection: "row",
@@ -792,16 +519,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuItemPrice: {
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: 'Inter_700Bold',
+    color: '#5FE8D0',
   },
   addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    boxShadow: "0px 2px 8px rgba(215, 194, 74, 0.3)",
-    elevation: 3,
+    boxShadow: "0px 4px 12px rgba(212, 175, 55, 0.6)",
+    elevation: 6,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#5FE8D0',
   },
 });

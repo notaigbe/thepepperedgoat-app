@@ -1,3 +1,4 @@
+
 import { StyleSheet, ViewStyle, TextStyle, useColorScheme } from 'react-native';
 import { ColorScheme, ThemeMode } from '@/types';
 
@@ -45,7 +46,7 @@ const colorSchemes = {
   },
   warm: {
     light: {
-      background: '#0D1117',
+      background: '#0D1A2B',
       text: '#FFFFFF',
       textSecondary: '#B0B8C1',
       primary: '#4AD7C2',
@@ -63,7 +64,7 @@ const colorSchemes = {
       cardGradientEnd: '#243848',
     },
     dark: {
-      background: '#0D1117',
+      background: '#0D1A2B',
       text: '#FFFFFF',
       textSecondary: '#B0B8C1',
       primary: '#4AD7C2',
@@ -83,7 +84,7 @@ const colorSchemes = {
   },
   cool: {
     light: {
-      background: '#0A0E27',
+      background: '#0D1A2B',
       text: '#FFFFFF',
       textSecondary: '#B0B8C1',
       primary: '#4AD7C2',
@@ -101,7 +102,7 @@ const colorSchemes = {
       cardGradientEnd: '#243848',
     },
     dark: {
-      background: '#0A0E27',
+      background: '#0D1A2B',
       text: '#FFFFFF',
       textSecondary: '#B0B8C1',
       primary: '#4AD7C2',
@@ -159,7 +160,7 @@ const colorSchemes = {
   },
   minimal: {
     light: {
-      background: '#0A0E27',
+      background: '#0D1A2B',
       text: '#FFFFFF',
       textSecondary: '#B0B8C1',
       primary: '#4AD7C2',
@@ -177,7 +178,7 @@ const colorSchemes = {
       cardGradientEnd: '#243848',
     },
     dark: {
-      background: '#0A0E27',
+      background: '#0D1A2B',
       text: '#FFFFFF',
       textSecondary: '#B0B8C1',
       primary: '#4AD7C2',
@@ -202,31 +203,19 @@ export const getColors = (mode: ThemeMode, colorScheme: ColorScheme, systemColor
   return colorSchemes[colorScheme][effectiveMode];
 };
 
-// Default colors for backward compatibility - Gold-first palette
+// Default colors for backward compatibility
 export const colors = colorSchemes.default.dark;
 
 export const buttonStyles = StyleSheet.create({
   primaryButton: {
-    backgroundColor: colors.primary, // Gold
+    backgroundColor: colors.primary,
     alignSelf: 'center',
     width: '100%',
     boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.35)',
     elevation: 8,
   },
   secondaryButton: {
-    backgroundColor: colors.secondary, // Turquoise
-    alignSelf: 'center',
-    width: '100%',
-    shadowColor: colors.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  outlineButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: colors.primary,
+    backgroundColor: colors.secondary,
     alignSelf: 'center',
     width: '100%',
     boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.35)',
@@ -254,7 +243,7 @@ export const commonStyles = StyleSheet.create({
     width: '100%',
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
     color: colors.text,
@@ -270,28 +259,16 @@ export const commonStyles = StyleSheet.create({
     marginBottom: 8,
     lineHeight: 24,
     textAlign: 'center',
-    fontFamily: 'Inter_400Regular',
-  },
-  textSecondary: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: colors.textSecondary, // Gold
-    marginBottom: 8,
-    lineHeight: 22,
-    textAlign: 'center',
-    fontFamily: 'Inter_400Regular',
   },
   section: {
     width: '100%',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
   buttonContainer: {
     width: '100%',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    gap: 12,
+    paddingHorizontal: 20,
   },
   card: {
     backgroundColor: colors.card,
@@ -305,24 +282,6 @@ export const commonStyles = StyleSheet.create({
   icon: {
     width: 60,
     height: 60,
-    tintColor: colors.primary, // Gold icon
-  },
-  badge: {
-    backgroundColor: colors.primary, // Gold badge
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  badgeText: {
-    color: colors.background, // Dark text on gold
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    fontFamily: 'Inter_700Bold',
+    tintColor: colors.primary,
   },
 });
