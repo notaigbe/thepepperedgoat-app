@@ -437,9 +437,19 @@ export default function HomeScreen() {
                     {/* Texture overlay */}
                     <View style={styles.textureOverlay} />
                     <LinearGradient
-                      colors={['rgba(26, 58, 46, 0.85)', 'rgba(26, 58, 46, 0.85)', 'rgba(26, 58, 46, 0.85)']}
+                      colors={[
+                        'rgba(13, 26, 43, 0.95)',
+                        'rgba(20, 35, 50, 0.95)',
+                        'rgba(30, 50, 65, 0.95)',
+                        'rgba(45, 70, 85, 0.95)',
+                        'rgba(70, 90, 100, 0.95)',
+                        'rgba(100, 120, 110, 0.95)',
+                        'rgba(150, 140, 90, 0.95)',
+                        'rgba(180, 160, 80, 0.95)',
+                        'rgba(200, 180, 70, 0.95)',
+                      ]}
                       start={{ x: 0, y: 0 }}
-                      end={{ x: 0, y: 1 }}
+                      end={{ x: 1, y: 0 }}
                       style={styles.menuItemInfo}
                     >
                       <Text style={styles.menuItemName}>
@@ -657,8 +667,6 @@ const styles = StyleSheet.create({
   },
   categoriesContainer: {
     maxHeight: 60,
-    // marginBottom: 12,
-    // marginTop: 12,
   },
   categoriesContent: {
     paddingHorizontal: 20,
@@ -721,8 +729,6 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: "100%",
     height: 260,
-    // borderTopLeftRadius: 16,
-    // borderTopRightRadius: 16,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -757,7 +763,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 10,
     letterSpacing: 0.5,
-    color: '#FFFFFF',
+    color: '#D4AF37',
   },
   menuItemDescription: {
     fontSize: 15,
@@ -774,7 +780,7 @@ const styles = StyleSheet.create({
   menuItemPrice: {
     fontSize: 24,
     fontFamily: 'Inter_700Bold',
-    color: '#5FE8D0',
+    color: '#D4AF37',
   },
   addButton: {
     width: 44,
@@ -789,24 +795,24 @@ const styles = StyleSheet.create({
     borderColor: '#5FE8D0',
   },
   categoriesWrapper: {
-  position: 'relative',
-  marginBottom: 12,
-  marginTop: 12,
-},
-categoryFadeLeft: {
-  position: 'absolute',
-  left: 0,
-  top: 0,
-  bottom: 0,
-  width: 40,
-  zIndex: 10,
-},
-categoryFadeRight: {
-  position: 'absolute',
-  right: 0,
-  top: 0,
-  bottom: 0,
-  width: 40,
-  zIndex: 10,
-},
+    position: 'relative',
+    marginBottom: 12,
+    marginTop: 12,
+  },
+  categoryFadeLeft: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 40,
+    zIndex: 10,
+  },
+  categoryFadeRight: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 40,
+    zIndex: 10,
+  },
 });
