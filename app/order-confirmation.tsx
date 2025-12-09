@@ -170,9 +170,11 @@ export default function OrderConfirmationScreen() {
   };
 
   const styles = StyleSheet.create({
+    gradientContainer: {
+      flex: 1,
+    },
     safeArea: {
       flex: 1,
-      backgroundColor: currentColors.background,
     },
     container: {
       flex: 1,
@@ -186,6 +188,7 @@ export default function OrderConfirmationScreen() {
     loadingText: {
       marginTop: 16,
       fontSize: 16,
+      fontFamily: 'Inter_400Regular',
       color: currentColors.textSecondary,
     },
     errorContainer: {
@@ -198,13 +201,15 @@ export default function OrderConfirmationScreen() {
       marginBottom: 16,
     },
     errorTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
+      fontSize: 24,
+      fontFamily: 'PlayfairDisplay_700Bold',
       color: currentColors.text,
       marginBottom: 8,
+      letterSpacing: 0.5,
     },
     errorText: {
       fontSize: 16,
+      fontFamily: 'Inter_400Regular',
       color: currentColors.textSecondary,
       textAlign: 'center',
       marginBottom: 24,
@@ -224,33 +229,41 @@ export default function OrderConfirmationScreen() {
     successIconContainer: {
       width: 100,
       height: 100,
-      borderRadius: 50,
+      borderRadius: 0,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 20,
-      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
-      elevation: 6,
+      boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
+      elevation: 8,
+      borderWidth: 2,
+      borderColor: currentColors.border,
     },
     successTitle: {
-      fontSize: 28,
-      fontWeight: 'bold',
+      fontSize: 32,
+      fontFamily: 'PlayfairDisplay_700Bold',
       color: currentColors.text,
       marginBottom: 8,
       textAlign: 'center',
+      letterSpacing: 0.5,
+      textShadowColor: 'rgba(0, 0, 0, 0.3)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 4,
     },
     successSubtitle: {
       fontSize: 16,
+      fontFamily: 'Inter_400Regular',
       color: currentColors.textSecondary,
       textAlign: 'center',
       lineHeight: 24,
     },
     statusCard: {
-      borderRadius: 16,
+      borderRadius: 0,
       padding: 20,
       marginBottom: 20,
-      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-      elevation: 3,
-      backgroundColor: currentColors.card,
+      boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+      elevation: 8,
+      borderWidth: 2,
+      borderColor: currentColors.border,
     },
     statusRow: {
       flexDirection: 'row',
@@ -262,66 +275,73 @@ export default function OrderConfirmationScreen() {
     },
     statusLabel: {
       fontSize: 14,
+      fontFamily: 'Inter_400Regular',
       color: currentColors.textSecondary,
       marginBottom: 4,
     },
     statusValue: {
       fontSize: 18,
-      fontWeight: 'bold',
+      fontFamily: 'Inter_700Bold',
       color: currentColors.text,
     },
     pointsCard: {
-      borderRadius: 16,
+      borderRadius: 0,
       padding: 20,
       marginBottom: 20,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 16,
-      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-      elevation: 3,
+      boxShadow: '0px 8px 24px rgba(229, 193, 88, 0.4)',
+      elevation: 8,
+      borderWidth: 2,
+      borderColor: currentColors.border,
     },
     pointsIconContainer: {
       width: 60,
       height: 60,
-      borderRadius: 30,
+      borderRadius: 0,
       justifyContent: 'center',
       alignItems: 'center',
+      borderWidth: 2,
+      borderColor: currentColors.border,
     },
     pointsInfo: {
       flex: 1,
     },
     pointsTitle: {
       fontSize: 16,
-      fontWeight: '600',
+      fontFamily: 'Inter_600SemiBold',
       color: currentColors.text,
       marginBottom: 4,
     },
     pointsValue: {
       fontSize: 24,
-      fontWeight: 'bold',
-      color: currentColors.primary,
+      fontFamily: 'Inter_700Bold',
+      color: currentColors.secondary,
     },
     sectionTitle: {
       fontSize: 20,
-      fontWeight: 'bold',
+      fontFamily: 'PlayfairDisplay_700Bold',
       color: currentColors.text,
       marginBottom: 16,
+      letterSpacing: 0.5,
     },
     orderSummaryCard: {
-      borderRadius: 16,
+      borderRadius: 0,
       padding: 20,
       marginBottom: 20,
-      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-      elevation: 3,
-      backgroundColor: currentColors.card,
+      boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+      elevation: 8,
+      borderWidth: 2,
+      borderColor: currentColors.border,
     },
     orderItem: {
       flexDirection: 'row',
       alignItems: 'center',
       marginBottom: 12,
       paddingBottom: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: currentColors.background,
+      borderBottomWidth: 2,
+      borderBottomColor: currentColors.border,
     },
     orderItemLast: {
       borderBottomWidth: 0,
@@ -330,18 +350,19 @@ export default function OrderConfirmationScreen() {
     },
     itemQuantity: {
       fontSize: 16,
-      fontWeight: '600',
+      fontFamily: 'Inter_600SemiBold',
       color: currentColors.textSecondary,
       width: 40,
     },
     itemName: {
       flex: 1,
       fontSize: 16,
+      fontFamily: 'Inter_400Regular',
       color: currentColors.text,
     },
     itemPrice: {
       fontSize: 16,
-      fontWeight: '600',
+      fontFamily: 'Inter_600SemiBold',
       color: currentColors.text,
     },
     totalRow: {
@@ -351,55 +372,59 @@ export default function OrderConfirmationScreen() {
       marginTop: 16,
       paddingTop: 16,
       borderTopWidth: 2,
-      borderTopColor: currentColors.background,
+      borderTopColor: currentColors.border,
     },
     totalLabel: {
       fontSize: 18,
-      fontWeight: 'bold',
+      fontFamily: 'PlayfairDisplay_700Bold',
       color: currentColors.text,
     },
     totalValue: {
       fontSize: 24,
-      fontWeight: 'bold',
-      color: currentColors.primary,
+      fontFamily: 'Inter_700Bold',
+      color: currentColors.secondary,
     },
     deliveryCard: {
-      borderRadius: 16,
+      borderRadius: 0,
       padding: 20,
       marginBottom: 20,
-      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-      elevation: 3,
-      backgroundColor: currentColors.card,
+      boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+      elevation: 8,
+      borderWidth: 2,
+      borderColor: currentColors.border,
     },
     deliveryTitle: {
       fontSize: 16,
-      fontWeight: '600',
+      fontFamily: 'Inter_600SemiBold',
       color: currentColors.text,
       marginBottom: 8,
     },
     deliveryText: {
       fontSize: 14,
+      fontFamily: 'Inter_400Regular',
       color: currentColors.textSecondary,
       lineHeight: 20,
     },
     orderIdCard: {
-      borderRadius: 12,
+      borderRadius: 0,
       padding: 16,
       marginBottom: 20,
       backgroundColor: currentColors.background,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: currentColors.border,
-      borderStyle: 'dashed',
+      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+      elevation: 4,
     },
     orderIdLabel: {
       fontSize: 12,
+      fontFamily: 'Inter_400Regular',
       color: currentColors.textSecondary,
       marginBottom: 4,
       textAlign: 'center',
     },
     orderIdValue: {
       fontSize: 16,
-      fontWeight: 'bold',
+      fontFamily: 'Inter_700Bold',
       color: currentColors.text,
       textAlign: 'center',
       fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
@@ -409,71 +434,98 @@ export default function OrderConfirmationScreen() {
       marginTop: 20,
     },
     primaryButton: {
-      backgroundColor: currentColors.primary,
+      borderRadius: 0,
+      boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.5)',
+      elevation: 10,
+    },
+    primaryButtonInner: {
       paddingVertical: 16,
-      borderRadius: 12,
       alignItems: 'center',
-      boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.15)',
-      elevation: 4,
     },
     primaryButtonText: {
       fontSize: 18,
-      fontWeight: 'bold',
-      color: currentColors.card,
+      fontFamily: 'Inter_700Bold',
+      color: currentColors.background,
     },
     secondaryButton: {
-      backgroundColor: currentColors.card,
+      borderRadius: 0,
       paddingVertical: 16,
-      borderRadius: 12,
       alignItems: 'center',
       borderWidth: 2,
-      borderColor: currentColors.primary,
+      borderColor: currentColors.border,
+      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+      elevation: 4,
+    },
+    secondaryButtonInner: {
+      paddingVertical: 16,
+      alignItems: 'center',
     },
     secondaryButtonText: {
       fontSize: 18,
-      fontWeight: 'bold',
-      color: currentColors.primary,
+      fontFamily: 'Inter_700Bold',
+      color: currentColors.secondary,
     },
   });
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={currentColors.primary} />
-          <Text style={styles.loadingText}>Loading order details...</Text>
-        </View>
-      </SafeAreaView>
+      <LinearGradient
+        colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.gradientContainer}
+      >
+        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={currentColors.secondary} />
+            <Text style={styles.loadingText}>Loading order details...</Text>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   if (error || !order) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <View style={styles.errorContainer}>
-          <IconSymbol
-            name="exclamationmark.triangle.fill"
-            size={64}
-            color={currentColors.primary}
-            style={styles.errorIcon}
-          />
-          <Text style={styles.errorTitle}>Unable to Load Order</Text>
-          <Text style={styles.errorText}>
-            {error || 'We couldn\'t find your order details. Please try again.'}
-          </Text>
-          <Pressable
-            style={styles.primaryButton}
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              router.replace('/(tabs)/(home)');
-            }}
-          >
-            <Text style={styles.primaryButtonText}>Go to Home</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+      <LinearGradient
+        colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.gradientContainer}
+      >
+        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+          <View style={styles.errorContainer}>
+            <IconSymbol
+              name="exclamationmark.triangle.fill"
+              size={64}
+              color={currentColors.secondary}
+              style={styles.errorIcon}
+            />
+            <Text style={styles.errorTitle}>Unable to Load Order</Text>
+            <Text style={styles.errorText}>
+              {error || 'We couldn&apos;t find your order details. Please try again.'}
+            </Text>
+            <LinearGradient
+              colors={[currentColors.secondary, currentColors.highlight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.primaryButton}
+            >
+              <Pressable
+                style={styles.primaryButtonInner}
+                onPress={() => {
+                  if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  router.replace('/(tabs)/(home)');
+                }}
+              >
+                <Text style={styles.primaryButtonText}>Go to Home</Text>
+              </Pressable>
+            </LinearGradient>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
     );
   }
 
@@ -481,164 +533,215 @@ export default function OrderConfirmationScreen() {
   const paymentSuccessful = order.payment_status === 'succeeded';
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Success Header */}
-        <View style={styles.successHeader}>
-          <LinearGradient
-            colors={[currentColors.primary, currentColors.secondary]}
-            style={styles.successIconContainer}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <IconSymbol
-              name={getStatusIcon(order.payment_status)}
-              size={50}
-              color={currentColors.card}
-            />
-          </LinearGradient>
-          <Text style={styles.successTitle}>
-            {paymentSuccessful ? 'Order Confirmed!' : getStatusText(order.payment_status)}
-          </Text>
-          <Text style={styles.successSubtitle}>
-            {paymentSuccessful
-              ? `Your ${isDelivery ? 'delivery' : 'pickup'} order has been confirmed and is being prepared.`
-              : 'We\'re processing your order. You\'ll receive a notification once it\'s confirmed.'}
-          </Text>
-        </View>
-
-        {/* Order ID */}
-        <View style={styles.orderIdCard}>
-          <Text style={styles.orderIdLabel}>Order ID</Text>
-          <Text style={styles.orderIdValue}>{order.id.substring(0, 8).toUpperCase()}</Text>
-        </View>
-
-        {/* Payment Status */}
-        <View style={styles.statusCard}>
-          <View style={styles.statusRow}>
-            <IconSymbol
-              name={getStatusIcon(order.payment_status)}
-              size={32}
-              color={getStatusColor(order.payment_status)}
-            />
-            <View style={styles.statusInfo}>
-              <Text style={styles.statusLabel}>Payment Status</Text>
-              <Text style={[styles.statusValue, { color: getStatusColor(order.payment_status) }]}>
-                {getStatusText(order.payment_status)}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Order Status */}
-        <View style={styles.statusCard}>
-          <View style={styles.statusRow}>
-            <IconSymbol
-              name="bag.fill"
-              size={32}
-              color={currentColors.primary}
-            />
-            <View style={styles.statusInfo}>
-              <Text style={styles.statusLabel}>Order Status</Text>
-              <Text style={styles.statusValue}>
-                {getOrderStatusText(order.status)}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Points Earned */}
-        {paymentSuccessful && order.points_earned > 0 && (
-          <LinearGradient
-            colors={[currentColors.highlight + '40', currentColors.accent + '40']}
-            style={styles.pointsCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={[styles.pointsIconContainer, { backgroundColor: currentColors.primary }]}>
-              <IconSymbol name="star.fill" size={32} color={currentColors.card} />
-            </View>
-            <View style={styles.pointsInfo}>
-              <Text style={styles.pointsTitle}>Points Earned</Text>
-              <Text style={styles.pointsValue}>+{order.points_earned} points</Text>
-            </View>
-          </LinearGradient>
-        )}
-
-        {/* Order Summary */}
-        <Text style={styles.sectionTitle}>Order Summary</Text>
-        <View style={styles.orderSummaryCard}>
-          {order.order_items.map((item, index) => (
-            <View
-              key={item.id}
-              style={[
-                styles.orderItem,
-                index === order.order_items.length - 1 && styles.orderItemLast,
-              ]}
+    <LinearGradient
+      colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Success Header */}
+          <View style={styles.successHeader}>
+            <LinearGradient
+              colors={[currentColors.secondary, currentColors.highlight]}
+              style={styles.successIconContainer}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.itemQuantity}>{item.quantity}x</Text>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>
-                ${(item.price * item.quantity).toFixed(2)}
-              </Text>
-            </View>
-          ))}
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>${order.total.toFixed(2)}</Text>
+              <IconSymbol
+                name={getStatusIcon(order.payment_status)}
+                size={50}
+                color={currentColors.background}
+              />
+            </LinearGradient>
+            <Text style={styles.successTitle}>
+              {paymentSuccessful ? 'Order Confirmed!' : getStatusText(order.payment_status)}
+            </Text>
+            <Text style={styles.successSubtitle}>
+              {paymentSuccessful
+                ? `Your ${isDelivery ? 'delivery' : 'pickup'} order has been confirmed and is being prepared.`
+                : 'We&apos;re processing your order. You&apos;ll receive a notification once it&apos;s confirmed.'}
+            </Text>
           </View>
-        </View>
 
-        {/* Delivery/Pickup Information */}
-        {isDelivery ? (
-          <View style={styles.deliveryCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <IconSymbol name="location.fill" size={20} color={currentColors.primary} />
-              <Text style={styles.deliveryTitle}>Delivery Address</Text>
-            </View>
-            <Text style={styles.deliveryText}>{order.delivery_address}</Text>
+          {/* Order ID */}
+          <View style={styles.orderIdCard}>
+            <Text style={styles.orderIdLabel}>Order ID</Text>
+            <Text style={styles.orderIdValue}>{order.id.substring(0, 8).toUpperCase()}</Text>
           </View>
-        ) : order.pickup_notes ? (
-          <View style={styles.deliveryCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <IconSymbol name="bag.fill" size={20} color={currentColors.primary} />
-              <Text style={styles.deliveryTitle}>Pickup Notes</Text>
-            </View>
-            <Text style={styles.deliveryText}>{order.pickup_notes}</Text>
-          </View>
-        ) : null}
 
-        {/* Action Buttons */}
-        <View style={styles.buttonContainer}>
-          <Pressable
-            style={styles.primaryButton}
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              router.replace('/order-history');
-            }}
+          {/* Payment Status */}
+          <LinearGradient
+            colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.statusCard}
           >
-            <Text style={styles.primaryButtonText}>View Order History</Text>
-          </Pressable>
+            <View style={styles.statusRow}>
+              <IconSymbol
+                name={getStatusIcon(order.payment_status)}
+                size={32}
+                color={getStatusColor(order.payment_status)}
+              />
+              <View style={styles.statusInfo}>
+                <Text style={styles.statusLabel}>Payment Status</Text>
+                <Text style={[styles.statusValue, { color: getStatusColor(order.payment_status) }]}>
+                  {getStatusText(order.payment_status)}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
 
-          <Pressable
-            style={styles.secondaryButton}
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              router.replace('/(tabs)/(home)');
-            }}
+          {/* Order Status */}
+          <LinearGradient
+            colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.statusCard}
           >
-            <Text style={styles.secondaryButtonText}>Back to Home</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            <View style={styles.statusRow}>
+              <IconSymbol
+                name="bag.fill"
+                size={32}
+                color={currentColors.primary}
+              />
+              <View style={styles.statusInfo}>
+                <Text style={styles.statusLabel}>Order Status</Text>
+                <Text style={styles.statusValue}>
+                  {getOrderStatusText(order.status)}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+
+          {/* Points Earned */}
+          {paymentSuccessful && order.points_earned > 0 && (
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              style={styles.pointsCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <LinearGradient
+                colors={[currentColors.secondary, currentColors.highlight]}
+                style={styles.pointsIconContainer}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <IconSymbol name="star.fill" size={32} color={currentColors.background} />
+              </LinearGradient>
+              <View style={styles.pointsInfo}>
+                <Text style={styles.pointsTitle}>Points Earned</Text>
+                <Text style={styles.pointsValue}>+{order.points_earned} points</Text>
+              </View>
+            </LinearGradient>
+          )}
+
+          {/* Order Summary */}
+          <Text style={styles.sectionTitle}>Order Summary</Text>
+          <LinearGradient
+            colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.orderSummaryCard}
+          >
+            {order.order_items.map((item, index) => (
+              <View
+                key={item.id}
+                style={[
+                  styles.orderItem,
+                  index === order.order_items.length - 1 && styles.orderItemLast,
+                ]}
+              >
+                <Text style={styles.itemQuantity}>{item.quantity}x</Text>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemPrice}>
+                  ${(item.price * item.quantity).toFixed(2)}
+                </Text>
+              </View>
+            ))}
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalValue}>${order.total.toFixed(2)}</Text>
+            </View>
+          </LinearGradient>
+
+          {/* Delivery/Pickup Information */}
+          {isDelivery ? (
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.deliveryCard}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <IconSymbol name="location.fill" size={20} color={currentColors.secondary} />
+                <Text style={styles.deliveryTitle}>Delivery Address</Text>
+              </View>
+              <Text style={styles.deliveryText}>{order.delivery_address}</Text>
+            </LinearGradient>
+          ) : order.pickup_notes ? (
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.deliveryCard}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <IconSymbol name="bag.fill" size={20} color={currentColors.secondary} />
+                <Text style={styles.deliveryTitle}>Pickup Notes</Text>
+              </View>
+              <Text style={styles.deliveryText}>{order.pickup_notes}</Text>
+            </LinearGradient>
+          ) : null}
+
+          {/* Action Buttons */}
+          <View style={styles.buttonContainer}>
+            <LinearGradient
+              colors={[currentColors.secondary, currentColors.highlight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.primaryButton}
+            >
+              <Pressable
+                style={styles.primaryButtonInner}
+                onPress={() => {
+                  if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  router.replace('/order-history');
+                }}
+              >
+                <Text style={styles.primaryButtonText}>View Order History</Text>
+              </Pressable>
+            </LinearGradient>
+
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.secondaryButton}
+            >
+              <Pressable
+                style={styles.secondaryButtonInner}
+                onPress={() => {
+                  if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  router.replace('/(tabs)/(home)');
+                }}
+              >
+                <Text style={styles.secondaryButtonText}>Back to Home</Text>
+              </Pressable>
+            </LinearGradient>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }

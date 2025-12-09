@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -18,6 +19,7 @@ import Toast from '@/components/Toast';
 import { SUPABASE_URL, supabase } from '@/app/integrations/supabase/client';
 import { StripeProvider, useStripe, PaymentSheet } from '@stripe/stripe-react-native';
 import Dialog from '@/components/Dialog';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // ============================================================================
 // TYPES
@@ -351,7 +353,6 @@ function CheckoutContent() {
         name: PaymentSheet.CollectionMode.ALWAYS,
         email: PaymentSheet.CollectionMode.ALWAYS,
         phone: PaymentSheet.CollectionMode.NEVER,
-        // address: PaymentSheet.CollectionMode.NEVER,
       },
     });
 
@@ -601,9 +602,11 @@ function CheckoutContent() {
   // ============================================================================
 
   const styles = StyleSheet.create({
+    gradientContainer: {
+      flex: 1,
+    },
     safeArea: {
       flex: 1,
-      backgroundColor: currentColors.background,
     },
     container: {
       flex: 1,
@@ -615,32 +618,34 @@ function CheckoutContent() {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 20,
-      paddingVertical: 12,
+      paddingVertical: 16,
+      borderBottomWidth: 2,
+      borderBottomColor: currentColors.border,
     },
     backButton: {
       width: 40,
       height: 40,
-      borderRadius: 20,
-      backgroundColor: currentColors.card,
+      borderRadius: 0,
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.3)',
+      elevation: 4,
     },
     infoBanner: {
       flexDirection: 'row',
       padding: 16,
-      borderRadius: 12,
+      borderRadius: 0,
       marginBottom: 20,
       gap: 12,
-      backgroundColor: currentColors.highlight + '20',
+      borderWidth: 2,
+      borderColor: currentColors.border,
+      boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.2)',
+      elevation: 4,
     },
     infoText: {
       flex: 1,
       fontSize: 14,
+      fontFamily: 'Inter_400Regular',
       lineHeight: 20,
       color: currentColors.text,
     },
@@ -649,9 +654,10 @@ function CheckoutContent() {
     },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: 'bold',
+      fontFamily: 'PlayfairDisplay_700Bold',
       marginBottom: 12,
       color: currentColors.text,
+      letterSpacing: 0.5,
     },
     orderTypeSelector: {
       flexDirection: 'row',
@@ -664,30 +670,32 @@ function CheckoutContent() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: 16,
-      borderRadius: 12,
+      borderRadius: 0,
       borderWidth: 2,
       gap: 8,
+      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+      elevation: 4,
     },
     orderTypeText: {
       fontSize: 16,
-      fontWeight: '600',
+      fontFamily: 'Inter_600SemiBold',
     },
     inputContainer: {
       position: 'relative',
     },
     input: {
-      borderRadius: 12,
+      borderRadius: 0,
       padding: 16,
       fontSize: 16,
+      fontFamily: 'Inter_400Regular',
       minHeight: 80,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+      elevation: 4,
       paddingRight: 48,
       backgroundColor: currentColors.card,
       color: currentColors.text,
+      borderWidth: 2,
+      borderColor: currentColors.border,
     },
     inputWithValidation: {
       borderWidth: 2,
@@ -706,15 +714,18 @@ function CheckoutContent() {
     },
     validationMessageText: {
       fontSize: 13,
+      fontFamily: 'Inter_400Regular',
       flex: 1,
     },
     formattedAddressSuggestion: {
       marginTop: 12,
       padding: 12,
-      borderRadius: 8,
-      borderWidth: 1,
+      borderRadius: 0,
+      borderWidth: 2,
       backgroundColor: currentColors.card,
-      borderColor: currentColors.primary + '40',
+      borderColor: currentColors.border,
+      boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.25)',
+      elevation: 4,
     },
     suggestionHeader: {
       flexDirection: 'row',
@@ -724,41 +735,43 @@ function CheckoutContent() {
     },
     suggestionTitle: {
       fontSize: 14,
-      fontWeight: '600',
+      fontFamily: 'Inter_600SemiBold',
       color: currentColors.text,
     },
     suggestionAddress: {
       fontSize: 14,
+      fontFamily: 'Inter_400Regular',
       marginBottom: 8,
       lineHeight: 20,
       color: currentColors.textSecondary,
     },
     useSuggestionButton: {
+      borderRadius: 0,
+      boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.3)',
+      elevation: 4,
+    },
+    useSuggestionButtonInner: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       padding: 8,
-      borderRadius: 6,
       gap: 6,
-      backgroundColor: currentColors.primary,
     },
     useSuggestionButtonText: {
       fontSize: 13,
-      fontWeight: '600',
-      color: currentColors.card,
+      fontFamily: 'Inter_600SemiBold',
+      color: currentColors.background,
     },
     pointsToggle: {
-      borderRadius: 12,
+      borderRadius: 0,
       padding: 16,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
-      backgroundColor: currentColors.card,
+      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+      elevation: 4,
+      borderWidth: 2,
+      borderColor: currentColors.border,
     },
     pointsToggleLeft: {
       flexDirection: 'row',
@@ -771,38 +784,38 @@ function CheckoutContent() {
     },
     pointsToggleTitle: {
       fontSize: 16,
-      fontWeight: '600',
+      fontFamily: 'Inter_600SemiBold',
       color: currentColors.text,
     },
     pointsToggleSubtitle: {
       fontSize: 14,
+      fontFamily: 'Inter_400Regular',
       marginTop: 2,
       color: currentColors.textSecondary,
     },
     checkbox: {
       width: 24,
       height: 24,
-      borderRadius: 6,
+      borderRadius: 0,
       borderWidth: 2,
       justifyContent: 'center',
       alignItems: 'center',
-      borderColor: currentColors.textSecondary,
+      borderColor: currentColors.border,
     },
     summaryCard: {
-      borderRadius: 12,
+      borderRadius: 0,
       padding: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
-      backgroundColor: currentColors.card,
+      boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+      elevation: 8,
+      borderWidth: 2,
+      borderColor: currentColors.border,
     },
     summaryTitle: {
       fontSize: 18,
-      fontWeight: 'bold',
+      fontFamily: 'PlayfairDisplay_700Bold',
       marginBottom: 16,
       color: currentColors.text,
+      letterSpacing: 0.5,
     },
     summaryRow: {
       flexDirection: 'row',
@@ -811,66 +824,70 @@ function CheckoutContent() {
     },
     summaryLabel: {
       fontSize: 16,
+      fontFamily: 'Inter_400Regular',
       color: currentColors.textSecondary,
     },
     summaryValue: {
       fontSize: 16,
+      fontFamily: 'Inter_600SemiBold',
       color: currentColors.text,
     },
     summaryRowTotal: {
-      borderTopWidth: 1,
+      borderTopWidth: 2,
       paddingTop: 12,
       marginTop: 4,
-      borderTopColor: currentColors.background,
+      borderTopColor: currentColors.border,
     },
     summaryLabelTotal: {
       fontSize: 18,
-      fontWeight: 'bold',
+      fontFamily: 'PlayfairDisplay_700Bold',
       color: currentColors.text,
     },
     summaryValueTotal: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: currentColors.primary,
+      fontSize: 20,
+      fontFamily: 'Inter_700Bold',
+      color: currentColors.secondary,
     },
     pointsEarnCard: {
       flexDirection: 'row',
       alignItems: 'center',
       padding: 12,
-      borderRadius: 8,
+      borderRadius: 0,
       marginTop: 16,
       gap: 8,
       backgroundColor: currentColors.background,
+      borderWidth: 2,
+      borderColor: currentColors.border,
     },
     pointsEarnText: {
       flex: 1,
       fontSize: 14,
-      fontWeight: '600',
+      fontFamily: 'Inter_600SemiBold',
       color: currentColors.text,
     },
     footer: {
       padding: 20,
-      borderTopWidth: 1,
-      backgroundColor: currentColors.card,
-      borderTopColor: currentColors.background,
+      borderTopWidth: 2,
+      borderTopColor: currentColors.border,
+      boxShadow: '0px -6px 20px rgba(74, 215, 194, 0.3)',
+      elevation: 10,
     },
     placeOrderButton: {
+      borderRadius: 0,
+      boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.5)',
+      elevation: 10,
+    },
+    placeOrderButtonInner: {
       paddingVertical: 16,
-      borderRadius: 12,
       alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 4,
       flexDirection: 'row',
       justifyContent: 'center',
       gap: 12,
     },
     placeOrderButtonText: {
       fontSize: 18,
-      fontWeight: 'bold',
-      color: currentColors.card,
+      fontFamily: 'Inter_700Bold',
+      color: currentColors.background,
     },
   });
 
@@ -879,290 +896,365 @@ function CheckoutContent() {
   // ============================================================================
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.back();
-          }}
-          style={styles.backButton}
+    <LinearGradient
+      colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+        <LinearGradient
+          colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.header}
         >
-          <IconSymbol name="chevron-left" size={24} color={currentColors.primary} />
-        </Pressable>
-      </View>
+          <LinearGradient
+            colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.backButton}
+          >
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.back();
+              }}
+              style={{ padding: 8 }}
+            >
+              <IconSymbol name="chevron-left" size={24} color={currentColors.secondary} />
+            </Pressable>
+          </LinearGradient>
+        </LinearGradient>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          <View style={styles.infoBanner}>
-            <IconSymbol name="info" size={20} color={currentColors.primary} />
-            <Text style={styles.infoText}>
-              Secure checkout powered by Stripe. Your payment information is encrypted and protected.
-            </Text>
-          </View>
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+          <View style={styles.content}>
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.infoBanner}
+            >
+              <IconSymbol name="info" size={20} color={currentColors.primary} />
+              <Text style={styles.infoText}>
+                Secure checkout powered by Stripe. Your payment information is encrypted and protected.
+              </Text>
+            </LinearGradient>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Order Type</Text>
-            <View style={styles.orderTypeSelector}>
-              <Pressable
-                style={[
-                  styles.orderTypeButton,
-                  {
-                    backgroundColor: orderType === 'delivery' ? currentColors.primary : currentColors.card,
-                    borderColor: orderType === 'delivery' ? currentColors.primary : currentColors.border,
-                  }
-                ]}
-                onPress={() => {
-                  if (!processing) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setOrderType('delivery');
-                  }
-                }}
-                disabled={processing}
-              >
-                <IconSymbol 
-                  name="delivery-dining" 
-                  size={20} 
-                  color={orderType === 'delivery' ? currentColors.card : currentColors.text} 
-                />
-                <Text style={[
-                  styles.orderTypeText, 
-                  { color: orderType === 'delivery' ? currentColors.card : currentColors.text }
-                ]}>
-                  Delivery
-                </Text>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.orderTypeButton,
-                  {
-                    backgroundColor: orderType === 'pickup' ? currentColors.primary : currentColors.card,
-                    borderColor: orderType === 'pickup' ? currentColors.primary : currentColors.border,
-                  }
-                ]}
-                onPress={() => {
-                  if (!processing) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setOrderType('pickup');
-                  }
-                }}
-                disabled={processing}
-              >
-                <IconSymbol 
-                  name="shopping-bag" 
-                  size={20} 
-                  color={orderType === 'pickup' ? currentColors.card : currentColors.text} 
-                />
-                <Text style={[
-                  styles.orderTypeText, 
-                  { color: orderType === 'pickup' ? currentColors.card : currentColors.text }
-                ]}>
-                  Pickup
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          {orderType === 'delivery' && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Delivery Address *</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
+              <Text style={styles.sectionTitle}>Order Type</Text>
+              <View style={styles.orderTypeSelector}>
+                <LinearGradient
+                  colors={orderType === 'delivery' 
+                    ? [currentColors.secondary, currentColors.highlight]
+                    : [currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
                   style={[
-                    styles.input,
-                    styles.inputWithValidation,
-                    { 
-                      borderColor: addressTouched && addressValidation 
-                        ? getAddressValidationColor()
-                        : currentColors.border,
+                    styles.orderTypeButton,
+                    {
+                      borderColor: orderType === 'delivery' ? currentColors.secondary : currentColors.border,
                     }
                   ]}
-                  placeholder="Enter your full delivery address (street, city, state, ZIP)"
-                  placeholderTextColor={currentColors.textSecondary}
-                  value={deliveryAddress}
-                  onChangeText={(text) => {
-                    setDeliveryAddress(text);
-                    setAddressTouched(true);
-                  }}
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                  editable={!processing}
-                />
-                {addressTouched && (
-                  <View style={styles.validationIconContainer}>
-                    {isValidatingAddress ? (
-                      <ActivityIndicator size="small" color={currentColors.primary} />
-                    ) : (
-                      <IconSymbol 
-                        name={getAddressValidationIcon()} 
-                        size={24} 
-                        color={getAddressValidationColor()} 
-                      />
-                    )}
-                  </View>
-                )}
-              </View>
-              
-              {addressTouched && addressValidation && (
-                <View style={styles.validationMessage}>
-                  <Text style={[
-                    styles.validationMessageText, 
-                    { color: getAddressValidationColor() }
-                  ]}>
-                    {getAddressValidationMessage()}
-                  </Text>
-                </View>
-              )}
-
-              {addressValidation?.isValid && 
-               addressValidation.formattedAddress && 
-               addressValidation.formattedAddress !== deliveryAddress && (
-                <View style={styles.formattedAddressSuggestion}>
-                  <View style={styles.suggestionHeader}>
-                    <IconSymbol name="lightbulb.fill" size={16} color={currentColors.primary} />
-                    <Text style={styles.suggestionTitle}>
-                      Suggested Address
-                    </Text>
-                  </View>
-                  <Text style={styles.suggestionAddress}>
-                    {addressValidation.formattedAddress}
-                  </Text>
+                >
                   <Pressable
-                    style={styles.useSuggestionButton}
-                    onPress={useFormattedAddress}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 4 }}
+                    onPress={() => {
+                      if (!processing) {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setOrderType('delivery');
+                      }
+                    }}
+                    disabled={processing}
                   >
-                    <IconSymbol name="checkmark" size={14} color={currentColors.card} />
-                    <Text style={styles.useSuggestionButtonText}>
-                      Use This Address
+                    <IconSymbol 
+                      name="delivery-dining" 
+                      size={20} 
+                      color={orderType === 'delivery' ? currentColors.background : currentColors.text} 
+                    />
+                    <Text style={[
+                      styles.orderTypeText, 
+                      { color: orderType === 'delivery' ? currentColors.background : currentColors.text }
+                    ]}>
+                      Delivery
                     </Text>
                   </Pressable>
-                </View>
-              )}
-            </View>
-          )}
+                </LinearGradient>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {orderType === 'pickup' ? 'Pickup Notes (Optional)' : 'Delivery Notes (Optional)'}
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder={orderType === 'pickup' 
-                ? 'Add any special instructions for pickup...' 
-                : 'Add any special instructions for delivery...'}
-              placeholderTextColor={currentColors.textSecondary}
-              value={pickupNotes}
-              onChangeText={setPickupNotes}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              editable={!processing}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Pressable
-              style={styles.pointsToggle}
-              onPress={() => {
-                if (!processing) {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setUsePoints(!usePoints);
-                }
-              }}
-              disabled={processing}
-            >
-              <View style={styles.pointsToggleLeft}>
-                <IconSymbol name="star.fill" size={24} color={currentColors.highlight} />
-                <View style={styles.pointsToggleInfo}>
-                  <Text style={styles.pointsToggleTitle}>Use Reward Points</Text>
-                  <Text style={styles.pointsToggleSubtitle}>
-                    You have {availablePoints} points available
-                  </Text>
-                </View>
+                <LinearGradient
+                  colors={orderType === 'pickup' 
+                    ? [currentColors.secondary, currentColors.highlight]
+                    : [currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[
+                    styles.orderTypeButton,
+                    {
+                      borderColor: orderType === 'pickup' ? currentColors.secondary : currentColors.border,
+                    }
+                  ]}
+                >
+                  <Pressable
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 4 }}
+                    onPress={() => {
+                      if (!processing) {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setOrderType('pickup');
+                      }
+                    }}
+                    disabled={processing}
+                  >
+                    <IconSymbol 
+                      name="shopping-bag" 
+                      size={20} 
+                      color={orderType === 'pickup' ? currentColors.background : currentColors.text} 
+                    />
+                    <Text style={[
+                      styles.orderTypeText, 
+                      { color: orderType === 'pickup' ? currentColors.background : currentColors.text }
+                    ]}>
+                      Pickup
+                    </Text>
+                  </Pressable>
+                </LinearGradient>
               </View>
-              <View style={[
-                styles.checkbox, 
-                usePoints && { backgroundColor: currentColors.primary, borderColor: currentColors.primary }
-              ]}>
-                {usePoints && <IconSymbol name="check-circle" size={16} color={currentColors.card} />}
-              </View>
-            </Pressable>
-          </View>
+            </View>
 
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>Order Summary</Text>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Tax (8.75%)</Text>
-              <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
-            </View>
-            {usePoints && pointsDiscount > 0 && (
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: currentColors.primary }]}>
-                  Points Discount
-                </Text>
-                <Text style={[styles.summaryValue, { color: currentColors.primary }]}>
-                  -${pointsDiscount.toFixed(2)}
-                </Text>
+            {orderType === 'delivery' && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Delivery Address *</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.inputWithValidation,
+                      { 
+                        borderColor: addressTouched && addressValidation 
+                          ? getAddressValidationColor()
+                          : currentColors.border,
+                      }
+                    ]}
+                    placeholder="Enter your full delivery address (street, city, state, ZIP)"
+                    placeholderTextColor={currentColors.textSecondary}
+                    value={deliveryAddress}
+                    onChangeText={(text) => {
+                      setDeliveryAddress(text);
+                      setAddressTouched(true);
+                    }}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                    editable={!processing}
+                  />
+                  {addressTouched && (
+                    <View style={styles.validationIconContainer}>
+                      {isValidatingAddress ? (
+                        <ActivityIndicator size="small" color={currentColors.primary} />
+                      ) : (
+                        <IconSymbol 
+                          name={getAddressValidationIcon()} 
+                          size={24} 
+                          color={getAddressValidationColor()} 
+                        />
+                      )}
+                    </View>
+                  )}
+                </View>
+                
+                {addressTouched && addressValidation && (
+                  <View style={styles.validationMessage}>
+                    <Text style={[
+                      styles.validationMessageText, 
+                      { color: getAddressValidationColor() }
+                    ]}>
+                      {getAddressValidationMessage()}
+                    </Text>
+                  </View>
+                )}
+
+                {addressValidation?.isValid && 
+                 addressValidation.formattedAddress && 
+                 addressValidation.formattedAddress !== deliveryAddress && (
+                  <LinearGradient
+                    colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.formattedAddressSuggestion}
+                  >
+                    <View style={styles.suggestionHeader}>
+                      <IconSymbol name="lightbulb.fill" size={16} color={currentColors.primary} />
+                      <Text style={styles.suggestionTitle}>
+                        Suggested Address
+                      </Text>
+                    </View>
+                    <Text style={styles.suggestionAddress}>
+                      {addressValidation.formattedAddress}
+                    </Text>
+                    <LinearGradient
+                      colors={[currentColors.primary, currentColors.primary]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.useSuggestionButton}
+                    >
+                      <Pressable
+                        style={styles.useSuggestionButtonInner}
+                        onPress={useFormattedAddress}
+                      >
+                        <IconSymbol name="checkmark" size={14} color={currentColors.background} />
+                        <Text style={styles.useSuggestionButtonText}>
+                          Use This Address
+                        </Text>
+                      </Pressable>
+                    </LinearGradient>
+                  </LinearGradient>
+                )}
               </View>
             )}
-            <View style={[styles.summaryRow, styles.summaryRowTotal]}>
-              <Text style={styles.summaryLabelTotal}>Total</Text>
-              <Text style={styles.summaryValueTotal}>${total.toFixed(2)}</Text>
-            </View>
-            <View style={styles.pointsEarnCard}>
-              <IconSymbol name="star.fill" size={20} color={currentColors.highlight} />
-              <Text style={styles.pointsEarnText}>
-                You'll earn {pointsToEarn} points with this order!
-              </Text>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
 
-      <View style={styles.footer}>
-        <Pressable 
-          style={[
-            styles.placeOrderButton, 
-            { 
-              backgroundColor: processing ? currentColors.textSecondary : currentColors.primary,
-              opacity: processing ? 0.7 : 1
-            }
-          ]} 
-          onPress={handlePlaceOrder}
-          disabled={processing}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                {orderType === 'pickup' ? 'Pickup Notes (Optional)' : 'Delivery Notes (Optional)'}
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder={orderType === 'pickup' 
+                  ? 'Add any special instructions for pickup...' 
+                  : 'Add any special instructions for delivery...'}
+                placeholderTextColor={currentColors.textSecondary}
+                value={pickupNotes}
+                onChangeText={setPickupNotes}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                editable={!processing}
+              />
+            </View>
+
+            <View style={styles.section}>
+              <LinearGradient
+                colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.pointsToggle}
+              >
+                <Pressable
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}
+                  onPress={() => {
+                    if (!processing) {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setUsePoints(!usePoints);
+                    }
+                  }}
+                  disabled={processing}
+                >
+                  <View style={styles.pointsToggleLeft}>
+                    <IconSymbol name="star.fill" size={24} color={currentColors.highlight} />
+                    <View style={styles.pointsToggleInfo}>
+                      <Text style={styles.pointsToggleTitle}>Use Reward Points</Text>
+                      <Text style={styles.pointsToggleSubtitle}>
+                        You have {availablePoints} points available
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={[
+                    styles.checkbox, 
+                    usePoints && { backgroundColor: currentColors.secondary, borderColor: currentColors.secondary }
+                  ]}>
+                    {usePoints && <IconSymbol name="check-circle" size={16} color={currentColors.background} />}
+                  </View>
+                </Pressable>
+              </LinearGradient>
+            </View>
+
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.summaryCard}
+            >
+              <Text style={styles.summaryTitle}>Order Summary</Text>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Subtotal</Text>
+                <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Tax (8.75%)</Text>
+                <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
+              </View>
+              {usePoints && pointsDiscount > 0 && (
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: currentColors.secondary }]}>
+                    Points Discount
+                  </Text>
+                  <Text style={[styles.summaryValue, { color: currentColors.secondary }]}>
+                    -${pointsDiscount.toFixed(2)}
+                  </Text>
+                </View>
+              )}
+              <View style={[styles.summaryRow, styles.summaryRowTotal]}>
+                <Text style={styles.summaryLabelTotal}>Total</Text>
+                <Text style={styles.summaryValueTotal}>${total.toFixed(2)}</Text>
+              </View>
+              <View style={styles.pointsEarnCard}>
+                <IconSymbol name="star.fill" size={20} color={currentColors.highlight} />
+                <Text style={styles.pointsEarnText}>
+                  You'll earn {pointsToEarn} points with this order!
+                </Text>
+              </View>
+            </LinearGradient>
+          </View>
+        </ScrollView>
+
+        <LinearGradient
+          colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.footer}
         >
-          {processing ? (
-            <>
-              <ActivityIndicator color={currentColors.card} />
-              <Text style={styles.placeOrderButtonText}>
-                Processing...
-              </Text>
-            </>
-          ) : (
-            <>
-              <IconSymbol name="lock" size={20} color={currentColors.card} />
-              <Text style={styles.placeOrderButtonText}>
-                Pay ${total.toFixed(2)}
-              </Text>
-            </>
-          )}
-        </Pressable>
-      </View>
-      
-      <Toast
-        visible={toastVisible}
-        message={toastMessage}
-        type={toastType}
-        onHide={() => setToastVisible(false)}
-        currentColors={currentColors}
-      />
-    </SafeAreaView>
+          <LinearGradient
+            colors={processing 
+              ? [currentColors.textSecondary, currentColors.textSecondary]
+              : [currentColors.secondary, currentColors.highlight]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.placeOrderButton, { opacity: processing ? 0.7 : 1 }]}
+          >
+            <Pressable 
+              style={styles.placeOrderButtonInner}
+              onPress={handlePlaceOrder}
+              disabled={processing}
+            >
+              {processing ? (
+                <>
+                  <ActivityIndicator color={currentColors.background} />
+                  <Text style={styles.placeOrderButtonText}>
+                    Processing...
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <IconSymbol name="lock" size={20} color={currentColors.background} />
+                  <Text style={styles.placeOrderButtonText}>
+                    Pay ${total.toFixed(2)}
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          </LinearGradient>
+        </LinearGradient>
+        
+        <Toast
+          visible={toastVisible}
+          message={toastMessage}
+          type={toastType}
+          onHide={() => setToastVisible(false)}
+          currentColors={currentColors}
+        />
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
