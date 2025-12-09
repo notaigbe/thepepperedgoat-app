@@ -129,7 +129,7 @@ function CheckoutContent() {
 
   const availablePoints = userProfile?.points || 0;
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * 0.0875;
+  const tax = subtotal * 0.0975;
   const pointsDiscount = usePoints ? Math.min(availablePoints * 0.01, subtotal * 0.2) : 0;
   const total = subtotal + tax - pointsDiscount;
   const pointsToEarn = Math.floor(total);
@@ -1180,7 +1180,7 @@ function CheckoutContent() {
                 <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Tax (8.75%)</Text>
+                <Text style={styles.summaryLabel}>Tax (9.75%)</Text>
                 <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
               </View>
               {usePoints && pointsDiscount > 0 && (
