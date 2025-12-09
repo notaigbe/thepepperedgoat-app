@@ -40,10 +40,46 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { customerId } = await req.json();
+    // Get user profile
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('name, email, stripe_customer_id')
+      .eq('user_id', user.id)
+      .single();
 
+    if (profileError || !profile) {
+      throw new Error('User profile not found');
+    }
+
+    let customerId = profile.stripe_customer_id;
+
+    // If customer doesn't exist, create one
     if (!customerId) {
-      throw new Error('Customer ID is required');
+      console.log('Creating new Stripe customer for user:', user.id);
+      
+      const customer = await stripe.customers.create({
+        email: profile.email,
+        name: profile.name,
+        metadata: {
+          userId: user.id,
+        },
+      });
+
+      customerId = customer.id;
+      console.log('Stripe customer created:', customerId);
+
+      // Update user profile with Stripe customer ID
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({ stripe_customer_id: customerId })
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('Error updating user profile with customer ID:', updateError);
+        // Continue anyway - we have the customer ID
+      }
+    } else {
+      console.log('Using existing Stripe customer:', customerId);
     }
 
     // Create setup intent
@@ -58,6 +94,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         clientSecret: setupIntent.client_secret,
+        customerId: customerId,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

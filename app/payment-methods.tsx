@@ -104,36 +104,22 @@ export default function PaymentMethodsScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      // First, ensure user has a Stripe customer
-      const customerResponse = await fetch(`${SUPABASE_URL}/functions/v1/create-stripe-customer`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (!customerResponse.ok) {
-        throw new Error('Failed to create customer');
-      }
-
-      const { customerId } = await customerResponse.json();
-
-      // Create setup intent
+      // Create setup intent (this will also create a Stripe customer if needed)
       const setupIntentResponse = await fetch(`${SUPABASE_URL}/functions/v1/create-setup-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ customerId }),
       });
 
       if (!setupIntentResponse.ok) {
-        throw new Error('Failed to create setup intent');
+        const errorData = await setupIntentResponse.json();
+        throw new Error(errorData.error || 'Failed to create setup intent');
       }
 
-      const { clientSecret } = await setupIntentResponse.json();
+      const { clientSecret, customerId } = await setupIntentResponse.json();
+      console.log('Setup intent created with customer:', customerId);
 
       // Confirm setup intent with card details
       const { setupIntent, error: confirmError } = await confirmSetupIntent(clientSecret, {
@@ -162,7 +148,8 @@ export default function PaymentMethodsScreen() {
       });
 
       if (!saveResponse.ok) {
-        throw new Error('Failed to save payment method');
+        const errorData = await saveResponse.json();
+        throw new Error(errorData.error || 'Failed to save payment method');
       }
 
       showToast('success', 'Card added successfully');
@@ -197,7 +184,8 @@ export default function PaymentMethodsScreen() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update default payment method');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update default payment method');
       }
 
       showToast('success', 'Default card updated successfully');
@@ -240,7 +228,8 @@ export default function PaymentMethodsScreen() {
               });
 
               if (!response.ok) {
-                throw new Error('Failed to remove payment method');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to remove payment method');
               }
 
               showToast('success', 'Payment method removed successfully');
