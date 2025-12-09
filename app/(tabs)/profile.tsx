@@ -9,7 +9,6 @@ import {
   Image,
   Platform,
   TextInput,
-  Alert,
   KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,6 +18,7 @@ import { useApp } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import * as Haptics from "expo-haptics";
 import Toast from "@/components/Toast";
+import Dialog from "@/components/Dialog";
 import { ActivityIndicator } from "react-native";
 import { supabase } from "@/app/integrations/supabase/client";
 import { LinearGradient } from "expo-linear-gradient";
@@ -42,6 +42,14 @@ export default function ProfileScreen() {
   );
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
+  
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    title: '',
+    message: '',
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+  });
 
   useEffect(() => {
     const fetchProfileImage = async () => {
@@ -73,10 +81,16 @@ export default function ProfileScreen() {
       fetchProfileImage();
     }
   }, [userProfile?.profileImage, isAuthenticated]);
+  
   const showToast = (type: "success" | "error" | "info", message: string) => {
     setToastType(type);
     setToastMessage(message);
     setToastVisible(true);
+  };
+
+  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
+    setDialogConfig({ title, message, buttons });
+    setDialogVisible(true);
   };
 
   const handleAuth = async () => {
@@ -129,8 +143,8 @@ export default function ProfileScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
+    showDialog("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", onPress: () => {}, style: "cancel" },
       {
         text: "Sign Out",
         style: "destructive",
@@ -407,6 +421,14 @@ export default function ProfileScreen() {
             message={toastMessage}
             type={toastType}
             onHide={() => setToastVisible(false)}
+            currentColors={currentColors}
+          />
+          <Dialog
+            visible={dialogVisible}
+            title={dialogConfig.title}
+            message={dialogConfig.message}
+            buttons={dialogConfig.buttons}
+            onHide={() => setDialogVisible(false)}
             currentColors={currentColors}
           />
         </SafeAreaView>
@@ -712,6 +734,14 @@ export default function ProfileScreen() {
           message={toastMessage}
           type={toastType}
           onHide={() => setToastVisible(false)}
+          currentColors={currentColors}
+        />
+        <Dialog
+          visible={dialogVisible}
+          title={dialogConfig.title}
+          message={dialogConfig.message}
+          buttons={dialogConfig.buttons}
+          onHide={() => setDialogVisible(false)}
           currentColors={currentColors}
         />
       </SafeAreaView>

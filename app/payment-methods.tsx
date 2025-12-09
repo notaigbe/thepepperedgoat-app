@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   Platform,
   ActivityIndicator,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { useApp } from '@/contexts/AppContext';
 import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
+import Dialog from '@/components/Dialog';
 import { supabase, SUPABASE_URL } from '@/app/integrations/supabase/client';
 import { useStripe, CardField } from '@stripe/stripe-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -43,11 +43,24 @@ export default function PaymentMethodsScreen() {
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+  
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    title: '',
+    message: '',
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+  });
 
   const showToast = (type: 'success' | 'error' | 'info', message: string) => {
     setToastType(type);
     setToastMessage(message);
     setToastVisible(true);
+  };
+
+  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
+    setDialogConfig({ title, message, buttons });
+    setDialogVisible(true);
   };
 
   const loadStoredCards = useCallback(async () => {
@@ -204,11 +217,11 @@ export default function PaymentMethodsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    Alert.alert(
+    showDialog(
       'Remove Payment Method',
       'Are you sure you want to remove this payment method?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancel', onPress: () => {}, style: 'cancel' },
         {
           text: 'Remove',
           style: 'destructive',
@@ -467,6 +480,14 @@ export default function PaymentMethodsScreen() {
           message={toastMessage}
           type={toastType}
           onHide={() => setToastVisible(false)}
+          currentColors={currentColors}
+        />
+        <Dialog
+          visible={dialogVisible}
+          title={dialogConfig.title}
+          message={dialogConfig.message}
+          buttons={dialogConfig.buttons}
+          onHide={() => setDialogVisible(false)}
           currentColors={currentColors}
         />
       </SafeAreaView>
