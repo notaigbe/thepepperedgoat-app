@@ -2,7 +2,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/app/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
-import { Alert } from 'react-native';
 
 interface AuthContextType {
   session: Session | null;
@@ -51,7 +50,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Sign in error:', error);
-        Alert.alert('Sign In Error', error.message);
         return { error };
       }
 
@@ -59,7 +57,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: null };
     } catch (error: any) {
       console.error('Sign in exception:', error);
-      Alert.alert('Sign In Error', error.message);
       return { error };
     }
   };
@@ -81,7 +78,6 @@ const signUp = async (email: string, password: string, name: string, phone?: str
 
     if (error) {
       console.error('Sign-up error:', error);
-      Alert.alert('Sign Up Error', error.message);
       return { error };
     }
 
@@ -90,14 +86,9 @@ const signUp = async (email: string, password: string, name: string, phone?: str
       if (data.session) {
         // Auto-confirmed (dev mode)
         console.log('User auto-confirmed:', data.user.email);
-        Alert.alert('Welcome!', 'Your account has been created successfully.');
       } else {
         // Confirmation required (production mode)
         console.log('Confirmation email sent to:', data.user.email);
-        Alert.alert(
-          'Registration Successful',
-          'Please check your email to verify your account before signing in.'
-        );
       }
     }
 
@@ -105,7 +96,6 @@ const signUp = async (email: string, password: string, name: string, phone?: str
     return { error: null };
   } catch (error: any) {
     console.error('Sign-up exception:', error);
-    Alert.alert('Sign Up Error', error.message);
     return { error };
   }
 };
@@ -116,13 +106,11 @@ const signUp = async (email: string, password: string, name: string, phone?: str
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);
-        Alert.alert('Sign Out Error', error.message);
         throw error;
       }
       console.log('Sign out successful');
     } catch (error: any) {
       console.error('Sign out exception:', error);
-      Alert.alert('Sign Out Error', error.message);
       throw error;
     }
   };

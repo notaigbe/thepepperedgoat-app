@@ -7,7 +7,6 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Alert,
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,6 +14,7 @@ import { useApp } from "@/contexts/AppContext";
 import * as Haptics from "expo-haptics";
 import { IconSymbol } from "@/components/IconSymbol";
 import { LinearGradient } from "expo-linear-gradient";
+import Dialog from "@/components/Dialog";
 
 const giftCardAmounts = [25, 50, 75, 100, 150, 200];
 const pointsAmounts = [100, 250, 500, 750, 1000, 1500];
@@ -30,7 +30,20 @@ export default function GiftCardsScreen() {
   const [recipientId, setRecipientId] = useState("");
   const [message, setMessage] = useState("");
 
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    title: '',
+    message: '',
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+  });
+
   const userPoints = userProfile?.points || 0;
+
+  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
+    setDialogConfig({ title, message, buttons });
+    setDialogVisible(true);
+  };
 
   const handleAmountSelect = (amount: number) => {
     console.log("Amount selected:", amount);
@@ -55,7 +68,9 @@ export default function GiftCardsScreen() {
     }
 
     if (!recipientEmail && !recipientName) {
-      Alert.alert("Missing Information", "Please fill in all required fields.");
+      showDialog("Missing Information", "Please fill in all required fields.", [
+        { text: "OK", onPress: () => {}, style: "default" }
+      ]);
       return;
     }
 
@@ -73,26 +88,32 @@ export default function GiftCardsScreen() {
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      Alert.alert(
+      showDialog(
         "Gift Card Purchased!",
         `A $${selectedAmount} gift card has been sent to ${recipientName} at ${recipientEmail}`,
-        [{ text: "OK" }]
+        [{ text: "OK", onPress: () => {
+          setRecipientEmail("");
+          setRecipientName("");
+          setMessage("");
+        }, style: "default" }]
       );
     } else {
       if (!recipientId.trim()) {
-        Alert.alert(
+        showDialog(
           "Missing Information",
-          "Please enter the recipient&apos;s user ID."
+          "Please enter the recipient&apos;s user ID.",
+          [{ text: "OK", onPress: () => {}, style: "default" }]
         );
         return;
       }
 
       if (userPoints < selectedPoints) {
-        Alert.alert(
+        showDialog(
           "Insufficient Points",
           `You need ${
             selectedPoints - userPoints
-          } more points to send this gift.`
+          } more points to send this gift.`,
+          [{ text: "OK", onPress: () => {}, style: "default" }]
         );
         return;
       }
@@ -101,17 +122,17 @@ export default function GiftCardsScreen() {
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      Alert.alert(
+      showDialog(
         "Points Gift Card Sent!",
         `${selectedPoints} points have been sent to ${recipientName}!`,
-        [{ text: "OK" }]
+        [{ text: "OK", onPress: () => {
+          setRecipientEmail("");
+          setRecipientName("");
+          setRecipientId("");
+          setMessage("");
+        }, style: "default" }]
       );
     }
-
-    setRecipientEmail("");
-    setRecipientName("");
-    setRecipientId("");
-    setMessage("");
   };
 
   return (
@@ -534,6 +555,14 @@ export default function GiftCardsScreen() {
             </LinearGradient>
           </ScrollView>
         </View>
+        <Dialog
+          visible={dialogVisible}
+          title={dialogConfig.title}
+          message={dialogConfig.message}
+          buttons={dialogConfig.buttons}
+          onHide={() => setDialogVisible(false)}
+          currentColors={currentColors}
+        />
       </SafeAreaView>
     </LinearGradient>
   );
