@@ -30,6 +30,7 @@ export default function AdminDashboard() {
   const { userProfile } = useApp();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -104,6 +105,13 @@ export default function AdminDashboard() {
     await signOut();
     setUsername("");
     setPassword("");
+  };
+
+  const togglePasswordVisibility = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setShowPassword(!showPassword);
   };
 
   const fetchStats = useCallback(async () => {
@@ -327,9 +335,16 @@ export default function AdminDashboard() {
                     placeholderTextColor={colors.textSecondary}
                     value={password}
                     onChangeText={setPassword}
-                    secureTextEntry
+                    secureTextEntry={!showPassword}
                     autoCapitalize="none"
                   />
+                  <Pressable onPress={togglePasswordVisibility} style={styles.eyeIconButton}>
+                    <IconSymbol 
+                      name={showPassword ? "visibility-off" : "visibility"} 
+                      size={20} 
+                      color={colors.textSecondary} 
+                    />
+                  </Pressable>
                 </View>
 
                 <Pressable
@@ -613,6 +628,10 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 16,
     color: colors.text,
+  },
+  eyeIconButton: {
+    padding: 4,
+    marginLeft: 8,
   },
   loginButton: {
     backgroundColor: colors.primary,
