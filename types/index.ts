@@ -26,6 +26,22 @@ export interface Order {
   deliveryAddress?: string;
   pickupNotes?: string;
   paymentId?: string;
+  uberDeliveryId?: string;
+  uberDeliveryStatus?: string;
+  uberTrackingUrl?: string;
+  uberCourierName?: string;
+  uberCourierPhone?: string;
+  uberCourierLocation?: {
+    lat: number;
+    lng: number;
+  };
+  uberDeliveryEta?: string;
+  uberProofOfDelivery?: {
+    signatureImageUrl?: string;
+    photoUrl?: string;
+    notes?: string;
+  };
+  deliveryTriggeredAt?: string;
 }
 
 export interface MerchItem {

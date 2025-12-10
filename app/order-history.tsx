@@ -14,10 +14,12 @@ import { useApp } from '@/contexts/AppContext';
 import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { DeliveryTracking } from '@/components/DeliveryTracking';
+import { orderService } from '@/services/supabaseService';
 
 export default function OrderHistoryScreen() {
   const router = useRouter();
-  const { userProfile, currentColors } = useApp();
+  const { userProfile, currentColors, refreshUserProfile } = useApp();
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -162,6 +164,15 @@ export default function OrderHistoryScreen() {
                         </Text>
                       </View>
                     </View>
+
+                    {order.uberDeliveryId && (
+                      <View style={styles.deliveryTrackingContainer}>
+                        <DeliveryTracking 
+                          order={order} 
+                          onRefresh={refreshUserProfile}
+                        />
+                      </View>
+                    )}
                   </LinearGradient>
                 ))}
               </>
@@ -353,5 +364,9 @@ const styles = StyleSheet.create({
   orderPointsText: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
+  },
+  deliveryTrackingContainer: {
+    marginTop: 16,
+    paddingTop: 16,
   },
 });

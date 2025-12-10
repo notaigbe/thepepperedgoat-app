@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerContainer: {
-    position: 'fixed',
+    position: 'relative',
     boxShadow: '0px 4px 20px rgba(212, 175, 55, 0.4)',
     elevation: 8,
   },

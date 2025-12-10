@@ -102,6 +102,15 @@ export interface Database {
           payment_id: string | null
           created_at: string
           updated_at: string
+          uber_delivery_id: string | null
+          uber_delivery_status: string | null
+          uber_tracking_url: string | null
+          uber_courier_name: string | null
+          uber_courier_phone: string | null
+          uber_courier_location: Json | null
+          uber_delivery_eta: string | null
+          uber_proof_of_delivery: Json | null
+          delivery_triggered_at: string | null
         }
         Insert: {
           id?: string
@@ -115,6 +124,15 @@ export interface Database {
           payment_id?: string | null
           created_at?: string
           updated_at?: string
+          uber_delivery_id?: string | null
+          uber_delivery_status?: string | null
+          uber_tracking_url?: string | null
+          uber_courier_name?: string | null
+          uber_courier_phone?: string | null
+          uber_courier_location?: Json | null
+          uber_delivery_eta?: string | null
+          uber_proof_of_delivery?: Json | null
+          delivery_triggered_at?: string | null
         }
         Update: {
           id?: string
@@ -128,6 +146,15 @@ export interface Database {
           payment_id?: string | null
           created_at?: string
           updated_at?: string
+          uber_delivery_id?: string | null
+          uber_delivery_status?: string | null
+          uber_tracking_url?: string | null
+          uber_courier_name?: string | null
+          uber_courier_phone?: string | null
+          uber_courier_location?: Json | null
+          uber_delivery_eta?: string | null
+          uber_proof_of_delivery?: Json | null
+          delivery_triggered_at?: string | null
         }
       }
       order_items: {

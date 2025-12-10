@@ -559,6 +559,68 @@ export const orderService = {
       return { data: null, error };
     }
   },
+
+  /**
+   * Trigger Uber Direct delivery for an order
+   */
+  async triggerUberDelivery(
+    orderId: string,
+    pickupAddress: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+      country: string;
+    },
+    dropoffAddress: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+      country: string;
+    },
+    pickupPhoneNumber: string,
+    dropoffPhoneNumber: string,
+    pickupName: string,
+    dropoffName: string,
+    pickupNotes?: string,
+    dropoffNotes?: string
+  ) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/trigger-uber-delivery`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            orderId,
+            pickupAddress,
+            dropoffAddress,
+            pickupPhoneNumber,
+            dropoffPhoneNumber,
+            pickupName,
+            dropoffName,
+            pickupNotes,
+            dropoffNotes,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+
+      return { data: result, error: null };
+    } catch (error) {
+      console.error('Trigger Uber delivery error:', error);
+      return { data: null, error };
+    }
+  },
 };
 
 // ============================================

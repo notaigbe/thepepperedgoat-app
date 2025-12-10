@@ -258,6 +258,15 @@ export default function AdminDashboard() {
       color: "#A8D8EA",
       superAdminOnly: true,
     },
+    {
+      id: "delivery",
+      title: "Delivery Settings",
+      description: "Configure Uber Direct delivery",
+      icon: "local-shipping" as const,
+      route: "/admin/delivery-settings",
+      color: "#FF9F43",
+      superAdminOnly: false,
+    },
   ];
 
   // Filter sections based on effective role

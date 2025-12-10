@@ -19,6 +19,8 @@ import * as Haptics from 'expo-haptics';
 import { supabase } from '@/app/integrations/supabase/client';
 import Dialog from '@/components/Dialog';
 import Toast from '@/components/Toast';
+import { DeliveryTracking } from '@/components/DeliveryTracking';
+import { RESTAURANT_PICKUP_ADDRESS } from '@/constants/DeliveryConfig';
 
 interface OrderWithItems extends Order {
   items: CartItem[];
@@ -148,6 +150,15 @@ export default function AdminOrderManagement() {
           status: updatedOrder.status || 'pending',
           deliveryAddress: updatedOrder.delivery_address,
           pickupNotes: updatedOrder.pickup_notes,
+          uberDeliveryId: updatedOrder.uber_delivery_id,
+          uberDeliveryStatus: updatedOrder.uber_delivery_status,
+          uberTrackingUrl: updatedOrder.uber_tracking_url,
+          uberCourierName: updatedOrder.uber_courier_name,
+          uberCourierPhone: updatedOrder.uber_courier_phone,
+          uberCourierLocation: updatedOrder.uber_courier_location,
+          uberDeliveryEta: updatedOrder.uber_delivery_eta,
+          uberProofOfDelivery: updatedOrder.uber_proof_of_delivery,
+          deliveryTriggeredAt: updatedOrder.delivery_triggered_at,
         };
 
         setOrders((prev) => prev.map((o) => (o.id === orderId ? transformedOrder : o)));
@@ -165,12 +176,95 @@ export default function AdminOrderManagement() {
           console.log('Notification sent to user:', userId);
         }
 
-        showToast('success', 'Order status updated and notification sent to customer');
+        // Trigger Uber Direct delivery if status is "ready" and has delivery address
+        if (newStatus === 'ready' && transformedOrder.deliveryAddress && !transformedOrder.uberDeliveryId) {
+          console.log('Triggering Uber Direct delivery for order:', orderId);
+          showDialog(
+            'Trigger Delivery?',
+            'Do you want to trigger Uber Direct delivery for this order?',
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+                onPress: () => console.log('Delivery trigger canceled'),
+              },
+              {
+                text: 'Trigger Delivery',
+                style: 'default',
+                onPress: () => triggerUberDelivery(orderId, transformedOrder),
+              },
+            ]
+          );
+        } else {
+          showToast('success', 'Order status updated and notification sent to customer');
+        }
       } catch (err) {
         console.error('Update order status failed', err);
         showToast('error', 'Unable to update order status');
       }
     })();
+  };
+
+  const triggerUberDelivery = async (orderId: string, order: OrderWithItems) => {
+    try {
+      showToast('info', 'Triggering Uber Direct delivery...');
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      // Parse delivery address (assuming format: "street, city, state zipcode")
+      const addressParts = (order.deliveryAddress || '').split(',').map(p => p.trim());
+      const streetAddress = addressParts[0] || '';
+      const cityState = addressParts[1] || '';
+      const zipCode = addressParts[2] || '';
+
+      const pickupAddress = RESTAURANT_PICKUP_ADDRESS.address;
+
+      const dropoffAddress = {
+        street: streetAddress,
+        city: cityState.split(' ')[0] || 'Los Angeles',
+        state: cityState.split(' ')[1] || 'CA',
+        zipCode: zipCode,
+        country: 'US',
+      };
+
+      const response = await fetch(
+        `${supabase.supabaseUrl}/functions/v1/trigger-uber-delivery`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            orderId,
+            pickupAddress,
+            dropoffAddress,
+            pickupPhoneNumber: RESTAURANT_PICKUP_ADDRESS.phoneNumber,
+            dropoffPhoneNumber: '+1234567890', // TODO: Get from user profile
+            pickupName: RESTAURANT_PICKUP_ADDRESS.name,
+            dropoffName: 'Customer', // TODO: Get from user profile
+            pickupNotes: RESTAURANT_PICKUP_ADDRESS.notes,
+            dropoffNotes: order.pickupNotes || '',
+          }),
+        }
+      );
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to trigger delivery');
+      }
+
+      console.log('Uber Direct delivery triggered:', result);
+      showToast('success', 'Uber Direct delivery triggered successfully!');
+      
+      // Refresh orders to get updated delivery info
+      await fetchOrders();
+    } catch (err) {
+      console.error('Failed to trigger Uber Direct delivery:', err);
+      showToast('error', `Failed to trigger delivery: ${err.message}`);
+    }
   };
 
   const getStatusColor = (status: Order['status']) => {
@@ -323,6 +417,12 @@ export default function AdminOrderManagement() {
                       )}
                     </View>
                   </View>
+
+                  {order.uberDeliveryId && (
+                    <View style={styles.deliveryTrackingContainer}>
+                      <DeliveryTracking order={order} onRefresh={fetchOrders} />
+                    </View>
+                  )}
                 </View>
               ))}
 
@@ -543,5 +643,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 16,
+  },
+  deliveryTrackingContainer: {
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 16,
   },
 });
