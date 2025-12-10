@@ -22,9 +22,11 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import Dialog from "@/components/Dialog";
 import Toast from "@/components/Toast";
+import { useApp } from "@/contexts/AppContext";
 
 export default function AdminMenuManagement() {
   const router = useRouter();
+  const { userProfile } = useApp();
   const [items, setItems] = useState<MenuItem[]>(staticMenuItems);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -62,6 +64,9 @@ export default function AdminMenuManagement() {
     setToastMessage(message);
     setToastVisible(true);
   };
+
+  // Check user role - only super_admin should see analytics/order totals
+  const isSuperAdmin = userProfile?.userRole === 'super_admin';
 
   const categories: string[] = [
     "All",

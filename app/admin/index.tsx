@@ -70,6 +70,9 @@ export default function AdminDashboard() {
   // Effective role based on the toggle
   const effectiveRole = isSuperAdmin && viewAsAdmin ? 'admin' : userProfile?.userRole;
   const isEffectivelyAdmin = effectiveRole === 'admin';
+  
+  // Show analytics only for super_admin (when not viewing as admin)
+  const shouldShowAnalytics = isSuperAdmin && !viewAsAdmin;
 
   const handleLogin = async () => {
     console.log("Admin login attempt");
@@ -159,10 +162,10 @@ export default function AdminDashboard() {
   }, [isEffectivelyAdmin]);
 
   useEffect(() => {
-    if (isAuthenticated && isAdmin) {
+    if (isAuthenticated && isAdmin && shouldShowAnalytics) {
       fetchStats();
     }
-  }, [isAuthenticated, isAdmin, viewAsAdmin, fetchStats]);
+  }, [isAuthenticated, isAdmin, viewAsAdmin, fetchStats, shouldShowAnalytics]);
 
   const allAdminSections = [
     {
@@ -253,7 +256,7 @@ export default function AdminDashboard() {
       icon: "analytics" as const,
       route: "/admin/analytics",
       color: "#A8D8EA",
-      superAdminOnly: false,
+      superAdminOnly: true,
     },
   ];
 
@@ -464,48 +467,48 @@ export default function AdminDashboard() {
           </View>
         )}
 
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <IconSymbol name="shopping-cart" size={32} color={colors.primary} />
-            {statsLoading ? (
-              <ActivityIndicator
-                color={colors.primary}
-                style={{ marginVertical: 8 }}
-              />
-            ) : (
-              <Text style={styles.statValue}>{stats.totalOrders}</Text>
-            )}
-            <Text style={styles.statLabel}>Total Orders</Text>
+        {shouldShowAnalytics && (
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <IconSymbol name="shopping-cart" size={32} color={colors.primary} />
+              {statsLoading ? (
+                <ActivityIndicator
+                  color={colors.primary}
+                  style={{ marginVertical: 8 }}
+                />
+              ) : (
+                <Text style={styles.statValue}>{stats.totalOrders}</Text>
+              )}
+              <Text style={styles.statLabel}>Total Orders</Text>
+            </View>
+            <View style={styles.statCard}>
+              <IconSymbol name="people" size={32} color="#4ECDC4" />
+              {statsLoading ? (
+                <ActivityIndicator
+                  color="#4ECDC4"
+                  style={{ marginVertical: 8 }}
+                />
+              ) : (
+                <Text style={styles.statValue}>{stats.activeUsers}</Text>
+              )}
+              <Text style={styles.statLabel}>Total Users</Text>
+            </View>
+            <View style={styles.statCard}>
+              <IconSymbol name="attach-money" size={32} color="#95E1D3" />
+              {statsLoading ? (
+                <ActivityIndicator
+                  color="#95E1D3"
+                  style={{ marginVertical: 8 }}
+                />
+              ) : (
+                <Text style={styles.statValue}>
+                  ${(stats.revenue / 1000).toFixed(1)}K
+                </Text>
+              )}
+              <Text style={styles.statLabel}>Revenue</Text>
+            </View>
           </View>
-          <View style={styles.statCard}>
-            <IconSymbol name="people" size={32} color="#4ECDC4" />
-            {statsLoading ? (
-              <ActivityIndicator
-                color="#4ECDC4"
-                style={{ marginVertical: 8 }}
-              />
-            ) : (
-              <Text style={styles.statValue}>{stats.activeUsers}</Text>
-            )}
-            <Text style={styles.statLabel}>
-              {isEffectivelyAdmin ? 'Active Users' : 'Total Users'}
-            </Text>
-          </View>
-          <View style={styles.statCard}>
-            <IconSymbol name="attach-money" size={32} color="#95E1D3" />
-            {statsLoading ? (
-              <ActivityIndicator
-                color="#95E1D3"
-                style={{ marginVertical: 8 }}
-              />
-            ) : (
-              <Text style={styles.statValue}>
-                ${(stats.revenue / 1000).toFixed(1)}K
-              </Text>
-            )}
-            <Text style={styles.statLabel}>Revenue</Text>
-          </View>
-        </View>
+        )}
 
         <View style={styles.sectionsContainer}>
           {adminSections.map((section) => (
