@@ -81,7 +81,9 @@ const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SbDvPKZwIF4J9pKEK6dHIGLWdMtwlgkTwzChNt
 // ============================================================================
 // POINTS SYSTEM CONSTANTS
 // ============================================================================
-const POINTS_CONVERSION_RATE = 100; // $100 = 1 point
+// CORRECT LOGIC: 100 points = $1
+// This means: 1 point = $0.01
+const POINTS_TO_DOLLAR_RATE = 0.01; // 1 point = $0.01, so 100 points = $1
 const DISCOUNT_PERCENTAGE = 0.10; // 10% discount
 const POINTS_REWARD_PERCENTAGE = 0.10; // 10% of order as points
 
@@ -131,7 +133,7 @@ function CheckoutContent() {
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
 
   // ============================================================================
-  // COMPUTED VALUES (NEW POINTS SYSTEM)
+  // COMPUTED VALUES (CORRECTED POINTS SYSTEM)
   // ============================================================================
 
   const availablePoints = userProfile?.points || 0;
@@ -145,15 +147,20 @@ function CheckoutContent() {
   const tax = subtotalAfterDiscount * 0.0975;
   
   // Points discount (if using points)
-  // Points are worth $0.01 each (since $100 = 1 point means 1 point = $1, but we store as 1 point per $100)
-  const pointsDiscount = usePoints ? Math.min(availablePoints * 1.00, subtotalAfterDiscount * 0.2) : 0;
+  // CORRECTED: 100 points = $1, so 1 point = $0.01
+  // Convert points to dollars: availablePoints * 0.01
+  // Cap at 20% of subtotal after discount
+  const pointsValueInDollars = availablePoints * POINTS_TO_DOLLAR_RATE;
+  const maxPointsDiscount = subtotalAfterDiscount * 0.2;
+  const pointsDiscount = usePoints ? Math.min(pointsValueInDollars, maxPointsDiscount) : 0;
   
   // Total after all discounts and tax
   const total = subtotalAfterDiscount + tax - pointsDiscount;
   
   // Points to earn: 10% of order total (after discount, before tax)
-  // Convert to points: $100 = 1 point
-  const pointsToEarn = Math.floor((subtotalAfterDiscount * POINTS_REWARD_PERCENTAGE) / POINTS_CONVERSION_RATE);
+  // CORRECTED: Award points based on 100 points = $1
+  // For $100 order, user gets 10% = $10 value = 1000 points
+  const pointsToEarn = Math.floor((subtotalAfterDiscount * POINTS_REWARD_PERCENTAGE) / POINTS_TO_DOLLAR_RATE);
 
   // ============================================================================
   // HELPER FUNCTIONS
@@ -296,7 +303,8 @@ function CheckoutContent() {
 
   // Deduct points if used
   if (usePoints && pointsDiscount > 0) {
-    const pointsToDeduct = Math.floor(pointsDiscount / 1.00); // Convert dollars back to points
+    // CORRECTED: Convert dollars back to points (divide by 0.01)
+    const pointsToDeduct = Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE);
     const { error: pointsError } = await supabase
       .from('user_profiles')
       .update({ points: availablePoints - pointsToDeduct })
@@ -304,6 +312,8 @@ function CheckoutContent() {
 
     if (pointsError) {
       console.error('Error deducting points:', pointsError);
+    } else {
+      console.log(`✓ Deducted ${pointsToDeduct} points (worth $${pointsDiscount.toFixed(2)})`);
     }
   }
 
@@ -1176,7 +1186,7 @@ function CheckoutContent() {
                     <View style={styles.pointsToggleInfo}>
                       <Text style={styles.pointsToggleTitle}>Use Reward Points</Text>
                       <Text style={styles.pointsToggleSubtitle}>
-                        You have {availablePoints} points available (${availablePoints.toFixed(2)} value)
+                        You have {availablePoints} points available (${pointsValueInDollars.toFixed(2)} value)
                       </Text>
                     </View>
                   </View>
@@ -1230,7 +1240,7 @@ function CheckoutContent() {
               <View style={styles.pointsEarnCard}>
                 <IconSymbol name="star.fill" size={20} color={currentColors.highlight} />
                 <Text style={styles.pointsEarnText}>
-                  You&apos;ll earn {pointsToEarn} points with this order! (${(pointsToEarn * POINTS_CONVERSION_RATE).toFixed(2)} value)
+                  You&apos;ll earn {pointsToEarn} points with this order! (${(pointsToEarn * POINTS_TO_DOLLAR_RATE).toFixed(2)} value)
                 </Text>
               </View>
             </LinearGradient>
