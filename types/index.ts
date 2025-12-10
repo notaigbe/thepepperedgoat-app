@@ -104,6 +104,7 @@ export interface Event {
   date: string;
   location: string;
   capacity: number;
+  availableSpots: number;
   attendees: string[];
   image: string;
   isPrivate: boolean;

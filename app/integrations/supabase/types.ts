@@ -466,6 +466,7 @@ export interface Database {
           date: string
           location: string
           capacity: number
+          available_spots: number
           image: string
           is_private: boolean
           is_invite_only: boolean
@@ -480,6 +481,7 @@ export interface Database {
           date: string
           location: string
           capacity: number
+          available_spots?: number
           image: string
           is_private?: boolean
           is_invite_only?: boolean
@@ -494,6 +496,7 @@ export interface Database {
           date?: string
           location?: string
           capacity?: number
+          available_spots?: number
           image?: string
           is_private?: boolean
           is_invite_only?: boolean

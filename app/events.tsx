@@ -8,7 +8,6 @@ import {
   Pressable,
   Platform,
   Image,
-  Alert,
   Share,
   ActivityIndicator,
 } from 'react-native';
@@ -17,6 +16,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { IconSymbol } from '@/components/IconSymbol';
+import Dialog from '@/components/Dialog';
 import * as Haptics from 'expo-haptics';
 import { Event } from '@/types';
 import { eventService } from '@/services/supabaseService';
@@ -31,6 +31,29 @@ export default function EventsScreen() {
   const [accessedInviteEvents, setAccessedInviteEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [rsvpLoading, setRsvpLoading] = useState<string | null>(null);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    message: string;
+    buttons: Array<{
+      text: string;
+      onPress: () => void;
+      style?: 'default' | 'destructive' | 'cancel';
+    }>;
+  }>({
+    title: '',
+    message: '',
+    buttons: [],
+  });
+
+  const showDialog = (config: typeof dialogConfig) => {
+    setDialogConfig(config);
+    setDialogVisible(true);
+  };
+
+  const hideDialog = () => {
+    setDialogVisible(false);
+  };
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -61,6 +84,7 @@ export default function EventsScreen() {
         date: event.date,
         location: event.location,
         capacity: event.capacity,
+        availableSpots: event.available_spots ?? event.capacity,
         attendees: [], // Will be populated from RSVPs if needed
         image: event.image,
         isPrivate: event.is_private,
@@ -82,7 +106,11 @@ export default function EventsScreen() {
       const { data: event, error } = await eventService.getInviteOnlyEvent(token);
       
       if (error || !event) {
-        Alert.alert('Invalid Invite', 'This invite link is invalid or has expired.');
+        showDialog({
+          title: 'Invalid Invite',
+          message: 'This invite link is invalid or has expired.',
+          buttons: [{ text: 'OK', onPress: () => {}, style: 'cancel' }],
+        });
         return;
       }
 
@@ -93,6 +121,7 @@ export default function EventsScreen() {
         date: (event as any)?.date || '',
         location: (event as any)?.location || '',
         capacity: (event as any)?.capacity || 0,
+        availableSpots: (event as any)?.available_spots ?? (event as any)?.capacity ?? 0,
         attendees: [],
         image: (event as any)?.image || '',
         isPrivate: (event as any)?.is_private || false,
@@ -109,7 +138,11 @@ export default function EventsScreen() {
       showToast(`You now have access to "${transformedEvent.title}"!`, 'success');
     } catch (error) {
       console.error('Error accessing invite event:', error);
-      Alert.alert('Error', 'Failed to access this event. Please try again.');
+      showDialog({
+        title: 'Error',
+        message: 'Failed to access this event. Please try again.',
+        buttons: [{ text: 'OK', onPress: () => {}, style: 'cancel' }],
+      });
     }
   }, [showToast]);
 
@@ -127,8 +160,19 @@ export default function EventsScreen() {
 
   const handleRSVP = async (event: Event) => {
     if (!isAuthenticated || !user) {
-      Alert.alert('Sign In Required', 'Please sign in to RSVP to events.');
-      router.push('/(auth)/sign-in' as any);
+      showDialog({
+        title: 'Sign In Required',
+        message: 'Please sign in to RSVP to events.',
+        buttons: [
+          { text: 'Cancel', onPress: () => {}, style: 'cancel' },
+          {
+            text: 'Sign In',
+            onPress: () => {
+              router.push('/(auth)/sign-in' as any);
+            },
+          },
+        ],
+      });
       return;
     }
 
@@ -141,22 +185,28 @@ export default function EventsScreen() {
     );
     
     if (isAlreadyRSVPd) {
-      Alert.alert('Already RSVP\'d', 'You have already secured your spot for this event!');
+      showDialog({
+        title: 'Already RSVP\'d',
+        message: 'You have already secured your spot for this event!',
+        buttons: [{ text: 'OK', onPress: () => {}, style: 'cancel' }],
+      });
       return;
     }
 
-    const spotsLeft = event.capacity - event.attendees.length;
-    
-    if (spotsLeft <= 0) {
-      Alert.alert('Event Full', 'Sorry, this event is at full capacity.');
+    if (event.availableSpots <= 0) {
+      showDialog({
+        title: 'Event Full',
+        message: 'Sorry, this event is at full capacity.',
+        buttons: [{ text: 'OK', onPress: () => {}, style: 'cancel' }],
+      });
       return;
     }
 
-    Alert.alert(
-      'Confirm RSVP',
-      `Would you like to secure your spot for ${event.title}?\n\nSpots remaining: ${spotsLeft}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
+    showDialog({
+      title: 'Confirm RSVP',
+      message: `Would you like to secure your spot for ${event.title}?\n\nSpots remaining: ${event.availableSpots}`,
+      buttons: [
+        { text: 'Cancel', onPress: () => {}, style: 'cancel' },
         {
           text: 'Confirm',
           onPress: async () => {
@@ -165,16 +215,26 @@ export default function EventsScreen() {
               const { error } = await eventService.rsvpEvent(user.id, event.id);
               
               if (error) {
+                console.error('RSVP error:', error);
                 showToast('Failed to RSVP. Please try again.', 'error');
                 return;
               }
+
+              // Update local state optimistically
+              setVisibleEvents((prevEvents) =>
+                prevEvents.map((e) =>
+                  e.id === event.id
+                    ? { ...e, availableSpots: Math.max(0, e.availableSpots - 1) }
+                    : e
+                )
+              );
 
               showToast(`RSVP confirmed for "${event.title}"!`, 'success');
               
               // Reload user profile to update RSVP list
               await loadUserProfile();
               
-              // Reload events to update attendee count
+              // Reload events to get updated data from server
               await loadEvents();
             } catch (error) {
               console.error('Error during RSVP:', error);
@@ -184,8 +244,8 @@ export default function EventsScreen() {
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const handleShareEvent = async (event: Event) => {
@@ -194,12 +254,20 @@ export default function EventsScreen() {
     }
 
     if (!event.isInviteOnly) {
-      Alert.alert('Cannot Share', 'Only invite-only events can be shared with specific people.');
+      showDialog({
+        title: 'Cannot Share',
+        message: 'Only invite-only events can be shared with specific people.',
+        buttons: [{ text: 'OK', onPress: () => {}, style: 'cancel' }],
+      });
       return;
     }
 
     if (!event.shareableLink) {
-      Alert.alert('Error', 'This event does not have a shareable link.');
+      showDialog({
+        title: 'Error',
+        message: 'This event does not have a shareable link.',
+        buttons: [{ text: 'OK', onPress: () => {}, style: 'cancel' }],
+      });
       return;
     }
 
@@ -217,7 +285,11 @@ export default function EventsScreen() {
       }
     } catch (error) {
       console.error('Error sharing event:', error);
-      Alert.alert('Error', 'Failed to share event. Please try again.');
+      showDialog({
+        title: 'Error',
+        message: 'Failed to share event. Please try again.',
+        buttons: [{ text: 'OK', onPress: () => {}, style: 'cancel' }],
+      });
     }
   };
 
@@ -301,11 +373,11 @@ export default function EventsScreen() {
               )}
 
               {allVisibleEvents.map((event) => {
-                const spotsLeft = event.capacity - event.attendees.length;
                 const isRSVPd = userProfile?.rsvpEvents?.some((rsvp: any) => 
                   rsvp.event_id === event.id || rsvp.eventId === event.id
                 );
                 const isRSVPing = rsvpLoading === event.id;
+                const isFull = event.availableSpots <= 0;
 
                 return (
                   <LinearGradient
@@ -371,14 +443,14 @@ export default function EventsScreen() {
                         <View style={styles.eventDetail}>
                           <IconSymbol name="person.2.fill" size={16} color={currentColors.secondary} />
                           <Text style={[styles.eventDetailText, { color: currentColors.text }]}>
-                            {spotsLeft} spots left
+                            {event.availableSpots} {event.availableSpots === 1 ? 'spot' : 'spots'} left
                           </Text>
                         </View>
                       </View>
 
                       <View style={styles.buttonRow}>
                         <LinearGradient
-                          colors={isRSVPd ? [currentColors.primary, currentColors.highlight] : spotsLeft <= 0 ? [currentColors.textSecondary, currentColors.textSecondary] : [currentColors.secondary, currentColors.highlight]}
+                          colors={isRSVPd ? [currentColors.primary, currentColors.highlight] : isFull ? [currentColors.textSecondary, currentColors.textSecondary] : [currentColors.secondary, currentColors.highlight]}
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 0 }}
                           style={styles.rsvpButton}
@@ -386,13 +458,13 @@ export default function EventsScreen() {
                           <Pressable
                             style={styles.rsvpButtonInner}
                             onPress={() => handleRSVP(event)}
-                            disabled={spotsLeft <= 0 || isRSVPing}
+                            disabled={isFull || isRSVPing || isRSVPd}
                           >
                             {isRSVPing ? (
                               <ActivityIndicator size="small" color={currentColors.background} />
                             ) : (
                               <Text style={[styles.rsvpButtonText, { color: currentColors.background }]}>
-                                {isRSVPd ? 'RSVP Confirmed' : spotsLeft <= 0 ? 'Event Full' : 'RSVP Now'}
+                                {isRSVPd ? 'RSVP Confirmed' : isFull ? 'Event Full' : 'RSVP Now'}
                               </Text>
                             )}
                           </Pressable>
@@ -414,6 +486,16 @@ export default function EventsScreen() {
           )}
         </View>
       </SafeAreaView>
+
+      {/* Custom Dialog */}
+      <Dialog
+        visible={dialogVisible}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        buttons={dialogConfig.buttons}
+        onHide={hideDialog}
+        currentColors={currentColors}
+      />
     </LinearGradient>
   );
 }

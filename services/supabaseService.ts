@@ -645,7 +645,7 @@ export const reservationService = {
       return { data, error: null };
     } catch (error) {
       console.error('Update reservation table error:', error);
-      return { data: null, error };
+      return { error };
     }
   },
 
@@ -1135,6 +1135,7 @@ export const eventService = {
           date: event.date,
           location: event.location,
           capacity: event.capacity,
+          available_spots: event.availableSpots ?? event.capacity,
           image: event.image,
           is_private: event.isPrivate,
           is_invite_only: event.isInviteOnly,
@@ -1156,18 +1157,22 @@ export const eventService = {
    */
   async updateEvent(eventId: string, updates: Partial<Event>) {
     try {
+      const updateData: any = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (updates.title !== undefined) updateData.title = updates.title;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.date !== undefined) updateData.date = updates.date;
+      if (updates.location !== undefined) updateData.location = updates.location;
+      if (updates.capacity !== undefined) updateData.capacity = updates.capacity;
+      if (updates.availableSpots !== undefined) updateData.available_spots = updates.availableSpots;
+      if (updates.image !== undefined) updateData.image = updates.image;
+      if (updates.isPrivate !== undefined) updateData.is_private = updates.isPrivate;
+
       const { data, error } = await (supabase as any)
         .from('events')
-        .update({
-          title: updates.title,
-          description: updates.description,
-          date: updates.date,
-          location: updates.location,
-          capacity: updates.capacity,
-          image: updates.image,
-          is_private: updates.isPrivate,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', eventId)
         .select()
         .single();
