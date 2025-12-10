@@ -664,7 +664,7 @@ export default function ProfileScreen() {
               </Pressable>
             </LinearGradient>
 
-            <LinearGradient
+            {/* <LinearGradient
               colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -698,7 +698,7 @@ export default function ProfileScreen() {
                   color={currentColors.textSecondary}
                 />
               </Pressable>
-            </LinearGradient>
+            </LinearGradient> */}
 
             <LinearGradient
               colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
