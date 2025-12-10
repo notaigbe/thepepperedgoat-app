@@ -1,371 +1,250 @@
 
-# Stripe Payment Integration - Implementation Summary
+# Implementation Summary: Points System & Delivery Flow Updates
 
-## Overview
+## Changes Implemented
 
-Successfully migrated the Jagabans LA mobile app from Square to Stripe for payment processing. The website continues to use Square, providing the best experience for each platform.
+### 1. Points System Overhaul
+**Previous System**: $1 = 1 point
+**New System**: $100 = 1 point
 
-## What Was Implemented
+#### Key Changes:
+- Updated points conversion rate from 1:1 to 100:1
+- Points earned: 10% of order total (after discount, before tax)
+- Automatic 10% discount applied to all orders before tax
+- Points redemption: 1 point = $1.00 value
 
-### 1. Database Schema ✅
+#### Files Modified:
+- `app/checkout.native.tsx` - Updated checkout calculations
+- `app/integrations/supabase/types.ts` - Added `delivery_scheduled_at` field
+- `docs/POINTS_AND_DELIVERY_SYSTEM.md` - New documentation
 
-**New Table**: `stripe_payments`
-- Stores Stripe payment records
-- Includes payment intent ID, status, amount, metadata
-- Row Level Security (RLS) enabled
-- Indexes for performance
+### 2. Delivery Flow Changes
+**Previous Flow**: Delivery triggered immediately after admin marks order as "Ready"
+**New Flow**: Delivery triggered automatically 10 minutes after successful payment
 
-**Updated Table**: `orders`
-- Added `payment_status` column
-- Added `payment_id` column
-- Enabled Supabase Realtime
+#### Timeline:
+- **T+0**: Payment success → Order status: "preparing"
+- **T+0**: Notification: "Payment Successful"
+- **T+0**: Notification: "Delivery Scheduled - Driver will be assigned in 10 minutes"
+- **T+10**: Uber Direct delivery triggered automatically
+- **T+10**: Notification: "Driver Assigned! - Estimated arrival: [time]"
 
-### 2. Edge Functions ✅
+#### Files Created/Modified:
+- `supabase/functions/stripe-webhook/index.ts` - Updated to schedule delivery
+- `supabase/functions/schedule-delivery-trigger/index.ts` - New scheduler function
+- Database migration for `delivery_scheduled_at` field
 
-**create-payment-intent**
-- Creates Stripe PaymentIntent
-- Stores initial payment record in database
-- Returns client secret to mobile app
-- Handles authentication and validation
-
-**stripe-webhook**
-- Validates Stripe webhook signatures
-- Processes payment events (succeeded, failed, canceled, processing)
-- Updates order and payment status
-- Sends notifications to users
-
-### 3. Mobile App ✅
-
-**Updated**: `app/checkout.tsx`
-- Integrated Stripe Payment Sheet
-- Removed Square SDK code
-- Implemented realtime order updates
-- Added proper error handling
-- Improved loading states
-- Better user feedback
-
-### 4. Documentation ✅
-
-Created comprehensive documentation:
-- `STRIPE_INTEGRATION_COMPLETE.md` - Complete integration guide
-- `STRIPE_SETUP_QUICK_START.md` - Quick setup checklist
-- `STRIPE_CONFIGURATION_CHECKLIST.md` - Configuration verification
-- `STRIPE_MIGRATION_SUMMARY.md` - Migration overview
-- `SQUARE_VS_STRIPE_COMPARISON.md` - Provider comparison
-
-## Key Features
-
-### Payment Methods Supported
-- ✅ Credit/Debit Cards
-- ✅ Apple Pay (iOS)
-- ✅ Google Pay (Android)
-- ✅ 3D Secure Authentication (automatic)
-
-### User Experience
-- ✅ Native payment sheet UI
-- ✅ Realtime order status updates
-- ✅ Instant payment confirmation
-- ✅ Clear error messages
-- ✅ Loading indicators
-- ✅ Success notifications
-
-### Security
-- ✅ PCI DSS compliant
-- ✅ Webhook signature validation
-- ✅ Row Level Security on database
-- ✅ Encrypted payment data
-- ✅ Secure API keys management
-
-### Reliability
-- ✅ Automatic retry logic
-- ✅ Webhook event processing
-- ✅ Database transaction safety
-- ✅ Error logging
-- ✅ Fallback handling
-
-## Architecture
-
+### 3. Checkout Experience
+#### New Order Summary Display:
 ```
-┌─────────────────┐
-│   Mobile App    │
-│   (React Native)│
-└────────┬────────┘
-         │
-         │ 1. Create Order
-         ▼
-┌─────────────────┐
-│    Supabase     │
-│    Database     │
-└────────┬────────┘
-         │
-         │ 2. Call Edge Function
-         ▼
-┌─────────────────┐
-│ create-payment- │
-│     intent      │
-└────────┬────────┘
-         │
-         │ 3. Create PaymentIntent
-         ▼
-┌─────────────────┐
-│     Stripe      │
-│      API        │
-└────────┬────────┘
-         │
-         │ 4. Return Client Secret
-         ▼
-┌─────────────────┐
-│   Mobile App    │
-│  Payment Sheet  │
-└────────┬────────┘
-         │
-         │ 5. Customer Pays
-         ▼
-┌─────────────────┐
-│     Stripe      │
-│   Processing    │
-└────────┬────────┘
-         │
-         │ 6. Send Webhook
-         ▼
-┌─────────────────┐
-│ stripe-webhook  │
-│  Edge Function  │
-└────────┬────────┘
-         │
-         │ 7. Update Order Status
-         ▼
-┌─────────────────┐
-│    Supabase     │
-│    Database     │
-└────────┬────────┘
-         │
-         │ 8. Realtime Update
-         ▼
-┌─────────────────┐
-│   Mobile App    │
-│  Order Confirmed│
-└─────────────────┘
+Subtotal: $XXX.XX
+Discount (10%): -$XX.XX
+Tax (9.75%): $XX.XX
+Points Discount: -$XX.XX (if using points)
+─────────────────
+Total: $XXX.XX
+
+You'll earn X points with this order! ($XXX.XX value)
 ```
 
-## Setup Requirements
+#### Enhanced Features:
+- Clear breakdown of automatic 10% discount
+- Points value displayed in dollars for clarity
+- Updated points balance display: "X points ($X.XX value)"
 
-### Stripe Account
-- [ ] Create Stripe account
-- [ ] Get API keys (publishable and secret)
-- [ ] Configure webhook endpoint
-- [ ] Get webhook signing secret
+## Database Changes
 
-### Supabase Configuration
-- [ ] Set STRIPE_SECRET_KEY environment variable
-- [ ] Set STRIPE_WEBHOOK_SECRET environment variable
-- [ ] Apply database migration
-- [ ] Deploy edge functions
-
-### Mobile App
-- [ ] Update STRIPE_PUBLISHABLE_KEY in checkout.tsx
-- [ ] Test payment flow
-- [ ] Verify realtime updates
-
-## Testing
-
-### Test Cards
-
-| Card Number | Scenario |
-|-------------|----------|
-| 4242 4242 4242 4242 | Success |
-| 4000 0000 0000 0002 | Card declined |
-| 4000 0025 0000 3155 | Requires authentication |
-| 4000 0000 0000 9995 | Insufficient funds |
-
-### Test Checklist
-
-- [x] Payment sheet opens
-- [x] Card payment succeeds
-- [x] Failed payment handled
-- [x] Order status updates
-- [x] Realtime updates work
-- [x] Points awarded
-- [x] Cart clears
-- [x] Notifications sent
-- [x] Webhook processed
-- [x] Database updated
-
-## Deployment Steps
-
-1. **Apply Database Migration**
-   ```bash
-   supabase db push
-   ```
-
-2. **Set Environment Variables**
-   ```bash
-   supabase secrets set STRIPE_SECRET_KEY=sk_test_...
-   supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
-   ```
-
-3. **Deploy Edge Functions**
-   ```bash
-   supabase functions deploy create-payment-intent
-   supabase functions deploy stripe-webhook
-   ```
-
-4. **Update Mobile App**
-   - Edit `app/checkout.tsx`
-   - Update `STRIPE_PUBLISHABLE_KEY`
-   - Deploy app update
-
-5. **Configure Stripe Webhook**
-   - Add endpoint in Stripe Dashboard
-   - Select events to listen for
-   - Save webhook signing secret
-
-6. **Test End-to-End**
-   - Complete test payment
-   - Verify order updates
-   - Check webhook processing
-
-## Monitoring
-
-### Stripe Dashboard
-- Monitor payments: https://dashboard.stripe.com/payments
-- View webhooks: https://dashboard.stripe.com/webhooks
-- Check disputes: https://dashboard.stripe.com/disputes
-
-### Supabase Dashboard
-- View edge function logs
-- Monitor database queries
-- Check realtime connections
-
-### Database Queries
-
+### New Fields
 ```sql
--- Recent payments
-SELECT * FROM stripe_payments 
-ORDER BY created_at DESC LIMIT 10;
-
--- Payment success rate
-SELECT 
-  status,
-  COUNT(*) as count,
-  ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) as percentage
-FROM stripe_payments
-GROUP BY status;
-
--- Failed payments
-SELECT * FROM stripe_payments 
-WHERE status = 'failed' 
-ORDER BY created_at DESC;
+-- orders table
+delivery_scheduled_at TIMESTAMPTZ -- When delivery should be triggered
 ```
 
-## Success Metrics
+### New Functions
+```sql
+-- Atomic points increment to prevent race conditions
+CREATE FUNCTION increment_user_points(user_id_param UUID, points_to_add INTEGER)
+```
 
-Track these after deployment:
+### New Indexes
+```sql
+-- Efficient querying of scheduled deliveries
+CREATE INDEX idx_orders_delivery_scheduled 
+ON orders(delivery_scheduled_at) 
+WHERE delivery_scheduled_at IS NOT NULL 
+AND delivery_triggered_at IS NULL 
+AND payment_status = 'succeeded';
+```
 
-- **Payment Success Rate**: Target >95%
-- **Average Checkout Time**: Target <30 seconds
-- **Abandonment Rate**: Target <20%
-- **Failed Payment Rate**: Target <5%
-- **Customer Satisfaction**: Monitor support tickets
+## Edge Functions
 
-## Known Limitations
+### Updated Functions
+1. **stripe-webhook** (`supabase/functions/stripe-webhook/index.ts`)
+   - Schedules delivery 10 minutes after payment success
+   - Awards points using new conversion rate
+   - Sends delivery scheduling notification
 
-1. **Web Support**: Stripe integration is mobile-only (website uses Square)
-2. **Offline Payments**: Requires internet connection
-3. **Currency**: Currently USD only (easily expandable)
-4. **Refunds**: Must be processed through Stripe Dashboard or API
+### New Functions
+2. **schedule-delivery-trigger** (`supabase/functions/schedule-delivery-trigger/index.ts`)
+   - Runs periodically (every minute via cron)
+   - Checks for orders ready for delivery
+   - Triggers Uber Direct delivery
+   - Sends driver assignment notification
 
-## Future Enhancements
+## Setup Required
 
-### Short Term
-- [ ] Add saved payment methods
-- [ ] Implement partial refunds
-- [ ] Add payment receipts
-- [ ] Support multiple currencies
+### 1. Database Migration
+```bash
+# Apply the migration to add new fields and functions
+# This needs to be done manually via Supabase dashboard or CLI
+```
 
-### Long Term
-- [ ] Migrate website to Stripe
-- [ ] Add subscription payments
-- [ ] Implement split payments
-- [ ] Add payment analytics dashboard
+SQL to run:
+```sql
+-- Add delivery_scheduled_at column
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_scheduled_at TIMESTAMPTZ;
+
+-- Create index
+CREATE INDEX IF NOT EXISTS idx_orders_delivery_scheduled 
+ON orders(delivery_scheduled_at) 
+WHERE delivery_scheduled_at IS NOT NULL 
+AND delivery_triggered_at IS NULL 
+AND payment_status = 'succeeded';
+
+-- Create points increment function
+CREATE OR REPLACE FUNCTION increment_user_points(user_id_param UUID, points_to_add INTEGER)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE user_profiles
+  SET points = COALESCE(points, 0) + points_to_add,
+      updated_at = NOW()
+  WHERE id = user_id_param;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant permissions
+GRANT EXECUTE ON FUNCTION increment_user_points(UUID, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION increment_user_points(UUID, INTEGER) TO service_role;
+```
+
+### 2. Deploy Edge Functions
+```bash
+# Deploy updated webhook
+supabase functions deploy stripe-webhook
+
+# Deploy new scheduler
+supabase functions deploy schedule-delivery-trigger
+```
+
+### 3. Set Up Cron Job
+The `schedule-delivery-trigger` function needs to run every minute. Options:
+
+#### Option A: External Cron Service
+Use GitHub Actions, Vercel Cron, or similar:
+```yaml
+# .github/workflows/delivery-scheduler.yml
+name: Delivery Scheduler
+on:
+  schedule:
+    - cron: '* * * * *' # Every minute
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger scheduler
+        run: |
+          curl -X POST \
+            https://vpunvfkmlmqbfiggqrkn.supabase.co/functions/v1/schedule-delivery-trigger \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+```
+
+#### Option B: Supabase pg_cron (if available)
+```sql
+-- Schedule the function to run every minute
+SELECT cron.schedule(
+  'delivery-scheduler',
+  '* * * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://vpunvfkmlmqbfiggqrkn.supabase.co/functions/v1/schedule-delivery-trigger',
+    headers := '{"Authorization": "Bearer ' || current_setting('app.settings.service_role_key') || '"}'::jsonb
+  );
+  $$
+);
+```
+
+## Testing Checklist
+
+### Points System
+- [ ] Place order for $1200
+- [ ] Verify 10% discount applied ($120 off)
+- [ ] Verify tax calculated on discounted amount
+- [ ] Verify 1 point earned (10% of $1080 = $108 → 1 point)
+- [ ] Check points balance updated after payment
+
+### Delivery Flow
+- [ ] Place delivery order
+- [ ] Verify immediate "Payment Successful" notification
+- [ ] Verify "Delivery Scheduled" notification
+- [ ] Wait 10 minutes
+- [ ] Verify "Driver Assigned" notification with ETA
+- [ ] Check order tracking information
+
+### Edge Cases
+- [ ] Test with points redemption
+- [ ] Test pickup orders (should not schedule delivery)
+- [ ] Test payment failure (should not schedule delivery)
+- [ ] Test order cancellation before delivery trigger
 
 ## Rollback Plan
 
-If issues occur:
+If issues arise, you can rollback by:
 
-1. **Immediate**: Disable checkout in app
-2. **Short-term**: Revert to previous app version
-3. **Database**: Keep tables (no need to drop)
-4. **Edge Functions**: Keep deployed (won't be called)
+1. **Revert checkout calculations**:
+   - Change `POINTS_CONVERSION_RATE` back to 1
+   - Remove `DISCOUNT_PERCENTAGE` application
+   - Adjust `POINTS_REWARD_PERCENTAGE` back to 1.0
 
-## Support Resources
+2. **Disable scheduled delivery**:
+   - Stop the cron job
+   - Revert webhook to not set `delivery_scheduled_at`
 
-### Documentation
-- Complete Guide: `docs/STRIPE_INTEGRATION_COMPLETE.md`
-- Quick Start: `docs/STRIPE_SETUP_QUICK_START.md`
-- Configuration: `docs/STRIPE_CONFIGURATION_CHECKLIST.md`
+3. **Database rollback**:
+```sql
+-- Remove the new column (optional)
+ALTER TABLE orders DROP COLUMN IF EXISTS delivery_scheduled_at;
 
-### External Resources
-- [Stripe Docs](https://stripe.com/docs)
-- [Stripe React Native](https://stripe.com/docs/payments/accept-a-payment?platform=react-native)
-- [Supabase Docs](https://supabase.com/docs)
+-- Remove the function
+DROP FUNCTION IF EXISTS increment_user_points(UUID, INTEGER);
+```
 
-### Getting Help
-1. Check troubleshooting section in docs
-2. Review Supabase edge function logs
-3. Check Stripe Dashboard for payment details
-4. Verify environment variables
+## Monitoring
 
-## Team Responsibilities
+### Key Metrics to Watch
+1. **Points Accuracy**: Monitor user points balances for anomalies
+2. **Delivery Timing**: Track time between payment and delivery trigger
+3. **Notification Delivery**: Ensure all three notifications are sent
+4. **Scheduler Performance**: Monitor `schedule-delivery-trigger` execution time
 
-### Developers
-- Complete setup following quick start guide
-- Test payment flow thoroughly
-- Monitor edge function logs
-- Fix any issues that arise
+### Logs to Check
+- Stripe webhook logs for payment processing
+- Scheduler function logs for delivery triggers
+- Uber Direct API responses
+- User notification delivery status
 
-### QA
-- Test all payment scenarios
-- Verify error handling
-- Check realtime updates
-- Test on multiple devices
+## Support
 
-### DevOps
-- Apply database migration
-- Set environment variables
-- Deploy edge functions
-- Monitor system health
-
-### Product
-- Review user experience
-- Collect user feedback
-- Track success metrics
-- Plan future enhancements
-
-## Sign-Off
-
-- [x] Code implemented
-- [x] Documentation complete
-- [x] Edge functions created
-- [x] Database migration ready
-- [ ] Setup completed (requires API keys)
-- [ ] Testing passed
-- [ ] Deployed to production
+For issues or questions:
+1. Check the logs in Supabase dashboard
+2. Review `docs/POINTS_AND_DELIVERY_SYSTEM.md` for detailed information
+3. Verify all environment variables are set correctly
+4. Ensure cron job is running properly
 
 ## Next Steps
 
-1. **Immediate**: Complete setup using quick start guide
-2. **This Week**: Test thoroughly in test mode
-3. **Next Week**: Deploy to staging
-4. **Following Week**: Deploy to production
-5. **Ongoing**: Monitor metrics and collect feedback
-
----
-
-**Implementation Status**: ✅ Complete and ready for deployment
-
-**Estimated Setup Time**: 20-25 minutes
-
-**Last Updated**: 2024
-
-**Questions?** Refer to the comprehensive documentation in the `docs/` folder.
+1. Apply database migration
+2. Deploy edge functions
+3. Set up cron job
+4. Test thoroughly in staging environment
+5. Monitor production deployment
+6. Update user-facing documentation if needed

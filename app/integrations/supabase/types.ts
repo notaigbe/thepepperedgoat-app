@@ -111,6 +111,7 @@ export interface Database {
           uber_delivery_eta: string | null
           uber_proof_of_delivery: Json | null
           delivery_triggered_at: string | null
+          delivery_scheduled_at: string | null
         }
         Insert: {
           id?: string
@@ -133,6 +134,7 @@ export interface Database {
           uber_delivery_eta?: string | null
           uber_proof_of_delivery?: Json | null
           delivery_triggered_at?: string | null
+          delivery_scheduled_at?: string | null
         }
         Update: {
           id?: string
@@ -155,6 +157,7 @@ export interface Database {
           uber_delivery_eta?: string | null
           uber_proof_of_delivery?: Json | null
           delivery_triggered_at?: string | null
+          delivery_scheduled_at?: string | null
         }
       }
       order_items: {

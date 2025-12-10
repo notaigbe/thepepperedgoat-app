@@ -144,6 +144,17 @@ serve(async (req) => {
           console.log('✓ stripe_payments table updated');
         }
 
+        // Get order details to check if it's a delivery order
+        const { data: orderData, error: orderFetchError } = await supabase
+          .from('orders')
+          .select('delivery_address, total, points_earned')
+          .eq('id', orderId)
+          .single();
+
+        if (orderFetchError) {
+          console.error('Error fetching order:', orderFetchError);
+        }
+
         // Update orders table
         const { error: orderUpdateError } = await supabase
           .from('orders')
@@ -158,6 +169,34 @@ serve(async (req) => {
           console.error('Error updating order:', orderUpdateError);
         } else {
           console.log('✓ orders table updated');
+        }
+
+        // Award points to user (points_earned is already calculated in checkout)
+        if (orderData?.points_earned) {
+          const { error: pointsError } = await supabase.rpc('increment_user_points', {
+            user_id_param: userId,
+            points_to_add: orderData.points_earned,
+          });
+
+          if (pointsError) {
+            console.error('Error awarding points:', pointsError);
+            // Try direct update as fallback
+            const { data: userData } = await supabase
+              .from('user_profiles')
+              .select('points')
+              .eq('id', userId)
+              .single();
+
+            if (userData) {
+              await supabase
+                .from('user_profiles')
+                .update({ points: (userData.points || 0) + orderData.points_earned })
+                .eq('id', userId);
+              console.log('✓ Points awarded via direct update');
+            }
+          } else {
+            console.log('✓ Points awarded to user');
+          }
         }
 
         // Send notification to user
@@ -175,6 +214,39 @@ serve(async (req) => {
           console.error('Error creating notification:', notificationError);
         } else {
           console.log('✓ Notification created');
+        }
+
+        // Schedule Uber Direct delivery for 10 minutes later (only for delivery orders)
+        if (orderData?.delivery_address) {
+          console.log('Scheduling Uber Direct delivery for 10 minutes from now...');
+          
+          // Calculate delivery trigger time (10 minutes from now)
+          const deliveryTriggerTime = new Date(Date.now() + 10 * 60 * 1000);
+          
+          // Store the scheduled delivery trigger time
+          const { error: scheduleError } = await supabase
+            .from('orders')
+            .update({
+              delivery_scheduled_at: deliveryTriggerTime.toISOString(),
+            })
+            .eq('id', orderId);
+
+          if (scheduleError) {
+            console.error('Error scheduling delivery:', scheduleError);
+          } else {
+            console.log('✓ Delivery scheduled for:', deliveryTriggerTime.toISOString());
+            
+            // Send notification about scheduled delivery
+            await supabase
+              .from('notifications')
+              .insert({
+                user_id: userId,
+                title: 'Delivery Scheduled',
+                message: 'A driver will be assigned to your order in approximately 10 minutes.',
+                type: 'order',
+                read: false,
+              });
+          }
         }
 
         console.log('✓ Payment succeeded and order updated successfully');

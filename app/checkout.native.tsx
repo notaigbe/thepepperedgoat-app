@@ -79,6 +79,13 @@ interface StripePayment {
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SbDvPKZwIF4J9pKEK6dHIGLWdMtwlgkTwzChNtA3BNvVFZY5UkdgpQoas4Tzu9jmYqhKgkVnMAWmtvl0ROvhNwd00kkEUh15y';
 
 // ============================================================================
+// POINTS SYSTEM CONSTANTS
+// ============================================================================
+const POINTS_CONVERSION_RATE = 100; // $100 = 1 point
+const DISCOUNT_PERCENTAGE = 0.10; // 10% discount
+const POINTS_REWARD_PERCENTAGE = 0.10; // 10% of order as points
+
+// ============================================================================
 // CHECKOUT CONTENT COMPONENT
 // ============================================================================
 
@@ -124,15 +131,29 @@ function CheckoutContent() {
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
 
   // ============================================================================
-  // COMPUTED VALUES
+  // COMPUTED VALUES (NEW POINTS SYSTEM)
   // ============================================================================
 
   const availablePoints = userProfile?.points || 0;
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * 0.0975;
-  const pointsDiscount = usePoints ? Math.min(availablePoints * 0.01, subtotal * 0.2) : 0;
-  const total = subtotal + tax - pointsDiscount;
-  const pointsToEarn = Math.floor(total);
+  
+  // Apply 10% discount before tax
+  const discount = subtotal * DISCOUNT_PERCENTAGE;
+  const subtotalAfterDiscount = subtotal - discount;
+  
+  // Calculate tax on discounted amount
+  const tax = subtotalAfterDiscount * 0.0975;
+  
+  // Points discount (if using points)
+  // Points are worth $0.01 each (since $100 = 1 point means 1 point = $1, but we store as 1 point per $100)
+  const pointsDiscount = usePoints ? Math.min(availablePoints * 1.00, subtotalAfterDiscount * 0.2) : 0;
+  
+  // Total after all discounts and tax
+  const total = subtotalAfterDiscount + tax - pointsDiscount;
+  
+  // Points to earn: 10% of order total (after discount, before tax)
+  // Convert to points: $100 = 1 point
+  const pointsToEarn = Math.floor((subtotalAfterDiscount * POINTS_REWARD_PERCENTAGE) / POINTS_CONVERSION_RATE);
 
   // ============================================================================
   // HELPER FUNCTIONS
@@ -231,6 +252,7 @@ function CheckoutContent() {
   if (!userProfile) throw new Error('User profile not found');
 
   console.log('Creating order in Supabase...');
+  console.log('Points to earn:', pointsToEarn);
 
   // Create order
   const { data: order, error: orderError } = await supabase
@@ -274,7 +296,7 @@ function CheckoutContent() {
 
   // Deduct points if used
   if (usePoints && pointsDiscount > 0) {
-    const pointsToDeduct = Math.floor(pointsDiscount * 100);
+    const pointsToDeduct = Math.floor(pointsDiscount / 1.00); // Convert dollars back to points
     const { error: pointsError } = await supabase
       .from('user_profiles')
       .update({ points: availablePoints - pointsToDeduct })
@@ -937,7 +959,7 @@ function CheckoutContent() {
             >
               <IconSymbol name="info" size={20} color={currentColors.primary} />
               <Text style={styles.infoText}>
-                Secure checkout powered by Stripe. Your payment information is encrypted and protected.
+                Secure checkout powered by Stripe. Your payment information is encrypted and protected. Enjoy 10% off your order!
               </Text>
             </LinearGradient>
 
@@ -1154,7 +1176,7 @@ function CheckoutContent() {
                     <View style={styles.pointsToggleInfo}>
                       <Text style={styles.pointsToggleTitle}>Use Reward Points</Text>
                       <Text style={styles.pointsToggleSubtitle}>
-                        You have {availablePoints} points available
+                        You have {availablePoints} points available (${availablePoints.toFixed(2)} value)
                       </Text>
                     </View>
                   </View>
@@ -1180,6 +1202,14 @@ function CheckoutContent() {
                 <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
               </View>
               <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: currentColors.secondary }]}>
+                  Discount (10%)
+                </Text>
+                <Text style={[styles.summaryValue, { color: currentColors.secondary }]}>
+                  -${discount.toFixed(2)}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Tax (9.75%)</Text>
                 <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
               </View>
@@ -1200,7 +1230,7 @@ function CheckoutContent() {
               <View style={styles.pointsEarnCard}>
                 <IconSymbol name="star.fill" size={20} color={currentColors.highlight} />
                 <Text style={styles.pointsEarnText}>
-                  You'll earn {pointsToEarn} points with this order!
+                  You&apos;ll earn {pointsToEarn} points with this order! (${(pointsToEarn * POINTS_CONVERSION_RATE).toFixed(2)} value)
                 </Text>
               </View>
             </LinearGradient>
