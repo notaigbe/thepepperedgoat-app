@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerContainer: {
-    position: 'relative',
+    position: 'fixed',
     boxShadow: '0px 4px 20px rgba(212, 175, 55, 0.4)',
     elevation: 8,
   },
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    paddingBottom: 10,
+    // paddingBottom: 10,
   },
   headerSafeArea: {
     width: '100%',
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 16,
+    // paddingTop: 16,
     paddingBottom: 14,
   },
   headerContent: {
