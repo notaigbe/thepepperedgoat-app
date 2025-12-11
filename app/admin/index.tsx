@@ -168,106 +168,106 @@ export default function AdminDashboard() {
   }, [isAuthenticated, isAdmin, viewAsAdmin, fetchStats, shouldShowAnalytics]);
 
   const allAdminSections = [
-    {
-      id: "menu",
-      title: "Menu Management",
-      description: "Add, edit, and remove menu items",
-      icon: "restaurant-menu" as const,
-      route: "/admin/menu",
-      color: colors.primary,
-      superAdminOnly: false,
-    },
-    {
-      id: "orders",
-      title: "Order Management",
-      description: "View and update order statuses",
-      icon: "receipt-long" as const,
-      route: "/admin/orders",
-      color: "#FF6B35",
-      superAdminOnly: false,
-    },
-    {
-      id: "reservations",
-      title: "Reservations",
-      description: "Manage table bookings",
-      icon: "event-seat" as const,
-      route: "/admin/reservations",
-      color: "#9B59B6",
-      superAdminOnly: false,
-    },
-    {
-      id: "users",
-      title: "User Management",
-      description: "Manage user accounts and profiles",
-      icon: "people" as const,
-      route: "/admin/users",
-      color: "#4ECDC4",
-      superAdminOnly: false,
-    },
-    {
-      id: "admins",
-      title: "Admin Management",
-      description: "Manage admin roles and permissions",
-      icon: "admin-panel-settings" as const,
-      route: "/admin/admins",
-      color: "#E74C3C",
-      superAdminOnly: true,
-    },
-    {
-      id: "events",
-      title: "Event Management",
-      description: "Create and manage events",
-      icon: "event" as const,
-      route: "/admin/events",
-      color: "#95E1D3",
-      superAdminOnly: false,
-    },
-    {
-      id: "merch",
-      title: "Merchandise",
-      description: "Manage merch inventory",
-      icon: "shopping-bag" as const,
-      route: "/admin/merch",
-      color: "#F38181",
-      superAdminOnly: false,
-    },
-    {
-      id: "giftcards",
-      title: "Gift Cards",
-      description: "View and manage gift cards",
-      icon: "card-giftcard" as const,
-      route: "/admin/giftcards",
-      color: "#AA96DA",
-      superAdminOnly: false,
-    },
-    {
-      id: "notifications",
-      title: "Notifications",
-      description: "Send push notifications",
-      icon: "notifications" as const,
-      route: "/admin/notifications",
-      color: "#FCBAD3",
-      superAdminOnly: false,
-    },
-    {
-      id: "analytics",
-      title: "Analytics",
-      description: "View sales and engagement metrics",
-      icon: "analytics" as const,
-      route: "/admin/analytics",
-      color: "#A8D8EA",
-      superAdminOnly: true,
-    },
-    {
-      id: "delivery",
-      title: "Delivery Settings",
-      description: "Configure Uber Direct delivery",
-      icon: "local-shipping" as const,
-      route: "/admin/delivery-settings",
-      color: "#FF9F43",
-      superAdminOnly: false,
-    },
-  ];
+  {
+    id: "menu",
+    title: "Menu Management",
+    description: "Add, edit, and remove menu items",
+    icon: "fork.knife" as const, // SF Symbol for iOS
+    route: "/admin/menu",
+    color: colors.primary,
+    superAdminOnly: false,
+  },
+  {
+    id: "orders",
+    title: "Order Management",
+    description: "View and update order statuses",
+    icon: "receipt" as const, // SF Symbol for iOS
+    route: "/admin/orders",
+    color: "#FF6B35",
+    superAdminOnly: false,
+  },
+  {
+    id: "reservations",
+    title: "Reservations",
+    description: "Manage table bookings",
+    icon: "calendar.badge.clock" as const, // SF Symbol for iOS
+    route: "/admin/reservations",
+    color: "#9B59B6",
+    superAdminOnly: false,
+  },
+  {
+    id: "users",
+    title: "User Management",
+    description: "Manage user accounts and profiles",
+    icon: "person.3" as const, // SF Symbol for iOS
+    route: "/admin/users",
+    color: "#4ECDC4",
+    superAdminOnly: false,
+  },
+  {
+    id: "admins",
+    title: "Admin Management",
+    description: "Manage admin roles and permissions",
+    icon: "shield.lefthalf.filled" as const, // SF Symbol for iOS
+    route: "/admin/admins",
+    color: "#E74C3C",
+    superAdminOnly: true,
+  },
+  {
+    id: "events",
+    title: "Event Management",
+    description: "Create and manage events",
+    icon: "calendar" as const, // SF Symbol for iOS
+    route: "/admin/events",
+    color: "#95E1D3",
+    superAdminOnly: false,
+  },
+  {
+    id: "merch",
+    title: "Merchandise",
+    description: "Manage merch inventory",
+    icon: "bag" as const, // SF Symbol for iOS
+    route: "/admin/merch",
+    color: "#F38181",
+    superAdminOnly: false,
+  },
+  {
+    id: "giftcards",
+    title: "Gift Cards",
+    description: "View and manage gift cards",
+    icon: "giftcard" as const, // SF Symbol for iOS
+    route: "/admin/giftcards",
+    color: "#AA96DA",
+    superAdminOnly: false,
+  },
+  {
+    id: "notifications",
+    title: "Notifications",
+    description: "Send push notifications",
+    icon: "bell.fill" as const, // SF Symbol for iOS
+    route: "/admin/notifications",
+    color: "#FCBAD3",
+    superAdminOnly: false,
+  },
+  {
+    id: "analytics",
+    title: "Analytics",
+    description: "View sales and engagement metrics",
+    icon: "chart.bar" as const, // SF Symbol for iOS
+    route: "/admin/analytics",
+    color: "#A8D8EA",
+    superAdminOnly: true,
+  },
+  {
+    id: "delivery",
+    title: "Delivery Settings",
+    description: "Configure Uber Direct delivery",
+    icon: "truck.box" as const, // SF Symbol for iOS
+    route: "/admin/delivery-settings",
+    color: "#FF9F43",
+    superAdminOnly: false,
+  },
+];
 
   // Filter sections based on effective role
   const adminSections = allAdminSections.filter(
@@ -312,14 +312,14 @@ export default function AdminDashboard() {
           >
             <View style={styles.loginContainer}>
               <View style={styles.loginHeader}>
-                <IconSymbol
-                  name="admin-panel-settings"
-                  size={64}
-                  color={colors.primary}
-                />
-                <Text style={styles.loginTitle}>Admin Dashboard</Text>
-                <Text style={styles.loginSubtitle}>Jagabans LA</Text>
-              </View>
+              <IconSymbol
+                name="shield.lefthalf.filled" // SF Symbol for iOS
+                size={64}
+                color={colors.primary}
+              />
+              <Text style={styles.loginTitle}>Admin Dashboard</Text>
+              <Text style={styles.loginSubtitle}>Jagabans LA</Text>
+            </View>
 
               <View style={styles.loginForm}>
                 <View style={styles.inputContainer}>
@@ -354,7 +354,7 @@ export default function AdminDashboard() {
                   />
                   <Pressable onPress={togglePasswordVisibility} style={styles.eyeIconButton} disabled={loading}>
                     <IconSymbol 
-                      name={showPassword ? "visibility-off" : "visibility"} 
+                      name={showPassword ? "eye.slash" : "eye"} 
                       size={20} 
                       color={colors.textSecondary} 
                     />
@@ -386,7 +386,7 @@ export default function AdminDashboard() {
                   disabled={loading}
                 >
                   <IconSymbol
-                    name="person-pin"
+                    name="person.badge.shield.checkmark" // SF Symbol for iOS
                     size={16}
                     color={colors.textSecondary}
                   />
@@ -429,13 +429,21 @@ export default function AdminDashboard() {
               <Text style={styles.subtitle}>Jagabans LA Management</Text>
               {isSuperAdmin && !viewAsAdmin && (
                 <View style={styles.superAdminBadge}>
-                  <IconSymbol name="verified" size={12} color="#FFFFFF" />
+                      <IconSymbol 
+                        name="shield.checkered" // SF Symbol for iOS
+                        size={12} 
+                        color="#FFFFFF" 
+                      />
                   <Text style={styles.superAdminBadgeText}>Super Admin</Text>
                 </View>
               )}
               {(isAdmin && !isSuperAdmin) || (isSuperAdmin && viewAsAdmin) ? (
                 <View style={styles.adminBadge}>
-                  <IconSymbol name="admin-panel-settings" size={12} color="#FFFFFF" />
+                      <IconSymbol 
+                        name="shield.lefthalf.filled" // SF Symbol for iOS
+                        size={12} 
+                        color="#FFFFFF" 
+                      />
                   <Text style={styles.adminBadgeText}>Admin</Text>
                 </View>
               ) : null}
@@ -446,10 +454,18 @@ export default function AdminDashboard() {
               style={styles.userProfileIconButton}
               onPress={handleUserProfilePress}
             >
-              <IconSymbol name="person-2" size={24} color={colors.primary} />
+                  <IconSymbol 
+                    name="person.circle.fill" // SF Symbol for iOS
+                    size={24} 
+                    color={colors.primary} 
+                  />
             </Pressable>
             <Pressable style={styles.logoutButton} onPress={handleLogout}>
-              <IconSymbol name="logout" size={24} color={colors.primary} />
+                  <IconSymbol 
+                    name="rectangle.and.arrow.up.right.and.arrow.down.left" // SF Symbol for iOS
+                    size={24} 
+                    color={colors.primary} 
+                  />
             </Pressable>
           </View>
         </View>
@@ -458,11 +474,11 @@ export default function AdminDashboard() {
           <View style={styles.roleSwitcherContainer}>
             <View style={styles.roleSwitcher}>
               <View style={styles.roleSwitcherLeft}>
-                <IconSymbol 
-                  name={viewAsAdmin ? "admin-panel-settings" : "verified"} 
-                  size={20} 
-                  color={colors.primary} 
-                />
+                  <IconSymbol 
+                    name={viewAsAdmin ? "shield.lefthalf.filled" : "shield.checkered"} 
+                    size={20} 
+                    color={colors.primary} 
+                  />
                 <Text style={styles.roleSwitcherLabel}>
                   {viewAsAdmin ? "Viewing as Admin" : "Viewing as Super Admin"}
                 </Text>
@@ -486,7 +502,11 @@ export default function AdminDashboard() {
         {shouldShowAnalytics && (
           <View style={styles.statsContainer}>
             <View style={styles.statCard}>
-              <IconSymbol name="shopping-cart" size={32} color={colors.primary} />
+                <IconSymbol 
+                  name="cart.fill" // SF Symbol for iOS
+                  size={32} 
+                  color={colors.primary} 
+                />
               {statsLoading ? (
                 <ActivityIndicator
                   color={colors.primary}
@@ -498,7 +518,11 @@ export default function AdminDashboard() {
               <Text style={styles.statLabel}>Total Orders</Text>
             </View>
             <View style={styles.statCard}>
-              <IconSymbol name="people" size={32} color="#4ECDC4" />
+                <IconSymbol 
+                  name="person.3" // SF Symbol for iOS
+                  size={32} 
+                  color="#4ECDC4" 
+                />
               {statsLoading ? (
                 <ActivityIndicator
                   color="#4ECDC4"
@@ -510,7 +534,11 @@ export default function AdminDashboard() {
               <Text style={styles.statLabel}>Total Users</Text>
             </View>
             <View style={styles.statCard}>
-              <IconSymbol name="attach-money" size={32} color="#95E1D3" />
+              <IconSymbol 
+                name="dollarsign.circle" // SF Symbol for iOS
+                size={32} 
+                color="#95E1D3" 
+              />
               {statsLoading ? (
                 <ActivityIndicator
                   color="#95E1D3"
@@ -555,7 +583,7 @@ export default function AdminDashboard() {
                 </Text>
               </View>
               <IconSymbol
-                name="chevron-right"
+                name="chevron.right"
                 size={24}
                 color={colors.textSecondary}
               />

@@ -9,14 +9,9 @@ import {
   ViewStyle,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-
 
 // Add your SFSymbol to MaterialIcons mappings here.
 const MAPPING = ({
-  // See MaterialIcons here: https://icons.expo.fyi
-  // See SF Symbols in the SF Symbols app on Mac.
-
   // Navigation & Home
   "house.fill": "home",
   "house": "home-outlined",
@@ -44,11 +39,28 @@ const MAPPING = ({
   "bell": "notifications-none",
   "heart.fill": "favorite",
   "heart": "favorite-border",
-	"receipt-long":"receipt-long",
-	"credit-card":"credit-card",
-	"event":"event",
-	"palette":"palette",
-	"logout":"logout",
+  "square.and.arrow.down": "save",
+
+  // Admin Dashboard Specific Icons
+  "shield.lefthalf.filled": "admin-panel-settings",
+  "shield.checkered": "verified",
+  "fork.knife": "restaurant-menu",
+  "receipt": "receipt-long",
+  "calendar.badge.clock": "event-seat",
+  "calendar.badge.exclamationmark": "event-busy",
+  "person.2": "people",
+  "person.3": "people",
+  "calendar": "event",
+  "bag": "shopping-bag",
+  "giftcard": "card-giftcard",
+  "chart.bar": "analytics",
+  "truck.box": "local-shipping",
+  "dollarsign.circle": "attach-money",
+  "chart.line.uptrend.xyaxis": "trending-up",
+  "chart.line.downtrend.xyaxis": "trending-down",
+  "chart.pie": "pie-chart",
+  "chart.bar.doc.horizontal": "bar-chart",
+  "table.furniture": "table-restaurant",
 
   // Actions & Controls
   "plus": "add",
@@ -63,6 +75,15 @@ const MAPPING = ({
   "trash.fill": "delete",
   "trash": "delete-outline",
   "plus.circle.fill": "add-circle",
+  "circle.inset.filled": "radio-button-checked",  // iOS filled circle → checked
+  "circle": "radio-button-unchecked",
+  "hand.raised.fill": "block",
+  "hand.raised": "block",
+  "nosign": "block",
+  "xmark.octagon.fill": "block",
+  "minus.circle.fill": "remove-circle",
+  "minus.circle": "remove-circle-outline",
+  "xmark.circle.fill": "remove-circle",
 
   // Editing & Creation
   "pencil": "edit",
@@ -74,6 +95,9 @@ const MAPPING = ({
   "folder": "folder-open",
   "doc.fill": "insert-drive-file",
   "doc": "insert-drive-file",
+  // "calendar": "calendar-today",
+  "calendar.circle": "calendar-today",
+  "calendar.badge.plus": "calendar-today",
 
   // Media & Content
   "photo.fill": "image",
@@ -103,10 +127,11 @@ const MAPPING = ({
   // Shapes & Symbols
   "square": "square",
   "square.grid.3x3": "apps",
-  "circle": "circle",
+  // "circle": "circle",
   "triangle.fill": "change-history",
   "star.fill": "star",
   "star": "star-border",
+  "star.circle.fill": "stars",
   "bookmark.fill": "bookmark",
   "bookmark": "bookmark-border",
 
@@ -120,16 +145,15 @@ const MAPPING = ({
   "lock.fill": "lock",
   "lock.open.fill": "lock-open",
 
-// Shopping & Commerce
-"cart.fill": "shopping-cart",
-"cart": "shopping-cart-outlined",
-"creditcard.fill": "credit-card",
-"creditcard": "credit-card",
-"dollarsign.circle.fill": "monetization-on",
-"bag.fill": "shopping-bag",
-"bag": "shopping-bag",
-"gift.fill": "card-giftcard",
-"gift": "card-giftcard",
+  // Shopping & Commerce
+  "cart.fill": "shopping-cart",
+  "cart": "shopping-cart-outlined",
+  "creditcard.fill": "credit-card",
+  "creditcard": "credit-card",
+  "dollarsign.circle.fill": "monetization-on",
+  "bag.fill": "shopping-bag",
+  "gift.fill": "card-giftcard",
+  "gift": "card-giftcard",
 
   // Location & Maps
   "location.fill": "location-on",
@@ -141,23 +165,22 @@ const MAPPING = ({
   // Time & Calendar
   "clock.fill": "access-time",
   "clock": "access-time",
-  "calendar": "event",
   "timer": "timer",
 
   // User & Profile
   "person": "person",
-  "person.fill": "person",
+  "person.fill": "person-add",
   "person.2.fill": "group",
-  "person.2": "group",
   "person.circle.fill": "account-circle",
   "person.circle": "account-circle",
   "person.crop.circle.fill": "account-circle",
   "person.crop.circle": "account-circle",
-  "lock":"lock",
+  "lock": "lock",
+  "person.badge.shield.checkmark": "admin-panel-settings",
 
   // Sharing & Export
   "square.and.arrow.up": "share",
-  "square.and.arrow.down": "download",
+  "square.and.arrow.down.fill": "download",
   "arrow.up.doc.fill": "upload-file",
   "link": "link",
 
@@ -168,17 +191,51 @@ const MAPPING = ({
 
   // Visibility & Display
   "eye.fill": "visibility",
+  "eye": "visibility",
   "eye.slash.fill": "visibility-off",
+  "eye.slash": "visibility-off",
   "lightbulb.fill": "lightbulb",
   "moon.fill": "dark-mode",
   "sun.max.fill": "light-mode",
-	"auto-mode":"auto-mode",
+  "auto.mode": "auto-mode",
+  "clock.badge.checkmark": "schedule",
+
+  // Authentication & Security
+  "rectangle.and.arrow.up.right.and.arrow.down.left": "logout",
+
+  // Fallback mappings (keep existing MaterialIcons names working)
+  "receipt-long": "receipt-long",
+  "credit-card": "credit-card",
+  "event": "event",
+  "palette": "palette",
+  "logout": "logout",
+  "restaurant-menu": "restaurant-menu",
+  "event-seat": "event-seat",
+  "people": "people",
+  "admin-panel-settings": "admin-panel-settings",
+  "verified": "verified",
+  "shopping-bag": "shopping-bag",
+  "card-giftcard": "card-giftcard",
+  "notifications": "notifications",
+  "analytics": "analytics",
+  "local-shipping": "local-shipping",
+  "attach-money": "attach-money",
+  "person-2": "group",
+  "person-pin": "person-pin",
+  "visibility": "visibility",
+  "visibility-off": "visibility-off",
+  
+  "account-circle": "account-circle",
+  "home": "home",
+  "settings": "settings",
+  "search": "search",
 } as unknown) as Record<string, React.ComponentProps<typeof MaterialIcons>["name"]>;
 
 export type IconSymbolName = string;
 
 /**
- * An icon component that uses native SFSymbols on iOS, and MaterialIcons on Android and web. This ensures a consistent look across platforms, and optimal resource usage.
+ * An icon component that uses native SFSymbols on iOS, and MaterialIcons on Android and web.
+ * This ensures a consistent look across platforms, and optimal resource usage.
  *
  * Icon `name`s are based on SFSymbols and require manual mapping to MaterialIcons.
  */
@@ -200,7 +257,6 @@ export function IconSymbol({
     <MaterialIcons
       color={color}
       size={size}
-      // cast because MaterialIcons name prop has a narrower union
       name={mappedName as React.ComponentProps<typeof MaterialIcons>["name"]}
       style={style as StyleProp<TextStyle>}
     />

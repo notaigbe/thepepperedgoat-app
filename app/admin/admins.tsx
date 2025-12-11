@@ -225,11 +225,11 @@ export default function AdminManagement() {
             }
           }}
         >
-          <IconSymbol name="arrow-back" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Admin Management</Text>
         <Pressable style={styles.addButton} onPress={handlePromoteUser}>
-          <IconSymbol name="person-add" size={24} color={colors.primary} />
+          <IconSymbol name="person.fill" size={24} color={colors.primary} />
         </Pressable>
       </View>
 
@@ -297,7 +297,7 @@ export default function AdminManagement() {
                       {admin.user_role === 'super_admin' && (
                         <View style={styles.superAdminBadge}>
                           <IconSymbol
-                            name="verified"
+                            name="shield.checkered"
                             size={14}
                             color="#FFFFFF"
                           />
@@ -309,7 +309,7 @@ export default function AdminManagement() {
                       {admin.user_role === 'admin' && (
                         <View style={styles.adminBadge}>
                           <IconSymbol
-                            name="admin-panel-settings"
+                            name="shield.lefthalf.filled"
                             size={14}
                             color="#FFFFFF"
                           />
@@ -331,7 +331,7 @@ export default function AdminManagement() {
                     onPress={() => handleUpdateRole(admin.id, 'user')}
                   >
                     <IconSymbol
-                      name={admin.user_role === 'user' ? 'check-circle' : 'radio-button-unchecked'}
+                      name={admin.user_role === 'user' ? 'circle.inset.filled' : 'circle'}
                       size={20}
                       color={admin.user_role === 'user' ? '#9E9E9E' : colors.textSecondary}
                     />
@@ -353,7 +353,7 @@ export default function AdminManagement() {
                     onPress={() => handleUpdateRole(admin.id, 'admin')}
                   >
                     <IconSymbol
-                      name={admin.user_role === 'admin' ? 'check-circle' : 'radio-button-unchecked'}
+                      name={admin.user_role === 'admin' ? 'circle.inset.filled' : 'circle'}
                       size={20}
                       color={admin.user_role === 'admin' ? '#4CAF50' : colors.textSecondary}
                     />
@@ -377,8 +377,7 @@ export default function AdminManagement() {
                     <IconSymbol
                       name={
                         admin.user_role === 'super_admin'
-                          ? 'check-circle'
-                          : 'radio-button-unchecked'
+                          ? 'circle.inset.filled' : 'circle'
                       }
                       size={20}
                       color={
@@ -399,7 +398,7 @@ export default function AdminManagement() {
                     style={styles.deleteButton}
                     onPress={() => handleDeleteAdmin(admin.id, admin.name)}
                   >
-                    <IconSymbol name="delete" size={20} color="#FF6B6B" />
+                    <IconSymbol name="trash.fill" size={20} color="#FF6B6B" />
                   </Pressable>
                 </View>
 
@@ -414,7 +413,7 @@ export default function AdminManagement() {
             {filteredAdmins.length === 0 && (
               <View style={styles.emptyState}>
                 <IconSymbol
-                  name="admin-panel-settings"
+                  name="shield.lefthalf.filled"
                   size={64}
                   color={colors.textSecondary}
                 />

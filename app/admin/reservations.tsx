@@ -268,7 +268,7 @@ export default function AdminReservations() {
             router.back();
           }}
         >
-          <IconSymbol name="arrow-back" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={24} color={colors.text} />
         </Pressable>
         <View style={styles.headerContent}>
           <Text style={styles.title}>Reservations</Text>
@@ -283,12 +283,12 @@ export default function AdminReservations() {
             fetchReservations();
           }}
         >
-          <IconSymbol name="refresh" size={24} color={colors.primary} />
+          <IconSymbol name="arrow.clockwise" size={24} color={colors.primary} />
         </Pressable>
       </View>
 
       <View style={styles.searchContainer}>
-        <IconSymbol name="search" size={20} color={colors.textSecondary} />
+        <IconSymbol name="magnifyingglass" size={20} color={colors.textSecondary} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search by name, email, or phone..."
@@ -333,7 +333,7 @@ export default function AdminReservations() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {filteredReservations.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <IconSymbol name="event-busy" size={64} color={colors.textSecondary} />
+            <IconSymbol name="calendar.badge.exclamationmark" size={64} color={colors.textSecondary} />
             <Text style={styles.emptyText}>No reservations found</Text>
             <Text style={styles.emptySubtext}>
               {searchQuery
@@ -381,7 +381,7 @@ export default function AdminReservations() {
 
                 <View style={styles.reservationDetails}>
                   <View style={styles.detailRow}>
-                    <IconSymbol name="calendar-today" size={16} color={colors.textSecondary} />
+                    <IconSymbol name="calendar.badge.plus" size={16} color={colors.textSecondary} />
                     <Text style={styles.detailText}>
                       {new Date(reservation.date).toLocaleDateString('en-US', {
                         weekday: 'short',
@@ -392,16 +392,16 @@ export default function AdminReservations() {
                     </Text>
                   </View>
                   <View style={styles.detailRow}>
-                    <IconSymbol name="schedule" size={16} color={colors.textSecondary} />
+                    <IconSymbol name="clock.badge.checkmark" size={16} color={colors.textSecondary} />
                     <Text style={styles.detailText}>{reservation.time}</Text>
                   </View>
                   <View style={styles.detailRow}>
-                    <IconSymbol name="people" size={16} color={colors.textSecondary} />
+                    <IconSymbol name="person.2" size={16} color={colors.textSecondary} />
                     <Text style={styles.detailText}>{reservation.guests} guests</Text>
                   </View>
                   {reservation.tableNumber && (
                     <View style={styles.detailRow}>
-                      <IconSymbol name="table-restaurant" size={16} color={colors.textSecondary} />
+                      <IconSymbol name="table.furniture" size={16} color={colors.textSecondary} />
                       <Text style={styles.detailText}>Table {reservation.tableNumber}</Text>
                     </View>
                   )}
@@ -426,7 +426,7 @@ export default function AdminReservations() {
                 style={styles.modalCloseButton}
                 onPress={() => setShowDetailModal(false)}
               >
-                <IconSymbol name="close" size={24} color={colors.text} />
+                <IconSymbol name="xmark" size={24} color={colors.text} />
               </Pressable>
             </View>
 
@@ -439,11 +439,11 @@ export default function AdminReservations() {
                     <Text style={styles.modalDetailText}>{selectedReservation.name}</Text>
                   </View>
                   <View style={styles.modalDetailRow}>
-                    <IconSymbol name="email" size={20} color={colors.textSecondary} />
+                    <IconSymbol name="envelope.fill" size={20} color={colors.textSecondary} />
                     <Text style={styles.modalDetailText}>{selectedReservation.email}</Text>
                   </View>
                   <View style={styles.modalDetailRow}>
-                    <IconSymbol name="phone" size={20} color={colors.textSecondary} />
+                    <IconSymbol name="phone.fill" size={20} color={colors.textSecondary} />
                     <Text style={styles.modalDetailText}>{selectedReservation.phone}</Text>
                   </View>
                 </View>
@@ -451,7 +451,7 @@ export default function AdminReservations() {
                 <View style={styles.modalSection}>
                   <Text style={styles.modalSectionTitle}>Reservation Details</Text>
                   <View style={styles.modalDetailRow}>
-                    <IconSymbol name="calendar-today" size={20} color={colors.textSecondary} />
+                    <IconSymbol name="calendar.badge.plus" size={20} color={colors.textSecondary} />
                     <Text style={styles.modalDetailText}>
                       {new Date(selectedReservation.date).toLocaleDateString('en-US', {
                         weekday: 'long',
@@ -462,11 +462,11 @@ export default function AdminReservations() {
                     </Text>
                   </View>
                   <View style={styles.modalDetailRow}>
-                    <IconSymbol name="schedule" size={20} color={colors.textSecondary} />
+                    <IconSymbol name="clock.badge.checkmark" size={20} color={colors.textSecondary} />
                     <Text style={styles.modalDetailText}>{selectedReservation.time}</Text>
                   </View>
                   <View style={styles.modalDetailRow}>
-                    <IconSymbol name="people" size={20} color={colors.textSecondary} />
+                    <IconSymbol name="person.2" size={20} color={colors.textSecondary} />
                     <Text style={styles.modalDetailText}>
                       {selectedReservation.guests} guests
                     </Text>
@@ -538,7 +538,7 @@ export default function AdminReservations() {
                   style={styles.deleteButton}
                   onPress={() => handleDeleteReservation(selectedReservation.id)}
                 >
-                  <IconSymbol name="delete" size={20} color="#FFFFFF" />
+                  <IconSymbol name="trash.fill" size={20} color="#FFFFFF" />
                   <Text style={styles.deleteButtonText}>Delete Reservation</Text>
                 </Pressable>
               </ScrollView>

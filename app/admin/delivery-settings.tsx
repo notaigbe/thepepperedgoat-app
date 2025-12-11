@@ -97,7 +97,7 @@ export default function DeliverySettingsScreen() {
             router.back();
           }}
         >
-          <IconSymbol name="arrow-back" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Delivery Settings</Text>
         <View style={{ width: 40 }} />
@@ -229,12 +229,12 @@ export default function DeliverySettingsScreen() {
               saveSettings();
             }}
           >
-            <IconSymbol name="save" size={20} color="#FFFFFF" />
+            <IconSymbol name="square.and.arrow.down" size={20} color="#FFFFFF" />
             <Text style={styles.saveButtonText}>Save Settings</Text>
           </Pressable>
 
           <View style={styles.infoBox}>
-            <IconSymbol name="info" size={20} color={colors.primary} />
+            <IconSymbol name="info.circle.fill" size={20} color={colors.primary} />
             <Text style={styles.infoText}>
               To complete the Uber Direct setup, you need to configure API credentials in Supabase Edge Functions. 
               See the documentation for detailed instructions.
