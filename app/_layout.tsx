@@ -24,6 +24,11 @@ import {
 } from '@expo-google-fonts/libertinus-sans';
 
 import { Inter_400Regular, Inter_700Bold  } from '@expo-google-fonts/inter'
+  Cormorant_400Regular,
+  Cormorant_500Medium,
+  Cormorant_600SemiBold,
+  Cormorant_700Bold,
+} from '@expo-google-fonts/cormorant';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -42,6 +47,10 @@ export default function RootLayout() {
     LibertinusSans_700Bold,
     Inter_400Regular,
     Inter_700Bold,
+    Cormorant_400Regular,
+    Cormorant_500Medium,
+    Cormorant_600SemiBold,
+    Cormorant_700Bold,
   });
 
   useEffect(() => {
