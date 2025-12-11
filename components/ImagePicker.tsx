@@ -22,6 +22,7 @@ interface ImagePickerProps {
   folder: string;
   label?: string;
   disabled?: boolean;
+  defaultImageUrl?: string;
 }
 
 export default function ImagePicker({
@@ -31,9 +32,10 @@ export default function ImagePicker({
   folder,
   label = 'Image',
   disabled = false,
+  defaultImageUrl,
 }: ImagePickerProps) {
   const [uploading, setUploading] = useState(false);
-  const [localImageUri, setLocalImageUri] = useState<string | undefined>(currentImageUrl);
+  const [localImageUri, setLocalImageUri] = useState<string | undefined>(currentImageUrl || defaultImageUrl);
 
   const pickImage = async () => {
     if (disabled) return;
@@ -111,15 +113,33 @@ export default function ImagePicker({
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('Failed to upload image. Please try again.');
-      setLocalImageUri(currentImageUrl);
+      setLocalImageUri(currentImageUrl || defaultImageUrl);
     } finally {
       setUploading(false);
     }
   };
 
+  const useDefaultImage = () => {
+    if (disabled || !defaultImageUrl) return;
+
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    setLocalImageUri(defaultImageUrl);
+    onImageSelected(defaultImageUrl);
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <View style={styles.labelContainer}>
+        <Text style={styles.label}>{label}</Text>
+        {defaultImageUrl && !localImageUri && (
+          <Pressable onPress={useDefaultImage} disabled={disabled}>
+            <Text style={styles.useDefaultText}>Use Default</Text>
+          </Pressable>
+        )}
+      </View>
       
       <Pressable
         style={[styles.imageContainer, disabled && styles.disabled]}
@@ -132,6 +152,9 @@ export default function ImagePicker({
           <View style={styles.placeholder}>
             <IconSymbol name="image" size={48} color={colors.textSecondary} />
             <Text style={styles.placeholderText}>Tap to select image</Text>
+            {defaultImageUrl && (
+              <Text style={styles.placeholderSubtext}>or use default image</Text>
+            )}
           </View>
         )}
         
@@ -161,11 +184,21 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 16,
   },
+  labelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   label: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: 8,
+  },
+  useDefaultText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
   },
   imageContainer: {
     width: '100%',
@@ -194,6 +227,11 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  placeholderSubtext: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
   },
   uploadingOverlay: {
     ...StyleSheet.absoluteFillObject,
