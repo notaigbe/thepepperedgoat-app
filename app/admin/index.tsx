@@ -336,7 +336,6 @@ export default function AdminDashboard() {
                     onChangeText={setUsername}
                     autoCapitalize="none"
                     keyboardType="email-address"
-                    editable={!loading}
                   />
                 </View>
 
@@ -350,9 +349,8 @@ export default function AdminDashboard() {
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
-                    editable={!loading}
                   />
-                  <Pressable onPress={togglePasswordVisibility} style={styles.eyeIconButton} disabled={loading}>
+                  <Pressable onPress={togglePasswordVisibility} style={styles.eyeIconButton}>
                     <IconSymbol 
                       name={showPassword ? "visibility-off" : "visibility"} 
                       size={20} 
@@ -364,20 +362,15 @@ export default function AdminDashboard() {
                 <Pressable
                   style={({ pressed }) => [
                     styles.loginButton,
-                    pressed && !loading && styles.loginButtonPressed,
+                    pressed && styles.loginButtonPressed,
                     loading && styles.loginButtonDisabled,
                   ]}
                   onPress={handleLogin}
                   disabled={loading}
                 >
-                  {loading ? (
-                    <View style={styles.loginButtonContent}>
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                      <Text style={styles.loginButtonText}>Signing In...</Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.loginButtonText}>Sign In</Text>
-                  )}
+                  <Text style={styles.loginButtonText}>
+                    {loading ? "Signing In..." : "Sign In"}
+                  </Text>
                 </Pressable>
 
                 <Pressable
@@ -621,13 +614,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: colors.text,
     marginTop: 16,
-    fontFamily: 'LibertinusSans_700Bold',
   },
   loginSubtitle: {
     fontSize: 18,
     color: colors.textSecondary,
     marginTop: 8,
-    fontFamily: 'LibertinusSans_400Regular',
   },
   loginForm: {
     width: "100%",
@@ -649,7 +640,6 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 16,
     color: colors.text,
-    fontFamily: 'LibertinusSans_400Regular',
   },
   eyeIconButton: {
     padding: 4,
@@ -668,16 +658,10 @@ const styles = StyleSheet.create({
   loginButtonDisabled: {
     opacity: 0.5,
   },
-  loginButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
   loginButtonText: {
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "600",
-    fontFamily: 'LibertinusSans_600SemiBold',
   },
   userProfileButton: {
     flexDirection: "row",
@@ -691,7 +675,6 @@ const styles = StyleSheet.create({
   userProfileButtonText: {
     fontSize: 13,
     fontWeight: "500",
-    fontFamily: 'LibertinusSans_400Regular',
   },
   header: {
     flexDirection: "row",
@@ -708,7 +691,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: colors.text,
-    fontFamily: 'LibertinusSans_700Bold',
   },
   subtitleRow: {
     flexDirection: 'row',
@@ -720,7 +702,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: colors.textSecondary,
-    fontFamily: 'LibertinusSans_400Regular',
   },
   superAdminBadge: {
     flexDirection: 'row',
@@ -735,7 +716,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: '#FFFFFF',
-    fontFamily: 'LibertinusSans_600SemiBold',
   },
   adminBadge: {
     flexDirection: 'row',
@@ -750,7 +730,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: '#FFFFFF',
-    fontFamily: 'LibertinusSans_600SemiBold',
   },
   headerButtons: {
     flexDirection: "row",
@@ -795,13 +774,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
-    fontFamily: 'LibertinusSans_600SemiBold',
   },
   roleSwitcherHint: {
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 8,
-    fontFamily: 'LibertinusSans_400Regular',
   },
   statsContainer: {
     flexDirection: "row",
@@ -823,14 +800,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: colors.text,
     marginTop: 8,
-    fontFamily: 'LibertinusSans_700Bold',
   },
   statLabel: {
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 4,
     textAlign: 'center',
-    fontFamily: 'LibertinusSans_400Regular',
   },
   sectionsContainer: {
     paddingHorizontal: 24,
@@ -863,13 +838,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: colors.text,
-    fontFamily: 'LibertinusSans_600SemiBold',
   },
   sectionDescription: {
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 4,
-    fontFamily: 'LibertinusSans_400Regular',
   },
   footer: {
     padding: 24,
@@ -879,6 +852,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: "center",
-    fontFamily: 'LibertinusSans_400Regular',
   },
 });
