@@ -355,7 +355,7 @@ export default function AdminMenuManagement() {
               style={styles.removeImageButton}
               onPress={() => setFormData({ ...formData, image: "" })}
             >
-              <IconSymbol name="close" size={16} color="#FFFFFF" />
+              <IconSymbol name="xmark" size={16} color="#FFFFFF" />
             </Pressable>
           </View>
         ) : null}
@@ -369,7 +369,7 @@ export default function AdminMenuManagement() {
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
             <React.Fragment>
-              <IconSymbol name="image" size={20} color={colors.primary} />
+              <IconSymbol name="photo.fill" size={20} color={colors.primary} />
               <Text style={styles.uploadButtonText}>
                 {formData.image ? "Change Image" : "Upload Image"}
               </Text>
@@ -427,7 +427,7 @@ export default function AdminMenuManagement() {
             router.back();
           }}
         >
-          <IconSymbol name="arrow-back" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Menu Management</Text>
         <Pressable
@@ -442,7 +442,7 @@ export default function AdminMenuManagement() {
           }}
         >
           <IconSymbol
-            name={isAddingItem ? "close" : "add"}
+            name={isAddingItem ? "xmark" : "plus"}
             size={24}
             color={colors.primary}
           />
@@ -507,13 +507,13 @@ export default function AdminMenuManagement() {
                     style={styles.actionButton}
                     onPress={() => handleEditItem(item)}
                   >
-                    <IconSymbol name="edit" size={20} color={colors.primary} />
+                    <IconSymbol name="pencil" size={20} color={colors.primary} />
                   </Pressable>
                   <Pressable
                     style={styles.actionButton}
                     onPress={() => handleDeleteItem(item.id)}
                   >
-                    <IconSymbol name="delete" size={20} color="#FF6B6B" />
+                    <IconSymbol name="trash.fill" size={20} color="#FF6B6B" />
                   </Pressable>
                 </View>
               </View>

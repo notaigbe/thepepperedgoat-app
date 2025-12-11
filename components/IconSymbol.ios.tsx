@@ -1,6 +1,11 @@
+// IconSymbol.ios.tsx - Native SF Symbols for iOS
 import { SymbolView, SymbolViewProps, SymbolWeight } from "expo-symbols";
 import { StyleProp, ViewStyle } from "react-native";
 
+/**
+ * iOS-specific implementation using native SF Symbols
+ * This file is automatically used on iOS devices by React Native
+ */
 export function IconSymbol({
   name,
   size = 24,

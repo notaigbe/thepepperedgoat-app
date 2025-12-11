@@ -374,7 +374,7 @@ export default function AdminUserManagement() {
               setBannedEvents(new Set());
             }}
           >
-            <IconSymbol name="arrow-back" size={24} color={colors.text} />
+            <IconSymbol name="arrow.left" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.title}>{selectedUser.name}</Text>
           <View style={{ width: 40 }} />
@@ -406,7 +406,7 @@ export default function AdminUserManagement() {
             </View>
           ) : userRSVPs.length === 0 ? (
             <View style={styles.emptyState}>
-              <IconSymbol name="event" size={48} color={colors.textSecondary} />
+              <IconSymbol name="calendar" size={48} color={colors.textSecondary} />
               <Text style={styles.emptyText}>No event RSVPs</Text>
             </View>
           ) : (
@@ -435,7 +435,7 @@ export default function AdminUserManagement() {
                         style={[styles.actionBtn, styles.cancelBtn]}
                         onPress={() => handleCancelUserRSVP(selectedUser.id, rsvp.event_id, rsvp.event.title)}
                       >
-                        <IconSymbol name="close" size={16} color="#FF6B6B" />
+                        <IconSymbol name="xmark" size={16} color="#FF6B6B" />
                         <Text style={styles.cancelBtnText}>Cancel</Text>
                       </Pressable>
                       {isBanned ? (
@@ -443,7 +443,7 @@ export default function AdminUserManagement() {
                           style={[styles.actionBtn, styles.unbanBtn]}
                           onPress={() => handleUnbanUserFromEvent(selectedUser.id, rsvp.event_id, rsvp.event.title)}
                         >
-                          <IconSymbol name="check" size={16} color="#4CAF50" />
+                          <IconSymbol name="checkmark" size={16} color="#4CAF50" />
                           <Text style={styles.unbanBtnText}>Unban</Text>
                         </Pressable>
                       ) : (
@@ -451,7 +451,7 @@ export default function AdminUserManagement() {
                           style={[styles.actionBtn, styles.banBtn]}
                           onPress={() => handleBanUserFromEvent(selectedUser.id, rsvp.event_id, rsvp.event.title)}
                         >
-                          <IconSymbol name="block" size={16} color="#FF6B6B" />
+                          <IconSymbol name="nosign" size={16} color="#FF6B6B" />
                           <Text style={styles.banBtnText}>Ban</Text>
                         </Pressable>
                       )}
@@ -505,7 +505,7 @@ export default function AdminUserManagement() {
       </View>
 
       <View style={styles.searchContainer}>
-        <IconSymbol name="search" size={20} color={colors.textSecondary} />
+        <IconSymbol name="magnifyingglass" size={20} color={colors.textSecondary} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search users..."
@@ -589,17 +589,17 @@ export default function AdminUserManagement() {
 
               <View style={styles.userStats}>
                 <View style={styles.userStat}>
-                  <IconSymbol name="stars" size={20} color={colors.primary} />
+                  <IconSymbol name="star.circle.fill" size={20} color={colors.primary} />
                   <Text style={styles.userStatValue}>{user.points}</Text>
                   <Text style={styles.userStatLabel}>Points</Text>
                 </View>
                 <View style={styles.userStat}>
-                  <IconSymbol name="receipt-long" size={20} color="#4ECDC4" />
+                  <IconSymbol name="receipt" size={20} color="#4ECDC4" />
                   <Text style={styles.userStatValue}>{user.totalOrders}</Text>
                   <Text style={styles.userStatLabel}>Orders</Text>
                 </View>
                 <View style={styles.userStat}>
-                  <IconSymbol name="attach-money" size={20} color="#95E1D3" />
+                  <IconSymbol name="dollarsign.circle" size={20} color="#95E1D3" />
                   <Text style={styles.userStatValue}>
                     ${user.totalSpent.toFixed(0)}
                   </Text>
@@ -628,7 +628,7 @@ export default function AdminUserManagement() {
                       }}
                     >
                       <IconSymbol
-                        name={user.userRole === 'admin' ? 'remove-circle' : 'admin-panel-settings'}
+                        name={user.userRole === 'admin' ? 'minus.circle.fill' : 'shield.lefthalf.filled'}
                         size={16}
                         color={user.userRole === 'admin' ? '#FF6B6B' : colors.primary}
                       />
@@ -649,7 +649,7 @@ export default function AdminUserManagement() {
 
           {filteredUsers.length === 0 && (
             <View style={styles.emptyState}>
-              <IconSymbol name="people" size={64} color={colors.textSecondary} />
+              <IconSymbol name="person.2" size={64} color={colors.textSecondary} />
               <Text style={styles.emptyText}>No users found</Text>
             </View>
           )}

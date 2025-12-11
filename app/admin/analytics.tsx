@@ -219,7 +219,7 @@ export default function AdminAnalytics() {
       value: "$0.00",
       change: "+0%",
       positive: true,
-      icon: "attach-money" as const,
+      icon: "dollarsign.circle" as const,
       color: "#4CAF50",
     },
     {
@@ -228,7 +228,7 @@ export default function AdminAnalytics() {
       value: "0",
       change: "+0%",
       positive: true,
-      icon: "receipt-long" as const,
+      icon: "receipt" as const,
       color: colors.primary,
     },
     {
@@ -237,7 +237,7 @@ export default function AdminAnalytics() {
       value: "0",
       change: "+0%",
       positive: true,
-      icon: "people" as const,
+      icon: "person.2" as const,
       color: "#4ECDC4",
     },
     {
@@ -246,7 +246,7 @@ export default function AdminAnalytics() {
       value: "$0.00",
       change: "+0%",
       positive: true,
-      icon: "trending-up" as const,
+      icon: "chart.line.uptrend.xyaxis" as const,
       color: "#95E1D3",
     },
   ];
@@ -278,7 +278,7 @@ export default function AdminAnalytics() {
             router.back();
           }}
         >
-          <IconSymbol name="arrow-back" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Analytics</Text>
         <Pressable style={styles.refreshButton} onPress={fetchAnalyticsData}>

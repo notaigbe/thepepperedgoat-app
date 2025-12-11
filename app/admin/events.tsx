@@ -290,7 +290,7 @@ Access the event: ${event.shareableLink}`;
             router.back();
           }}
         >
-          <IconSymbol name="arrow-back" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Event Management</Text>
         <Pressable
@@ -304,7 +304,7 @@ Access the event: ${event.shareableLink}`;
           }}
         >
           <IconSymbol
-            name={isAddingEvent ? "close" : "add"}
+            name={isAddingEvent ? "xmark" : "plus"}
             size={24}
             color={colors.primary}
           />
@@ -348,7 +348,7 @@ Access the event: ${event.shareableLink}`;
                 onPress={() => setShowDatePicker(true)}
                 disabled={saving}
               >
-                <IconSymbol name="calendar-today" size={20} color={colors.primary} />
+                <IconSymbol name="calendar.badge.plus" size={20} color={colors.primary} />
                 <Text style={styles.dateTimeButtonText}>
                   {formData.date.toLocaleDateString()}
                 </Text>
@@ -359,7 +359,7 @@ Access the event: ${event.shareableLink}`;
                 onPress={() => setShowTimePicker(true)}
                 disabled={saving}
               >
-                <IconSymbol name="schedule" size={20} color={colors.primary} />
+                <IconSymbol name="clock.badge.checkmark" size={20} color={colors.primary} />
                 <Text style={styles.dateTimeButtonText}>
                   {formData.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </Text>
@@ -448,7 +448,7 @@ Access the event: ${event.shareableLink}`;
                   ]}
                 >
                   {formData.isPrivate && !formData.isInviteOnly && (
-                    <IconSymbol name="check" size={16} color="#FFFFFF" />
+                    <IconSymbol name="checkmark" size={16} color="#FFFFFF" />
                   )}
                 </View>
                 <View style={styles.checkboxLabelContainer}>
@@ -481,7 +481,7 @@ Access the event: ${event.shareableLink}`;
                   ]}
                 >
                   {formData.isInviteOnly && (
-                    <IconSymbol name="check" size={16} color="#FFFFFF" />
+                    <IconSymbol name="checkmark" size={16} color="#FFFFFF" />
                   )}
                 </View>
                 <View style={styles.checkboxLabelContainer}>
@@ -534,7 +534,7 @@ Access the event: ${event.shareableLink}`;
             </View>
           ) : events.length === 0 ? (
             <View style={styles.emptyState}>
-              <IconSymbol name="event" size={64} color={colors.textSecondary} />
+              <IconSymbol name="calendar" size={64} color={colors.textSecondary} />
               <Text style={styles.emptyText}>No events yet</Text>
               <Text style={styles.emptySubtext}>
                 Create your first event to get started
@@ -555,13 +555,13 @@ Access the event: ${event.shareableLink}`;
                     <View style={styles.badgeContainer}>
                       {event.isPrivate && !event.isInviteOnly && (
                         <View style={styles.privateBadge}>
-                          <IconSymbol name="lock" size={12} color="#FFFFFF" />
+                          <IconSymbol name="lock.fill" size={12} color="#FFFFFF" />
                           <Text style={styles.privateBadgeText}>Private</Text>
                         </View>
                       )}
                       {event.isInviteOnly && (
                         <View style={[styles.privateBadge, styles.inviteBadge]}>
-                          <IconSymbol name="mail" size={12} color="#FFFFFF" />
+                          <IconSymbol name="envelope.fill" size={12} color="#FFFFFF" />
                           <Text style={styles.privateBadgeText}>
                             Invite Only
                           </Text>
@@ -579,7 +579,7 @@ Access the event: ${event.shareableLink}`;
                   <View style={styles.eventDetails}>
                     <View style={styles.eventDetail}>
                       <IconSymbol
-                        name="calendar-today"
+                        name="calendar.badge.plus"
                         size={16}
                         color={colors.textSecondary}
                       />
@@ -589,7 +589,7 @@ Access the event: ${event.shareableLink}`;
                     </View>
                     <View style={styles.eventDetail}>
                       <IconSymbol
-                        name="location-on"
+                        name="location.fill"
                         size={16}
                         color={colors.textSecondary}
                       />
@@ -599,7 +599,7 @@ Access the event: ${event.shareableLink}`;
                     </View>
                     <View style={styles.eventDetail}>
                       <IconSymbol
-                        name="people"
+                        name="person.2"
                         size={16}
                         color={colors.textSecondary}
                       />
@@ -616,7 +616,7 @@ Access the event: ${event.shareableLink}`;
                         onPress={() => handleShareEvent(event)}
                       >
                         <IconSymbol
-                          name="share"
+                          name="square.and.arrow.up"
                           size={18}
                           color={colors.primary}
                         />
@@ -632,7 +632,7 @@ Access the event: ${event.shareableLink}`;
                       ]}
                       onPress={() => handleDeleteEvent(event.id)}
                     >
-                      <IconSymbol name="delete" size={18} color="#FF6B6B" />
+                      <IconSymbol name="trash.fill" size={18} color="#FF6B6B" />
                       <Text style={styles.deleteButtonText}>Delete</Text>
                     </Pressable>
                   </View>

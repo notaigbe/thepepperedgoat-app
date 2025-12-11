@@ -380,11 +380,11 @@ export default function AdminMerchManagement() {
             }
           }}
         >
-          <IconSymbol name="arrow-back" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Merchandise</Text>
         <Pressable style={styles.addButton} onPress={openAddModal}>
-          <IconSymbol name="add" size={24} color={colors.primary} />
+          <IconSymbol name="plus" size={24} color={colors.primary} />
         </Pressable>
       </View>
 
@@ -406,7 +406,7 @@ export default function AdminMerchManagement() {
                   </Text>
                   <View style={styles.merchFooter}>
                     <View style={styles.pointsCost}>
-                      <IconSymbol name="stars" size={16} color={colors.primary} />
+                      <IconSymbol name="star.circle.fill" size={16} color={colors.primary} />
                       <Text style={styles.pointsText}>{item.pointsCost} points</Text>
                     </View>
                     <View
@@ -430,14 +430,14 @@ export default function AdminMerchManagement() {
                       style={[styles.actionButton, styles.editButton]}
                       onPress={() => openEditModal(item)}
                     >
-                      <IconSymbol name="edit" size={16} color="#FFFFFF" />
+                      <IconSymbol name="pencil" size={16} color="#FFFFFF" />
                       <Text style={styles.actionButtonText}>Edit</Text>
                     </Pressable>
                     <Pressable
                       style={[styles.actionButton, styles.deleteButton]}
                       onPress={() => handleDeleteItem(item.id, item.name)}
                     >
-                      <IconSymbol name="delete" size={16} color="#FFFFFF" />
+                      <IconSymbol name="trash.fill" size={16} color="#FFFFFF" />
                       <Text style={styles.actionButtonText}>Delete</Text>
                     </Pressable>
                   </View>
@@ -446,7 +446,7 @@ export default function AdminMerchManagement() {
             ))
           ) : (
             <View style={styles.emptyState}>
-              <IconSymbol name="shopping-bag" size={64} color={colors.textSecondary} />
+              <IconSymbol name="bag" size={64} color={colors.textSecondary} />
               <Text style={styles.emptyText}>No merchandise available</Text>
               <Text style={styles.emptySubtext}>Tap the + button to add items</Text>
             </View>
@@ -466,7 +466,7 @@ export default function AdminMerchManagement() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Add Merchandise Item</Text>
               <Pressable onPress={closeModals} style={styles.closeButton}>
-                <IconSymbol name="close" size={24} color={colors.text} />
+                <IconSymbol name="xmark" size={24} color={colors.text} />
               </Pressable>
             </View>
             {renderForm(false)}
@@ -486,7 +486,7 @@ export default function AdminMerchManagement() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit Merchandise Item</Text>
               <Pressable onPress={closeModals} style={styles.closeButton}>
-                <IconSymbol name="close" size={24} color={colors.text} />
+                <IconSymbol name="xmark" size={24} color={colors.text} />
               </Pressable>
             </View>
             {renderForm(true)}

@@ -24,6 +24,8 @@ import {
 } from '@expo-google-fonts/libertinus-sans';
 
 import { Inter_400Regular, Inter_700Bold  } from '@expo-google-fonts/inter'
+
+import {
   Cormorant_400Regular,
   Cormorant_500Medium,
   Cormorant_600SemiBold,

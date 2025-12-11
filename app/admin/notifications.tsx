@@ -203,7 +203,7 @@ export default function AdminNotifications() {
             router.back();
           }}
         >
-          <IconSymbol name="arrow-back" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Send Notifications</Text>
         <View style={{ width: 40 }} />
@@ -243,7 +243,7 @@ export default function AdminNotifications() {
             ))}
           </View>
           <View style={styles.userCountCard}>
-            <IconSymbol name="people" size={24} color={colors.primary} />
+            <IconSymbol name="person.2" size={24} color={colors.primary} />
             <View style={styles.userCountContent}>
               <Text style={styles.userCountNumber}>{allUsers.length}</Text>
               <Text style={styles.userCountLabel}>Active Users</Text>
@@ -326,7 +326,7 @@ export default function AdminNotifications() {
               </>
             ) : (
               <>
-                <IconSymbol name="send" size={20} color="#FFFFFF" />
+                <IconSymbol name="paperplane.fill" size={20} color="#FFFFFF" />
                 <Text style={styles.sendButtonText}>
                   Send to {allUsers.length} User{allUsers.length !== 1 ? 's' : ''}
                 </Text>
@@ -336,7 +336,7 @@ export default function AdminNotifications() {
         </View>
 
         <View style={styles.infoContainer}>
-          <IconSymbol name="info" size={24} color={colors.primary} />
+          <IconSymbol name="info.circle.fill" size={24} color={colors.primary} />
           <View style={styles.infoContent}>
             <Text style={styles.infoTitle}>Push Notifications</Text>
             <Text style={styles.infoText}>

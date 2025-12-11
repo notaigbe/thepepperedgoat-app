@@ -299,7 +299,7 @@ export default function AdminOrderManagement() {
             router.back();
           }}
         >
-          <IconSymbol name="arrow-back" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Order Management</Text>
         <View style={{ width: 40 }} />
@@ -428,7 +428,7 @@ export default function AdminOrderManagement() {
 
               {filteredOrders.length === 0 && (
                 <View style={styles.emptyState}>
-                  <IconSymbol name="receipt-long" size={64} color={colors.textSecondary} />
+                  <IconSymbol name="receipt" size={64} color={colors.textSecondary} />
                   <Text style={styles.emptyText}>No orders found</Text>
                 </View>
               )}
