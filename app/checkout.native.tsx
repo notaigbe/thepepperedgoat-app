@@ -108,7 +108,7 @@ function CheckoutContent() {
   // STATE
   // ============================================================================
 
-  const [orderType, setOrderType] = useState<OrderType>('delivery');
+  const [orderType, setOrderType] = useState<OrderType>('pickup');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [pickupNotes, setPickupNotes] = useState('');
   const [usePoints, setUsePoints] = useState(false);
@@ -574,7 +574,7 @@ function CheckoutContent() {
 
   const handlePlaceOrder = useCallback(async () => {
     console.log('=== Starting Checkout Flow ===');
-    
+
     if (orderType === 'delivery') {
       if (!deliveryAddress.trim()) {
         showToast('error', 'Please enter a delivery address.');
@@ -976,7 +976,7 @@ function CheckoutContent() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Order Type</Text>
               <View style={styles.orderTypeSelector}>
-                <LinearGradient
+                {/* <LinearGradient
                   colors={orderType === 'delivery' 
                     ? [currentColors.secondary, currentColors.highlight]
                     : [currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]
@@ -1012,7 +1012,7 @@ function CheckoutContent() {
                       Delivery
                     </Text>
                   </Pressable>
-                </LinearGradient>
+                </LinearGradient> */}
 
                 <LinearGradient
                   colors={orderType === 'pickup' 

@@ -770,7 +770,7 @@ const styles = StyleSheet.create({
     color: '#D4AF37',
   },
   menuItemDescription: {
-    fontSize: 15,
+    fontSize: 20,
     fontFamily: 'LibertinusSans_400Regular',
     marginBottom: 18,
     lineHeight: 24,
@@ -782,7 +782,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuItemPrice: {
-    fontSize: 36,
+    fontSize: 24,
     fontFamily: 'LibertinusSans_700Bold',
     color: '#D4AF37',
   },
