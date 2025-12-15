@@ -24,6 +24,8 @@ import {
 } from '@expo-google-fonts/libertinus-sans';
 
 import { Inter_400Regular, Inter_700Bold  } from '@expo-google-fonts/inter'
+import { Barlow_400Regular } from '@expo-google-fonts/barlow';
+import { Roboto_100Thin } from '@expo-google-fonts/roboto';
 
 import {
   Cormorant_400Regular,
@@ -53,6 +55,8 @@ export default function RootLayout() {
     Cormorant_500Medium,
     Cormorant_600SemiBold,
     Cormorant_700Bold,
+    Barlow_400Regular,
+    Roboto_100Thin
   });
 
   useEffect(() => {
