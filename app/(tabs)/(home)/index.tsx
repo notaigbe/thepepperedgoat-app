@@ -763,7 +763,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   menuItemName: {
-    fontSize: 26,
+    fontSize: 22,
     fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 10,
     letterSpacing: 0.5,
