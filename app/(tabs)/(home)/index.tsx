@@ -158,9 +158,16 @@ export default function HomeScreen() {
 
   return (
     <LinearGradient
-      colors={['#0D1A2B', '#1A2838', '#2A3848', '#3A4858', '#4A5868', '#5A6878', '#D4AF37']}
+      colors={[
+        '#6B4423', // Brown
+        '#8B5A2B', // Lighter brown
+        '#5A4A3A', // Mid brown
+        '#3A3A4A', // Dark grayish blue
+        '#2A2A3A', // Very dark blue
+      ]}
+      locations={[0, 0.25, 0.5, 0.75, 1]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
+      end={{ x: 1, y: 1 }}
       style={styles.container}
     >
       {/* Header with Gradient and 3% Translucency - Background Only */}
@@ -454,7 +461,7 @@ export default function HomeScreen() {
                       </Text>
                       <Text
                         style={styles.menuItemDescription}
-                        numberOfLines={2}
+                        numberOfLines={3}
                       >
                         {item.description}
                       </Text>
@@ -582,8 +589,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1a303aff',
-    borderRadius: 0,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 0.2,
     borderColor: '#4AD7C2',
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -680,7 +687,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   categoryButton: {
-    borderRadius: 0,
+    borderRadius: 8,
     marginRight: 6,
     minWidth: 80,
     alignItems: "center",
@@ -763,18 +770,19 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   menuItemName: {
-    fontSize: 26,
+    fontSize: 22,
     fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 10,
     letterSpacing: 0.5,
     color: '#D4AF37',
   },
   menuItemDescription: {
-    fontSize: 15,
-    fontFamily: 'LibertinusSans_400Regular',
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     marginBottom: 18,
     lineHeight: 24,
-    color: '#FFFFFF',
+    color: '#ffffffcc',
+    // letterSpacing: 0.01,
   },
   menuItemFooter: {
     flexDirection: "row",
@@ -782,7 +790,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuItemPrice: {
-    fontSize: 36,
+    fontSize: 24,
     fontFamily: 'LibertinusSans_700Bold',
     color: '#D4AF37',
   },

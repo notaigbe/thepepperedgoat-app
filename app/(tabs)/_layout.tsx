@@ -34,7 +34,7 @@ export default function TabLayout() {
     {
       name: 'profile',
       route: '/(tabs)/profile',
-      icon: 'person.fill',
+      icon: 'person',
       label: 'Profile',
     },
   ];
