@@ -575,7 +575,7 @@ export default function ProfileScreen() {
                   ]}
                 >
                   <IconSymbol
-                    name="receipt-long"
+                    name="receipt"
                     size={24}
                     color={currentColors.primary}
                   />
@@ -594,7 +594,7 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
                 <IconSymbol
-                  name="chevron-right"
+                  name="chevron.right"
                   size={24}
                   color={currentColors.textSecondary}
                 />
@@ -616,7 +616,7 @@ export default function ProfileScreen() {
                   <View
                     style={[styles.menuIcon, { backgroundColor: "#4ECDC4" + "20" }]}
                   >
-                    <IconSymbol name="credit-card" size={24} color="#4ECDC4" />
+                    <IconSymbol name="creditcard.fill" size={24} color="#4ECDC4" />
                   </View>
                   <View style={styles.menuContent}>
                     <Text style={[styles.menuTitle, { color: currentColors.text }]}>
@@ -632,7 +632,7 @@ export default function ProfileScreen() {
                     </Text>
                   </View>
                   <IconSymbol
-                    name="chevron-right"
+                    name="chevron.right"
                     size={24}
                     color={currentColors.textSecondary}
                   />
@@ -653,7 +653,7 @@ export default function ProfileScreen() {
                 <View
                   style={[styles.menuIcon, { backgroundColor: "#95E1D3" + "20" }]}
                 >
-                  <IconSymbol name="event" size={24} color="#95E1D3" />
+                  <IconSymbol name="calendar" size={24} color="#95E1D3" />
                 </View>
                 <View style={styles.menuContent}>
                   <Text style={[styles.menuTitle, { color: currentColors.text }]}>
@@ -669,7 +669,7 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
                 <IconSymbol
-                  name="chevron-right"
+                  name="chevron.right"
                   size={24}
                   color={currentColors.textSecondary}
                 />
@@ -705,7 +705,7 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
                 <IconSymbol
-                  name="chevron-right"
+                  name="chevron.right"
                   size={24}
                   color={currentColors.textSecondary}
                 />
@@ -741,7 +741,7 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
                 <IconSymbol
-                  name="chevron-right"
+                  name="chevron.right"
                   size={24}
                   color={currentColors.textSecondary}
                 />

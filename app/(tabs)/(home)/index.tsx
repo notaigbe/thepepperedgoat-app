@@ -526,7 +526,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingBottom: 14,
+    paddingBottom: 8,
+    paddingTop: Platform.OS === 'ios' ? 0 : 0,
   },
   headerContent: {
     flex: 1,
