@@ -24,8 +24,25 @@ import {
 } from '@expo-google-fonts/libertinus-sans';
 
 import { Inter_400Regular, Inter_700Bold  } from '@expo-google-fonts/inter'
-import { Barlow_400Regular } from '@expo-google-fonts/barlow';
-import { Roboto_100Thin } from '@expo-google-fonts/roboto';
+import { 
+  Barlow_100Thin,
+  Barlow_200ExtraLight,
+  Barlow_300Light,
+  Barlow_400Regular,
+  Barlow_500Medium,
+  Barlow_600SemiBold,
+  Barlow_700Bold,
+  Barlow_800ExtraBold,
+  Barlow_900Black,
+} from '@expo-google-fonts/barlow';
+import { 
+  Roboto_100Thin,
+  Roboto_300Light,
+  Roboto_400Regular,
+  Roboto_500Medium,
+  Roboto_700Bold,
+  Roboto_900Black,
+} from '@expo-google-fonts/roboto';
 
 import {
   Cormorant_400Regular,
@@ -55,8 +72,21 @@ export default function RootLayout() {
     Cormorant_500Medium,
     Cormorant_600SemiBold,
     Cormorant_700Bold,
+    Barlow_100Thin,
+    Barlow_200ExtraLight,
+    Barlow_300Light,
     Barlow_400Regular,
-    Roboto_100Thin
+    Barlow_500Medium,
+    Barlow_600SemiBold,
+    Barlow_700Bold,
+    Barlow_800ExtraBold,
+    Barlow_900Black,
+    Roboto_100Thin,
+    Roboto_300Light,
+    Roboto_400Regular,
+    Roboto_500Medium,
+    Roboto_700Bold,
+    Roboto_900Black,
   });
 
   useEffect(() => {
