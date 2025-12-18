@@ -311,7 +311,7 @@ export default function PaymentMethodsScreen() {
               end={{ x: 1, y: 1 }}
               style={[styles.infoCard, { borderColor: currentColors.border }]}
             >
-              <IconSymbol name="info" size={20} color={currentColors.secondary} />
+              <IconSymbol name="info.circle.fill" size={20} color={currentColors.secondary} />
               <Text style={[styles.infoText, { color: currentColors.text }]}>
                 Securely save your payment methods for faster checkout. Your card information is encrypted and stored by Stripe.
               </Text>
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     padding: 8,
     boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
-    elevation: 4,
+    elevation: 0,
   },
   cardDetails: {
     flex: 1,
