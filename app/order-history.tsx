@@ -15,12 +15,13 @@ import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DeliveryTracking } from '@/components/DeliveryTracking';
-import { orderService } from '@/services/supabaseService';
+import type { CartItem } from '@/types';
 
 export default function OrderHistoryScreen() {
   const router = useRouter();
-  const { userProfile, currentColors, refreshUserProfile } = useApp();
+  const { userProfile, currentColors, refreshUserProfile, addToCart, showToast, menuItems } = useApp();
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [reorderingOrderId, setReorderingOrderId] = useState<string | null>(null);
 
   const toggleOrderExpansion = (orderId: string) => {
     if (Platform.OS !== 'web') {
@@ -35,6 +36,75 @@ export default function OrderHistoryScreen() {
       }
       return newSet;
     });
+  };
+
+  const handleOrderAgain = async (orderId: string) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    const order = userProfile?.orders?.find(o => o.id === orderId);
+    if (!order) {
+      showToast('Order not found', 'error');
+      return;
+    }
+
+    setReorderingOrderId(orderId);
+
+    try {
+      let addedCount = 0;
+      let unavailableCount = 0;
+      const unavailableItems: string[] = [];
+
+      // Add each item from the order to the cart
+      for (const item of order.items) {
+        // Check if the item still exists in the menu
+        const menuItem = menuItems.find(mi => mi.id === item.id);
+        
+        if (menuItem) {
+          // Item is still available, add to cart
+          const cartItem: CartItem = {
+            id: item.id,
+            name: item.name,
+            price: menuItem.price, // Use current price from menu
+            quantity: item.quantity,
+            image: menuItem.image,
+            description: menuItem.description,
+            category: menuItem.category,
+          };
+          addToCart(cartItem);
+          addedCount++;
+        } else {
+          // Item is no longer available
+          unavailableCount++;
+          unavailableItems.push(item.name);
+        }
+      }
+
+      // Show appropriate feedback
+      if (addedCount > 0 && unavailableCount === 0) {
+        showToast(`All ${addedCount} item${addedCount > 1 ? 's' : ''} added to cart!`, 'success');
+      } else if (addedCount > 0 && unavailableCount > 0) {
+        showToast(
+          `${addedCount} item${addedCount > 1 ? 's' : ''} added to cart. ${unavailableCount} item${unavailableCount > 1 ? 's are' : ' is'} no longer available.`,
+          'info'
+        );
+      } else {
+        showToast('None of the items from this order are currently available', 'error');
+      }
+
+      // Navigate to cart if items were added
+      if (addedCount > 0) {
+        setTimeout(() => {
+          router.push('/(tabs)/cart');
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Error reordering:', error);
+      showToast('Failed to add items to cart', 'error');
+    } finally {
+      setReorderingOrderId(null);
+    }
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -121,6 +191,7 @@ export default function OrderHistoryScreen() {
 
                 {userProfile?.orders?.map((order) => {
                   const isExpanded = expandedOrders.has(order.id);
+                  const isReordering = reorderingOrderId === order.id;
                   
                   return (
                     <Pressable
@@ -191,6 +262,29 @@ export default function OrderHistoryScreen() {
                                 </Text>
                               </View>
                             </View>
+
+                            {/* Order Again Button */}
+                            <LinearGradient
+                              colors={[currentColors.primary, currentColors.secondary]}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 0 }}
+                              style={[styles.orderAgainButton, { opacity: isReordering ? 0.6 : 1 }]}
+                            >
+                              <Pressable
+                                style={styles.orderAgainButtonInner}
+                                onPress={() => handleOrderAgain(order.id)}
+                                disabled={isReordering}
+                              >
+                                <IconSymbol 
+                                  name="arrow.clockwise" 
+                                  size={20} 
+                                  color={currentColors.background} 
+                                />
+                                <Text style={[styles.orderAgainButtonText, { color: currentColors.background }]}>
+                                  {isReordering ? 'Adding to Cart...' : 'Order Again'}
+                                </Text>
+                              </Pressable>
+                            </LinearGradient>
 
                             {order.uberDeliveryId && (
                               <View style={styles.deliveryTrackingContainer}>
@@ -405,6 +499,23 @@ const styles = StyleSheet.create({
   orderPointsText: {
     fontSize: 14,
     fontFamily: 'Cormorant_600SemiBold',
+  },
+  orderAgainButton: {
+    borderRadius: 0,
+    marginTop: 16,
+    boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
+    elevation: 8,
+  },
+  orderAgainButtonInner: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 14,
+    gap: 8,
+  },
+  orderAgainButtonText: {
+    fontSize: 16,
+    fontFamily: 'Cormorant_700Bold',
   },
   deliveryTrackingContainer: {
     marginTop: 16,

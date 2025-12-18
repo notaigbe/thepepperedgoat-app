@@ -81,22 +81,43 @@ export default function AdminDashboard() {
     }
 
     if (!username || !password) {
-      showDialog('Login Failed', 'Please enter both email and password.', [
-        { text: 'OK', onPress: () => {}, style: 'default' }
-      ]);
+      showToast('error', 'Please enter both email and password');
       return;
     }
 
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const email = username.includes("@") ? username : `${username}@jagabansla.com`;
+    
+    if (!emailRegex.test(email)) {
+      showToast('error', 'Please enter a valid email address');
+      return;
+    }
+
+    // Password length validation
+    if (password.length < 6) {
+      showToast('error', 'Password must be at least 6 characters');
+      return;
+    }
 
     setLoading(true);
     const { error } = await signIn(email, password);
     setLoading(false);
 
     if (error) {
-      showDialog('Login Failed', 'Invalid credentials. Please try again.', [
-        { text: 'OK', onPress: () => {}, style: 'default' }
-      ]);
+      console.error('Admin login error:', error);
+      // Handle specific error messages
+      if (error.message?.includes('Invalid login credentials')) {
+        showToast('error', 'Invalid email or password. Please check your credentials and try again.');
+      } else if (error.message?.includes('Email not confirmed')) {
+        showToast('error', 'Please verify your email before signing in. Check your inbox for the verification link.');
+      } else if (error.message?.includes('Email')) {
+        showToast('error', 'Please enter a valid email address');
+      } else {
+        showToast('error', error.message || 'Login failed. Please try again.');
+      }
+    } else {
+      showToast('success', 'Welcome to Admin Dashboard!');
     }
   };
 
@@ -105,9 +126,15 @@ export default function AdminDashboard() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    await signOut();
-    setUsername("");
-    setPassword("");
+    try {
+      await signOut();
+      setUsername("");
+      setPassword("");
+      showToast('success', 'Logged out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      showToast('error', 'Failed to log out. Please try again.');
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -403,6 +430,13 @@ export default function AdminDashboard() {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
+        <Toast
+          visible={toastVisible}
+          message={toastMessage}
+          type={toastType}
+          onHide={() => setToastVisible(false)}
+          currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
+        />
         <Dialog
           visible={dialogVisible}
           title={dialogConfig.title}

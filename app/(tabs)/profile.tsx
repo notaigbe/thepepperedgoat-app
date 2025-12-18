@@ -25,7 +25,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { currentColors, userProfile } = useApp();
+  const { currentColors, userProfile, showToast } = useApp();
   const { isAuthenticated, signIn, signUp, signOut } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
@@ -78,7 +78,7 @@ export default function ProfileScreen() {
     setProfileImageUrl(url);
   } catch (err) {
     console.error("Failed to load profile image:", err);
-    showToast("error", "Could not load profile picture");
+    showLocalToast("error", "Could not load profile picture");
   } finally {
     setImageLoading(false);
   }
@@ -91,7 +91,7 @@ export default function ProfileScreen() {
     }
   }, [userProfile?.profileImage, isAuthenticated]);
   
-  const showToast = (type: "success" | "error" | "info", message: string) => {
+  const showLocalToast = (type: "success" | "error" | "info", message: string) => {
     setToastType(type);
     setToastMessage(message);
     setToastVisible(true);
@@ -108,7 +108,20 @@ export default function ProfileScreen() {
     }
 
     if (!email || !password) {
-      showToast("error", "Please fill in all required fields");
+      showLocalToast("error", "Please fill in all required fields");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showLocalToast("error", "Please enter a valid email address");
+      return;
+    }
+
+    // Password length validation
+    if (password.length < 6) {
+      showLocalToast("error", "Password must be at least 6 characters");
       return;
     }
 
@@ -116,12 +129,25 @@ export default function ProfileScreen() {
     try {
       if (isSignUp) {
         if (!name) {
-          showToast("error", "Please enter your name");
+          showLocalToast("error", "Please enter your name");
           setLoading(false);
           return;
         }
         const { error } = await signUp(email, password, name, phone);
-        if (!error) {
+        if (error) {
+          console.error('Sign up error:', error);
+          // Handle specific error messages
+          if (error.message?.includes('already registered')) {
+            showLocalToast("error", "This email is already registered. Please sign in instead.");
+          } else if (error.message?.includes('Invalid email')) {
+            showLocalToast("error", "Please enter a valid email address");
+          } else if (error.message?.includes('Password')) {
+            showLocalToast("error", "Password must be at least 6 characters");
+          } else {
+            showLocalToast("error", error.message || "Sign up failed. Please try again.");
+          }
+        } else {
+          showLocalToast("success", "Account created! Please check your email to verify your account.");
           // Clear form after successful signup
           setEmail("");
           setPassword("");
@@ -133,15 +159,29 @@ export default function ProfileScreen() {
         }
       } else {
         const { error } = await signIn(email, password);
-        if (!error) {
+        if (error) {
+          console.error('Sign in error:', error);
+          // Handle specific error messages
+          if (error.message?.includes('Invalid login credentials')) {
+            showLocalToast("error", "Invalid email or password. Please try again.");
+          } else if (error.message?.includes('Email not confirmed')) {
+            showLocalToast("error", "Please verify your email before signing in. Check your inbox for the verification link.");
+          } else if (error.message?.includes('Email')) {
+            showLocalToast("error", "Please enter a valid email address");
+          } else {
+            showLocalToast("error", error.message || "Sign in failed. Please try again.");
+          }
+        } else {
+          showLocalToast("success", "Welcome back!");
           // Clear form after successful sign in
           setEmail("");
           setPassword("");
           setShowPassword(false);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Auth error:", error);
+      showLocalToast("error", "An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -174,10 +214,10 @@ export default function ProfileScreen() {
             setPhone("");
             setIsSignUp(false);
             setShowPassword(false);
-            showToast("success", "Signed out successfully");
+            showLocalToast("success", "Signed out successfully");
           } catch (error) {
             console.error("Sign out error:", error);
-            showToast("error", "Failed to sign out. Please try again.");
+            showLocalToast("error", "Failed to sign out. Please try again.");
           }
         },
       },
@@ -259,6 +299,7 @@ export default function ProfileScreen() {
                       value={name}
                       onChangeText={setName}
                       autoCapitalize="words"
+                      editable={!loading}
                     />
                   </LinearGradient>
                 )}
@@ -285,6 +326,7 @@ export default function ProfileScreen() {
                     onChangeText={setEmail}
                     autoCapitalize="none"
                     keyboardType="email-address"
+                    editable={!loading}
                   />
                 </LinearGradient>
 
@@ -310,6 +352,7 @@ export default function ProfileScreen() {
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
+                    editable={!loading}
                   />
                   <Pressable
                     onPress={() => {
@@ -319,6 +362,7 @@ export default function ProfileScreen() {
                       }
                     }}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    disabled={loading}
                   >
                     <IconSymbol
                       name={showPassword ? "eye.slash.fill" : "eye.fill"}
@@ -350,6 +394,7 @@ export default function ProfileScreen() {
                       value={phone}
                       onChangeText={setPhone}
                       keyboardType="phone-pad"
+                      editable={!loading}
                     />
                   </LinearGradient>
                 )}
@@ -368,11 +413,18 @@ export default function ProfileScreen() {
                     onPress={handleAuth}
                     disabled={loading}
                   >
-                    <Text
-                      style={[styles.authButtonText, { color: currentColors.card }]}
-                    >
-                      {loading ? "Please wait..." : isSignUp ? "Sign Up" : "Sign In"}
-                    </Text>
+                    {loading ? (
+                      <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="small" color={currentColors.card} />
+                        <Text style={[styles.authButtonText, { color: currentColors.card, marginLeft: 8 }]}>
+                          Please wait...
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={[styles.authButtonText, { color: currentColors.card }]}>
+                        {isSignUp ? "Sign Up" : "Sign In"}
+                      </Text>
+                    )}
                   </Pressable>
                 </LinearGradient>
 
@@ -840,6 +892,11 @@ const styles = StyleSheet.create({
   authButtonText: {
     fontSize: 18,
     fontWeight: "600",
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   switchButton: {
     marginTop: 24,
