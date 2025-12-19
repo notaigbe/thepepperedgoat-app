@@ -728,6 +728,43 @@ export default function ProfileScreen() {
               </Pressable>
             </LinearGradient>
 
+            {/* Help & Support Option */}
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.menuItem}
+            >
+              <Pressable
+                style={styles.menuItemInner}
+                onPress={() => handleMenuPress("/help")}
+              >
+                <View
+                  style={[styles.menuIcon, { backgroundColor: "#9C27B0" + "20" }]}
+                >
+                  <IconSymbol name="questionmark.circle.fill" size={24} color="#9C27B0" />
+                </View>
+                <View style={styles.menuContent}>
+                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
+                    Help & Support
+                  </Text>
+                  <Text
+                    style={[
+                      styles.menuSubtitle,
+                      { color: currentColors.textSecondary },
+                    ]}
+                  >
+                    FAQs and contact information
+                  </Text>
+                </View>
+                <IconSymbol
+                  name="chevron.right"
+                  size={24}
+                  color={currentColors.textSecondary}
+                />
+              </Pressable>
+            </LinearGradient>
+
             {/* Delete Account Option */}
             <LinearGradient
               colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
