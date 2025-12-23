@@ -9,9 +9,11 @@ import {
   Image,
   ActivityIndicator,
   Platform,
-  Alert,
+  ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { socialService } from '@/services/socialService';
@@ -20,7 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { supabase } from '@/app/integrations/supabase/client';
 import { JAGABANS_LOCATION } from '@/constants/LocationConfig';
-import {BodyScrollView} from '@/components/BodyScrollView';
+import BodyScrollView from '@/components/BodyScrollView';
 
 export default function CreatePostScreen() {
   const router = useRouter();
@@ -112,6 +114,10 @@ export default function CreatePostScreen() {
 
   const takePhoto = async () => {
     try {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+
       // Verify location first
       const isLocationValid = await verifyLocation();
       if (!isLocationValid) {
@@ -170,6 +176,10 @@ export default function CreatePostScreen() {
   };
 
   const handlePost = async () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     if (!imageUri) {
       showToast('Please take a photo first', 'error');
       return;
@@ -209,199 +219,255 @@ export default function CreatePostScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: currentColors.card,
-            paddingTop: Platform.OS === 'android' ? 48 : 0,
-          },
-        ]}
-      >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <IconSymbol
-            ios_icon_name="chevron.left"
-            android_material_icon_name="arrow_back"
-            size={24}
-            color={currentColors.text}
-          />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: currentColors.text }]}>Create Post</Text>
-        <TouchableOpacity
-          onPress={handlePost}
-          disabled={loading || !imageUri || !locationVerified}
-          style={styles.postButton}
+    <LinearGradient
+      colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header with Gradient - matching Events screen */}
+        <LinearGradient
+          colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.header, { borderBottomColor: currentColors.border }]}
         >
-          {loading ? (
-            <ActivityIndicator size="small" color={currentColors.primary} />
-          ) : (
-            <Text
-              style={[
-                styles.postButtonText,
-                {
-                  color:
-                    !imageUri || !locationVerified
-                      ? currentColors.textSecondary
-                      : currentColors.primary,
-                },
-              ]}
-            >
-              Post
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <BodyScrollView style={styles.content}>
-        {/* Location Status */}
-        <View
-          style={[
-            styles.locationCard,
-            {
-              backgroundColor: currentColors.card,
-              borderColor: locationVerified ? '#4CAF50' : currentColors.border,
-            },
-          ]}
-        >
-          <View style={styles.locationHeader}>
-            <IconSymbol
-              ios_icon_name={locationVerified ? 'checkmark.seal.fill' : 'location.fill'}
-              android_material_icon_name={locationVerified ? 'verified' : 'location_on'}
-              size={24}
-              color={locationVerified ? '#4CAF50' : currentColors.textSecondary}
-            />
-            <Text style={[styles.locationText, { color: currentColors.text }]}>
-              {locationVerified
-                ? 'Location Verified - At Jagabans L.A.'
-                : 'Location Not Verified'}
-            </Text>
-          </View>
-          {!locationVerified && (
-            <Text style={[styles.locationSubtext, { color: currentColors.textSecondary }]}>
-              You must be at the restaurant to post
-            </Text>
-          )}
-        </View>
-
-        {/* Camera Button */}
-        {!imageUri && (
-          <TouchableOpacity
-            style={[styles.cameraButton, { backgroundColor: currentColors.card }]}
-            onPress={takePhoto}
-            disabled={verifyingLocation}
+          <TouchableOpacity 
+            onPress={() => {
+              if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              router.back();
+            }} 
+            style={[styles.backButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
           >
-            {verifyingLocation ? (
-              <ActivityIndicator size="large" color={currentColors.primary} />
+            <IconSymbol
+              name="chevron.left"
+              size={24}
+              color={currentColors.secondary}
+            />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Create Post</Text>
+          <TouchableOpacity
+            onPress={handlePost}
+            disabled={loading || !imageUri || !locationVerified}
+            style={[styles.postButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color={currentColors.secondary} />
             ) : (
-              <>
-                <IconSymbol
-                  ios_icon_name="camera.fill"
-                  android_material_icon_name="photo_camera"
-                  size={64}
-                  color={currentColors.primary}
-                />
-                <Text style={[styles.cameraButtonText, { color: currentColors.text }]}>
-                  Take Photo
-                </Text>
-                <Text style={[styles.cameraButtonSubtext, { color: currentColors.textSecondary }]}>
-                  Location will be verified when you take the photo
-                </Text>
-              </>
+              <Text
+                style={[
+                  styles.postButtonText,
+                  {
+                    color:
+                      !imageUri || !locationVerified
+                        ? currentColors.textSecondary
+                        : currentColors.secondary,
+                  },
+                ]}
+              >
+                Post
+              </Text>
             )}
           </TouchableOpacity>
-        )}
+        </LinearGradient>
 
-        {/* Image Preview */}
-        {imageUri && (
-          <View style={styles.imagePreviewContainer}>
-            <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-            <TouchableOpacity
-              style={[styles.retakeButton, { backgroundColor: currentColors.card }]}
-              onPress={takePhoto}
-            >
+        <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Location Status */}
+          <LinearGradient
+            colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.locationCard,
+              {
+                borderColor: locationVerified ? '#4CAF50' : currentColors.border,
+              },
+            ]}
+          >
+            <View style={styles.locationHeader}>
               <IconSymbol
-                ios_icon_name="camera.rotate"
-                android_material_icon_name="cameraswitch"
-                size={20}
-                color={currentColors.text}
+                name={locationVerified ? 'checkmark.seal.fill' : 'location.fill'}
+                size={24}
+                color={locationVerified ? '#4CAF50' : currentColors.textSecondary}
               />
-              <Text style={[styles.retakeButtonText, { color: currentColors.text }]}>
-                Retake Photo
+              <Text style={[styles.locationText, { color: currentColors.text }]}>
+                {locationVerified
+                  ? 'Location Verified - At Jagabans L.A.'
+                  : 'Location Not Verified'}
               </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+            </View>
+            {!locationVerified && (
+              <Text style={[styles.locationSubtext, { color: currentColors.textSecondary }]}>
+                You must be at the restaurant to post
+              </Text>
+            )}
+          </LinearGradient>
 
-        {/* Caption Input */}
-        {imageUri && (
-          <View style={styles.captionContainer}>
-            <Text style={[styles.captionLabel, { color: currentColors.text }]}>
-              Caption (Optional)
-            </Text>
-            <TextInput
-              style={[
-                styles.captionInput,
-                {
-                  backgroundColor: currentColors.card,
-                  color: currentColors.text,
-                  borderColor: currentColors.border,
-                },
-              ]}
-              placeholder="Write a caption..."
-              placeholderTextColor={currentColors.textSecondary}
-              value={caption}
-              onChangeText={setCaption}
-              multiline
-              maxLength={500}
-            />
-            <Text style={[styles.characterCount, { color: currentColors.textSecondary }]}>
-              {caption.length}/500
-            </Text>
-          </View>
-        )}
-      </BodyScrollView>
-    </View>
+          {/* Camera Button */}
+          {!imageUri && (
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.cameraButton, { borderColor: currentColors.border }]}
+            >
+              <TouchableOpacity
+                style={styles.cameraButtonInner}
+                onPress={takePhoto}
+                disabled={verifyingLocation}
+              >
+                {verifyingLocation ? (
+                  <ActivityIndicator size="large" color={currentColors.secondary} />
+                ) : (
+                  <>
+                    <IconSymbol
+                      name="camera.fill"
+                      size={64}
+                      color={currentColors.secondary}
+                    />
+                    <Text style={[styles.cameraButtonText, { color: currentColors.text }]}>
+                      Take Photo
+                    </Text>
+                    <Text style={[styles.cameraButtonSubtext, { color: currentColors.textSecondary }]}>
+                      Location will be verified when you take the photo
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </LinearGradient>
+          )}
+
+          {/* Image Preview */}
+          {imageUri && (
+            <View style={styles.imagePreviewContainer}>
+              <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+              <LinearGradient
+                colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.retakeButton, { borderColor: currentColors.border }]}
+              >
+                <TouchableOpacity
+                  style={styles.retakeButtonInner}
+                  onPress={takePhoto}
+                >
+                  <IconSymbol
+                    name="camera.rotate"
+                    size={20}
+                    color={currentColors.text}
+                  />
+                  <Text style={[styles.retakeButtonText, { color: currentColors.text }]}>
+                    Retake Photo
+                  </Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </View>
+          )}
+
+          {/* Caption Input */}
+          {imageUri && (
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.captionContainer, { borderColor: currentColors.border }]}
+            >
+              <Text style={[styles.captionLabel, { color: currentColors.text }]}>
+                Caption (Optional)
+              </Text>
+              <TextInput
+                style={[
+                  styles.captionInput,
+                  {
+                    color: currentColors.text,
+                    borderColor: currentColors.border,
+                  },
+                ]}
+                placeholder="Write a caption..."
+                placeholderTextColor={currentColors.textSecondary}
+                value={caption}
+                onChangeText={setCaption}
+                multiline
+                maxLength={500}
+              />
+              <Text style={[styles.characterCount, { color: currentColors.textSecondary }]}>
+                {caption.length}/500
+              </Text>
+            </LinearGradient>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gradientContainer: {
+    flex: 1,
+  },
+  safeArea: {
     flex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    borderBottomWidth: 2,
+    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    elevation: 8,
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 32,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   postButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
   },
   postButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   content: {
     flex: 1,
-    padding: 16,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 120,
   },
   locationCard: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 0,
     borderWidth: 2,
     marginBottom: 24,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
   },
   locationHeader: {
     flexDirection: 'row',
@@ -409,29 +475,38 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginLeft: 12,
     flex: 1,
   },
   locationSubtext: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     marginTop: 8,
     marginLeft: 36,
   },
   cameraButton: {
     padding: 48,
-    borderRadius: 12,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 300,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
+  },
+  cameraButtonInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cameraButtonText: {
     fontSize: 20,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginTop: 16,
   },
   cameraButtonSubtext: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     marginTop: 8,
     textAlign: 'center',
   },
@@ -441,7 +516,7 @@ const styles = StyleSheet.create({
   imagePreview: {
     width: '100%',
     height: 400,
-    borderRadius: 12,
+    borderRadius: 0,
     resizeMode: 'cover',
   },
   retakeButton: {
@@ -449,32 +524,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 0,
     marginTop: 12,
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
+  },
+  retakeButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   retakeButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginLeft: 8,
   },
   captionContainer: {
     marginBottom: 24,
+    padding: 16,
+    borderRadius: 0,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
   },
   captionLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginBottom: 8,
   },
   captionInput: {
-    borderWidth: 1,
-    borderRadius: 8,
+    borderWidth: 2,
+    borderRadius: 0,
     padding: 12,
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
     minHeight: 100,
     textAlignVertical: 'top',
   },
   characterCount: {
     fontSize: 12,
+    fontFamily: 'Inter_400Regular',
     marginTop: 4,
     textAlign: 'right',
   },

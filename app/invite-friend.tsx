@@ -18,21 +18,17 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { socialService } from '@/services/socialService';
-import Toast from '@/components/Toast';
 import * as Haptics from 'expo-haptics';
 
 export default function InviteFriendScreen() {
   const router = useRouter();
-  const { currentColors, userProfile } = useApp();
+  const { currentColors, userProfile, showToast } = useApp();
   const { isAuthenticated } = useAuth();
 
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referrals, setReferrals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingReferrals, setLoadingReferrals] = useState(false);
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -47,13 +43,13 @@ export default function InviteFriendScreen() {
       const { data, error } = await socialService.getUserReferralCode();
       if (error) {
         console.error('Error loading referral code:', error);
-        showLocalToast('error', 'Failed to load referral code');
+        showToast('Failed to load referral code', 'error');
       } else {
         setReferralCode(data);
       }
     } catch (error) {
       console.error('Error loading referral code:', error);
-      showLocalToast('error', 'An unexpected error occurred');
+      showToast('An unexpected error occurred', 'error');
     } finally {
       setLoading(false);
     }
@@ -75,12 +71,6 @@ export default function InviteFriendScreen() {
     }
   };
 
-  const showLocalToast = (type: 'success' | 'error' | 'info', message: string) => {
-    setToastType(type);
-    setToastMessage(message);
-    setToastVisible(true);
-  };
-
   const handleCopyCode = async () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -92,7 +82,7 @@ export default function InviteFriendScreen() {
       } else {
         Clipboard.setString(referralCode);
       }
-      showLocalToast('success', 'Referral code copied to clipboard!');
+      showToast('Referral code copied to clipboard!', 'success');
     }
   };
 
@@ -115,7 +105,7 @@ export default function InviteFriendScreen() {
         } else {
           // Fallback for web browsers that don't support share
           navigator.clipboard.writeText(message);
-          showLocalToast('success', 'Referral message copied to clipboard!');
+          showToast('Referral message copied to clipboard!', 'success');
         }
       } else {
         await Share.share({
@@ -162,7 +152,12 @@ export default function InviteFriendScreen() {
         style={styles.gradientContainer}
       >
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <View style={styles.header}>
+          <LinearGradient
+            colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.header, { borderBottomColor: currentColors.border }]}
+          >
             <Pressable
               onPress={() => {
                 if (Platform.OS !== 'web') {
@@ -170,15 +165,15 @@ export default function InviteFriendScreen() {
                 }
                 router.back();
               }}
-              style={styles.backButton}
+              style={[styles.backButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
             >
-              <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
+              <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
             </Pressable>
             <Text style={[styles.headerTitle, { color: currentColors.text }]}>
               Invite a Friend
             </Text>
             <View style={{ width: 40 }} />
-          </View>
+          </LinearGradient>
 
           <View style={styles.notAuthContainer}>
             <IconSymbol name="person.2" size={80} color={currentColors.textSecondary} />
@@ -189,7 +184,7 @@ export default function InviteFriendScreen() {
               Create an account to get your referral code and start earning rewards
             </Text>
             <LinearGradient
-              colors={[currentColors.primary, currentColors.secondary]}
+              colors={[currentColors.secondary, currentColors.highlight]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.signInButton}
@@ -203,7 +198,7 @@ export default function InviteFriendScreen() {
                   router.push('/(tabs)/profile');
                 }}
               >
-                <Text style={[styles.signInButtonText, { color: currentColors.card }]}>
+                <Text style={[styles.signInButtonText, { color: currentColors.background }]}>
                   Sign In
                 </Text>
               </Pressable>
@@ -226,8 +221,13 @@ export default function InviteFriendScreen() {
       style={styles.gradientContainer}
     >
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Header with Gradient - matching Events screen */}
+        <LinearGradient
+          colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.header, { borderBottomColor: currentColors.border }]}
+        >
           <Pressable
             onPress={() => {
               if (Platform.OS !== 'web') {
@@ -235,15 +235,15 @@ export default function InviteFriendScreen() {
               }
               router.back();
             }}
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
           >
-            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
+            <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: currentColors.text }]}>
             Invite a Friend
           </Text>
           <View style={{ width: 40 }} />
-        </View>
+        </LinearGradient>
 
         <ScrollView
           style={styles.container}
@@ -258,10 +258,10 @@ export default function InviteFriendScreen() {
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.codeCard}
+            style={[styles.codeCard, { borderColor: currentColors.border }]}
           >
             <View style={styles.codeHeader}>
-              <IconSymbol name="gift.fill" size={48} color={currentColors.primary} />
+              <IconSymbol name="gift.fill" size={48} color={currentColors.highlight} />
               <Text style={[styles.codeTitle, { color: currentColors.text }]}>
                 Your Referral Code
               </Text>
@@ -272,40 +272,40 @@ export default function InviteFriendScreen() {
 
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={currentColors.primary} />
+                <ActivityIndicator size="large" color={currentColors.secondary} />
               </View>
             ) : (
               <>
-                <View style={[styles.codeDisplay, { backgroundColor: currentColors.primary + '20' }]}>
-                  <Text style={[styles.codeText, { color: currentColors.primary }]}>
+                <View style={[styles.codeDisplay, { backgroundColor: currentColors.secondary + '20', borderColor: currentColors.border }]}>
+                  <Text style={[styles.codeText, { color: currentColors.secondary }]}>
                     {referralCode}
                   </Text>
                 </View>
 
                 <View style={styles.buttonRow}>
                   <LinearGradient
-                    colors={[currentColors.primary, currentColors.secondary]}
+                    colors={[currentColors.secondary, currentColors.highlight]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.actionButton}
                   >
                     <Pressable style={styles.actionButtonInner} onPress={handleCopyCode}>
-                      <IconSymbol name="doc.on.doc" size={20} color={currentColors.card} />
-                      <Text style={[styles.actionButtonText, { color: currentColors.card }]}>
+                      <IconSymbol name="doc.on.doc" size={20} color={currentColors.background} />
+                      <Text style={[styles.actionButtonText, { color: currentColors.background }]}>
                         Copy Code
                       </Text>
                     </Pressable>
                   </LinearGradient>
 
                   <LinearGradient
-                    colors={[currentColors.primary, currentColors.secondary]}
+                    colors={[currentColors.secondary, currentColors.highlight]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.actionButton}
                   >
                     <Pressable style={styles.actionButtonInner} onPress={handleShare}>
-                      <IconSymbol name="square.and.arrow.up" size={20} color={currentColors.card} />
-                      <Text style={[styles.actionButtonText, { color: currentColors.card }]}>
+                      <IconSymbol name="square.and.arrow.up" size={20} color={currentColors.background} />
+                      <Text style={[styles.actionButtonText, { color: currentColors.background }]}>
                         Share
                       </Text>
                     </Pressable>
@@ -323,15 +323,15 @@ export default function InviteFriendScreen() {
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.infoCard}
+            style={[styles.infoCard, { borderColor: currentColors.border }]}
           >
             <Text style={[styles.infoTitle, { color: currentColors.text }]}>
               How It Works
             </Text>
 
             <View style={styles.stepContainer}>
-              <View style={[styles.stepNumber, { backgroundColor: currentColors.primary }]}>
-                <Text style={[styles.stepNumberText, { color: currentColors.card }]}>1</Text>
+              <View style={[styles.stepNumber, { backgroundColor: currentColors.secondary }]}>
+                <Text style={[styles.stepNumberText, { color: currentColors.background }]}>1</Text>
               </View>
               <View style={styles.stepContent}>
                 <Text style={[styles.stepTitle, { color: currentColors.text }]}>
@@ -344,8 +344,8 @@ export default function InviteFriendScreen() {
             </View>
 
             <View style={styles.stepContainer}>
-              <View style={[styles.stepNumber, { backgroundColor: currentColors.primary }]}>
-                <Text style={[styles.stepNumberText, { color: currentColors.card }]}>2</Text>
+              <View style={[styles.stepNumber, { backgroundColor: currentColors.secondary }]}>
+                <Text style={[styles.stepNumberText, { color: currentColors.background }]}>2</Text>
               </View>
               <View style={styles.stepContent}>
                 <Text style={[styles.stepTitle, { color: currentColors.text }]}>
@@ -358,8 +358,8 @@ export default function InviteFriendScreen() {
             </View>
 
             <View style={styles.stepContainer}>
-              <View style={[styles.stepNumber, { backgroundColor: currentColors.primary }]}>
-                <Text style={[styles.stepNumberText, { color: currentColors.card }]}>3</Text>
+              <View style={[styles.stepNumber, { backgroundColor: currentColors.secondary }]}>
+                <Text style={[styles.stepNumberText, { color: currentColors.background }]}>3</Text>
               </View>
               <View style={styles.stepContent}>
                 <Text style={[styles.stepTitle, { color: currentColors.text }]}>
@@ -380,7 +380,7 @@ export default function InviteFriendScreen() {
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.statsCard}
+            style={[styles.statsCard, { borderColor: currentColors.border }]}
           >
             <Text style={[styles.statsTitle, { color: currentColors.text }]}>
               Your Referrals
@@ -388,7 +388,7 @@ export default function InviteFriendScreen() {
 
             {loadingReferrals ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={currentColors.primary} />
+                <ActivityIndicator size="large" color={currentColors.secondary} />
               </View>
             ) : referrals.length === 0 ? (
               <View style={styles.emptyContainer}>
@@ -403,7 +403,7 @@ export default function InviteFriendScreen() {
             ) : (
               <View style={styles.referralsList}>
                 {referrals.map((referral, index) => (
-                  <View key={index} style={styles.referralItem}>
+                  <View key={index} style={[styles.referralItem, { borderBottomColor: currentColors.border }]}>
                     <View style={styles.referralInfo}>
                       <Text style={[styles.referralEmail, { color: currentColors.text }]}>
                         {referral.referred_user?.name || referral.referred_email || 'Pending'}
@@ -428,14 +428,6 @@ export default function InviteFriendScreen() {
             )}
           </LinearGradient>
         </ScrollView>
-
-        <Toast
-          visible={toastVisible}
-          message={toastMessage}
-          type={toastType}
-          onHide={() => setToastVisible(false)}
-          currentColors={currentColors}
-        />
       </SafeAreaView>
     </LinearGradient>
   );
@@ -450,26 +442,38 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    borderBottomWidth: 2,
+    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    elevation: 8,
   },
   backButton: {
     width: 40,
     height: 40,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   container: {
     flex: 1,
   },
   content: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 120,
   },
   notAuthContainer: {
@@ -480,12 +484,13 @@ const styles = StyleSheet.create({
   },
   notAuthText: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     marginTop: 24,
     textAlign: 'center',
   },
   notAuthSubtext: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
     marginTop: 12,
     textAlign: 'center',
   },
@@ -501,14 +506,15 @@ const styles = StyleSheet.create({
   },
   signInButtonText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   codeCard: {
     borderRadius: 0,
     padding: 24,
     marginBottom: 16,
-    boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
-    elevation: 6,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
   },
   codeHeader: {
     alignItems: 'center',
@@ -516,11 +522,12 @@ const styles = StyleSheet.create({
   },
   codeTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     marginTop: 16,
   },
   codeSubtitle: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     marginTop: 8,
     textAlign: 'center',
   },
@@ -533,10 +540,11 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     alignItems: 'center',
     marginBottom: 16,
+    borderWidth: 2,
   },
   codeText: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontFamily: 'Inter_700Bold',
     letterSpacing: 4,
   },
   buttonRow: {
@@ -546,8 +554,8 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     borderRadius: 0,
-    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
-    elevation: 6,
+    boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
+    elevation: 8,
   },
   actionButtonInner: {
     flexDirection: 'row',
@@ -558,18 +566,19 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   infoCard: {
     borderRadius: 0,
     padding: 24,
     marginBottom: 16,
-    boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
-    elevation: 6,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
   },
   infoTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 20,
   },
   stepContainer: {
@@ -586,29 +595,31 @@ const styles = StyleSheet.create({
   },
   stepNumberText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: 'Inter_700Bold',
   },
   stepContent: {
     flex: 1,
   },
   stepTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginBottom: 4,
   },
   stepDescription: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     lineHeight: 20,
   },
   statsCard: {
     borderRadius: 0,
     padding: 24,
-    boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
-    elevation: 6,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
   },
   statsTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 20,
   },
   emptyContainer: {
@@ -617,11 +628,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     marginTop: 8,
     textAlign: 'center',
   },
@@ -633,28 +645,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomWidth: 2,
   },
   referralInfo: {
     flex: 1,
   },
   referralEmail: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginBottom: 4,
   },
   referralDate: {
     fontSize: 12,
+    fontFamily: 'Inter_400Regular',
   },
   referralStatus: {
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 0,
   },
   referralStatusText: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
 });

@@ -612,6 +612,32 @@ export default function AdminUserManagement() {
                   Joined: {new Date(user.joinDate).toLocaleDateString()}
                 </Text>
                 <View style={styles.userActions}>
+                  <Pressable
+                    style={[styles.actionButton, styles.pointsButton]}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      if (Platform.OS !== 'web') {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                      router.push({
+                        pathname: '/admin/manage-points',
+                        params: {
+                          userId: user.id,
+                          userName: user.name,
+                          currentPoints: user.points.toString(),
+                        },
+                      } as any);
+                    }}
+                  >
+                    <IconSymbol
+                      name="star.circle.fill"
+                      size={16}
+                      color={colors.highlight}
+                    />
+                    <Text style={[styles.actionButtonText, styles.pointsButtonText]}>
+                      Manage Points
+                    </Text>
+                  </Pressable>
                   {isSuperAdmin && user.userRole !== 'super_admin' && (
                     <Pressable
                       style={[
@@ -877,6 +903,12 @@ const styles = StyleSheet.create({
   },
   revokeButtonText: {
     color: '#FF6B6B',
+  },
+  pointsButton: {
+    borderColor: colors.highlight,
+  },
+  pointsButtonText: {
+    color: colors.highlight,
   },
   emptyState: {
     alignItems: 'center',
