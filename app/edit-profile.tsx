@@ -194,63 +194,54 @@ export default function EditProfileScreen() {
   };
 
   const uploadImage = async (asset: ImagePicker.ImagePickerAsset) => {
-    if (!user?.id) {
-      showToast('error', 'User not authenticated');
-      return;
-    }
-    setUploadingImage(true);
-    
-    try {
-      // Generate unique filename
-      const fileExt = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
-      // const fileName = `${user.id}_${Date.now()}.${fileExt}`;
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-      console.log('Uploading image:', filePath);
+  if (!user?.id) {
+    showToast('error', 'User not authenticated');
+    return;
+  }
+  setUploadingImage(true);
 
-      // For React Native, we need to use ArrayBuffer instead of Blob
-      const response = await fetch(asset.uri);
-      const arrayBuffer = await response.arrayBuffer();
-      
-      console.log('ArrayBuffer size:', arrayBuffer.byteLength);
+  try {
+    const fileExt = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+    const filePath = `${user.id}/${fileName}`;
+    console.log('Uploading image:', filePath);
 
-      // Determine MIME type
-      const mimeType = asset.mimeType || `image/${fileExt}`;
-      
-      // Upload to Supabase Storage using ArrayBuffer
-      const { data, error } = await imageService.uploadImage(
-        'profile', // bucket name
-        filePath,
-        arrayBuffer,
-        {
-          contentType: mimeType,
-          upsert: true
-        }
-      );
+    const response = await fetch(asset.uri);
+    const arrayBuffer = await response.arrayBuffer();
 
-      if (error) {
-        console.error('Upload error:', error);
-        throw error;
+    console.log('ArrayBuffer size:', arrayBuffer.byteLength);
+
+    const mimeType = asset.mimeType || `image/${fileExt}`;
+
+    const { data, error } = await imageService.uploadImage(
+      'profile',
+      filePath,
+      arrayBuffer,
+      {
+        contentType: mimeType,
+        upsert: true, // safe to keep; RLS still enforces folder ownership
       }
+    );
 
-      console.log('Upload successful:', data);
-
-      // Store the path and get signed URL for preview
-      setProfileImagePath(filePath);
-      await handleGetImageUrl(filePath);
-      
-      console.log('Image path stored:', filePath);
-
-      showToast('success', 'Image uploaded successfully');
-      
-      // Note: The image path will be saved to the database when user clicks Save
-    } catch (error: any) {
+    if (error) {
       console.error('Upload error:', error);
-      showToast('error', `Failed to upload image: ${error.message || 'Unknown error'}`);
-    } finally {
-      setUploadingImage(false);
+      throw error;
     }
-  };
+
+    console.log('Upload successful:', data);
+
+    setProfileImagePath(filePath);
+    await handleGetImageUrl(filePath);
+
+    console.log('Image path stored:', filePath);
+    showToast('success', 'Image uploaded successfully');
+  } catch (error: any) {
+    console.error('Upload error:', error);
+    showToast('error', `Failed to upload image: ${error.message || 'Unknown error'}`);
+  } finally {
+    setUploadingImage(false);
+  }
+};
 
   return (
     <LinearGradient

@@ -269,7 +269,7 @@ export default function ReservationsScreen() {
                 Phone *
               </Text>
               <View style={[styles.inputContainer, { borderColor: currentColors.border }]}>
-                <IconSymbol name="phone" size={20} color={currentColors.textSecondary} />
+                <IconSymbol name="phone.fill" size={20} color={currentColors.textSecondary} />
                 <TextInput
                   style={[styles.input, { color: currentColors.text }]}
                   placeholder="(555) 123-4567"

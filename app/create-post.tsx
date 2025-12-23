@@ -20,7 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { supabase } from '@/app/integrations/supabase/client';
 import { JAGABANS_LOCATION } from '@/constants/LocationConfig';
-import BodyScrollView from '@/components/BodyScrollView';
+import {BodyScrollView} from '@/components/BodyScrollView';
 
 export default function CreatePostScreen() {
   const router = useRouter();

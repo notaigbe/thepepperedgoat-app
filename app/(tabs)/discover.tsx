@@ -15,7 +15,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { socialService, Post } from '@/services/socialService';
 import { IconSymbol } from '@/components/IconSymbol';
-import BodyScrollView from '@/components/BodyScrollView';
+import {BodyScrollView} from '@/components/BodyScrollView';
 
 export default function DiscoverScreen() {
   const router = useRouter();
