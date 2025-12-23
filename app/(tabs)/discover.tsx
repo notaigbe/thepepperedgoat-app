@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -10,12 +11,14 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { socialService, Post } from '@/services/socialService';
 import { IconSymbol } from '@/components/IconSymbol';
-import BodyScrollView from '@/components/BodyScrollView';
+import * as Haptics from 'expo-haptics';
 
 export default function DiscoverScreen() {
   const router = useRouter();
@@ -80,6 +83,10 @@ export default function DiscoverScreen() {
       return;
     }
 
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
     try {
       if (isLiked) {
         await socialService.unlikePost(postId);
@@ -106,10 +113,16 @@ export default function DiscoverScreen() {
   };
 
   const handleComment = (postId: string) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     router.push(`/post-detail?postId=${postId}`);
   };
 
   const handleCreatePost = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     if (!isAuthenticated) {
       showToast('Please sign in to create posts', 'info');
       return;
@@ -118,7 +131,12 @@ export default function DiscoverScreen() {
   };
 
   const renderPost = ({ item }: { item: Post }) => (
-    <View style={[styles.postCard, { backgroundColor: currentColors.card }]}>
+    <LinearGradient
+      colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[styles.postCard, { borderColor: currentColors.border }]}
+    >
       {/* User Info */}
       <View style={styles.postHeader}>
         <View style={styles.userInfo}>
@@ -127,10 +145,9 @@ export default function DiscoverScreen() {
           ) : (
             <View style={[styles.avatar, { backgroundColor: currentColors.secondary }]}>
               <IconSymbol
-                ios_icon_name="person.fill"
-                android_material_icon_name="person"
+                name="person.fill"
                 size={20}
-                color={currentColors.text}
+                color={currentColors.background}
               />
             </View>
           )}
@@ -141,8 +158,7 @@ export default function DiscoverScreen() {
             {item.locationVerified && (
               <View style={styles.verifiedBadge}>
                 <IconSymbol
-                  ios_icon_name="checkmark.seal.fill"
-                  android_material_icon_name="verified"
+                  name="checkmark.seal.fill"
                   size={14}
                   color={currentColors.primary}
                 />
@@ -167,8 +183,7 @@ export default function DiscoverScreen() {
           onPress={() => handleLike(item.id, item.isLikedByCurrentUser || false)}
         >
           <IconSymbol
-            ios_icon_name={item.isLikedByCurrentUser ? 'heart.fill' : 'heart'}
-            android_material_icon_name={item.isLikedByCurrentUser ? 'favorite' : 'favorite_border'}
+            name={item.isLikedByCurrentUser ? 'heart.fill' : 'heart'}
             size={24}
             color={item.isLikedByCurrentUser ? '#FF3B30' : currentColors.text}
           />
@@ -179,8 +194,7 @@ export default function DiscoverScreen() {
 
         <TouchableOpacity style={styles.actionButton} onPress={() => handleComment(item.id)}>
           <IconSymbol
-            ios_icon_name="bubble.left"
-            android_material_icon_name="chat_bubble_outline"
+            name="bubble.left"
             size={24}
             color={currentColors.text}
           />
@@ -204,111 +218,171 @@ export default function DiscoverScreen() {
       <Text style={[styles.timestamp, { color: currentColors.textSecondary }]}>
         {new Date(item.createdAt).toLocaleDateString()}
       </Text>
-    </View>
+    </LinearGradient>
   );
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: currentColors.background }]}>
-        <View style={[styles.header, { backgroundColor: currentColors.card }]}>
-          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Discover</Text>
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={currentColors.primary} />
-        </View>
-      </View>
+      <LinearGradient
+        colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.gradientContainer}
+      >
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <LinearGradient
+            colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.header, { borderBottomColor: currentColors.border }]}
+          >
+            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Discover</Text>
+            <TouchableOpacity onPress={handleCreatePost} style={styles.createButton}>
+              <IconSymbol
+                name="camera.fill"
+                size={24}
+                color={currentColors.secondary}
+              />
+            </TouchableOpacity>
+          </LinearGradient>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={currentColors.secondary} />
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: currentColors.card, paddingTop: Platform.OS === 'android' ? 48 : 0 }]}>
-        <Text style={[styles.headerTitle, { color: currentColors.text }]}>Discover</Text>
-        <TouchableOpacity onPress={handleCreatePost} style={styles.createButton}>
-          <IconSymbol
-            ios_icon_name="camera.fill"
-            android_material_icon_name="photo_camera"
-            size={24}
-            color={currentColors.primary}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Posts Feed */}
-      <FlatList
-        data={posts}
-        renderItem={renderPost}
-        keyExtractor={(item) => item.id}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={currentColors.primary}
-          />
-        }
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          loadingMore ? (
-            <View style={styles.footerLoader}>
-              <ActivityIndicator size="small" color={currentColors.primary} />
-            </View>
-          ) : null
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
+    <LinearGradient
+      colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header with Gradient - matching Events screen */}
+        <LinearGradient
+          colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.header, { borderBottomColor: currentColors.border }]}
+        >
+          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Discover</Text>
+          <TouchableOpacity onPress={handleCreatePost} style={[styles.createButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}>
             <IconSymbol
-              ios_icon_name="photo.on.rectangle"
-              android_material_icon_name="photo_library"
-              size={64}
-              color={currentColors.textSecondary}
+              name="camera.fill"
+              size={24}
+              color={currentColors.secondary}
             />
-            <Text style={[styles.emptyText, { color: currentColors.textSecondary }]}>
-              No posts yet. Be the first to share!
-            </Text>
-            <TouchableOpacity
-              style={[styles.emptyButton, { backgroundColor: currentColors.primary }]}
-              onPress={handleCreatePost}
-            >
-              <Text style={styles.emptyButtonText}>Create Post</Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
-    </View>
+          </TouchableOpacity>
+        </LinearGradient>
+
+        {/* Posts Feed */}
+        <FlatList
+          data={posts}
+          renderItem={renderPost}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={currentColors.secondary}
+            />
+          }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.footerLoader}>
+                <ActivityIndicator size="small" color={currentColors.secondary} />
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <IconSymbol
+                name="photo.on.rectangle"
+                size={80}
+                color={currentColors.textSecondary}
+              />
+              <Text style={[styles.emptyText, { color: currentColors.text }]}>
+                No posts yet. Be the first to share!
+              </Text>
+              <LinearGradient
+                colors={[currentColors.secondary, currentColors.highlight]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.emptyButton}
+              >
+                <TouchableOpacity
+                  style={styles.emptyButtonInner}
+                  onPress={handleCreatePost}
+                >
+                  <Text style={[styles.emptyButtonText, { color: currentColors.background }]}>Create Post</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </View>
+          }
+        />
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gradientContainer: {
+    flex: 1,
+  },
+  safeArea: {
     flex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    borderBottomWidth: 2,
+    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    elevation: 8,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   createButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 120,
+  },
   postCard: {
-    marginBottom: 16,
-    borderRadius: 12,
+    borderRadius: 0,
+    marginBottom: 20,
     overflow: 'hidden',
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
   },
   postHeader: {
     flexDirection: 'row',
@@ -333,7 +407,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginBottom: 2,
   },
   verifiedBadge: {
@@ -342,6 +416,7 @@ const styles = StyleSheet.create({
   },
   verifiedText: {
     fontSize: 12,
+    fontFamily: 'Inter_400Regular',
     marginLeft: 4,
   },
   postImage: {
@@ -361,8 +436,8 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
     marginLeft: 4,
-    fontWeight: '600',
   },
   captionContainer: {
     paddingHorizontal: 12,
@@ -370,13 +445,15 @@ const styles = StyleSheet.create({
   },
   caption: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     lineHeight: 20,
   },
   captionUsername: {
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   timestamp: {
     fontSize: 12,
+    fontFamily: 'Inter_400Regular',
     paddingHorizontal: 12,
     paddingBottom: 12,
   },
@@ -392,17 +469,21 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
     marginTop: 16,
     marginBottom: 24,
   },
   emptyButton: {
+    borderRadius: 0,
+    boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
+    elevation: 8,
+  },
+  emptyButtonInner: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
   },
   emptyButtonText: {
-    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
 });

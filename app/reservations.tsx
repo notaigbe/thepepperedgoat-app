@@ -23,7 +23,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function ReservationsScreen() {
   const router = useRouter();
-  const { currentColors, userProfile } = useApp();
+  const { currentColors, userProfile, showToast } = useApp();
   const { isAuthenticated } = useAuth();
 
   // Form state
@@ -39,9 +39,6 @@ export default function ReservationsScreen() {
   const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
   // User reservations
   const [userReservations, setUserReservations] = useState<any[]>([]);
@@ -77,12 +74,6 @@ export default function ReservationsScreen() {
     }
   };
 
-  const showLocalToast = (type: 'success' | 'error' | 'info', message: string) => {
-    setToastType(type);
-    setToastMessage(message);
-    setToastVisible(true);
-  };
-
   const handleSubmit = async () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -90,20 +81,20 @@ export default function ReservationsScreen() {
 
     // Validation
     if (!name || !email || !phone || !guests) {
-      showLocalToast('error', 'Please fill in all required fields');
+      showToast('Please fill in all required fields', 'error');
       return;
     }
 
     const guestsNum = parseInt(guests);
     if (isNaN(guestsNum) || guestsNum < 1 || guestsNum > 20) {
-      showLocalToast('error', 'Please enter a valid number of guests (1-20)');
+      showToast('Please enter a valid number of guests (1-20)', 'error');
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      showLocalToast('error', 'Please enter a valid email address');
+      showToast('Please enter a valid email address', 'error');
       return;
     }
 
@@ -123,9 +114,9 @@ export default function ReservationsScreen() {
 
       if (error) {
         console.error('Reservation error:', error);
-        showLocalToast('error', 'Failed to create reservation. Please try again.');
+        showToast('Failed to create reservation. Please try again.', 'error');
       } else {
-        showLocalToast('success', 'Reservation created successfully! We will contact you to confirm.');
+        showToast('Reservation created successfully! We will contact you to confirm.', 'success');
         // Reset form
         setGuests('2');
         setSpecialRequests('');
@@ -136,7 +127,7 @@ export default function ReservationsScreen() {
       }
     } catch (error) {
       console.error('Reservation error:', error);
-      showLocalToast('error', 'An unexpected error occurred. Please try again.');
+      showToast('An unexpected error occurred. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -151,14 +142,14 @@ export default function ReservationsScreen() {
       const { error } = await reservationService.cancelReservation(reservationId);
       if (error) {
         console.error('Cancel reservation error:', error);
-        showLocalToast('error', 'Failed to cancel reservation. Please try again.');
+        showToast('Failed to cancel reservation. Please try again.', 'error');
       } else {
-        showLocalToast('success', 'Reservation cancelled successfully');
+        showToast('Reservation cancelled successfully', 'success');
         loadUserReservations();
       }
     } catch (error) {
       console.error('Cancel reservation error:', error);
-      showLocalToast('error', 'An unexpected error occurred. Please try again.');
+      showToast('An unexpected error occurred. Please try again.', 'error');
     }
   };
 
@@ -187,8 +178,13 @@ export default function ReservationsScreen() {
       style={styles.gradientContainer}
     >
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Header with Gradient - matching Events screen */}
+        <LinearGradient
+          colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.header, { borderBottomColor: currentColors.border }]}
+        >
           <Pressable
             onPress={() => {
               if (Platform.OS !== 'web') {
@@ -196,15 +192,13 @@ export default function ReservationsScreen() {
               }
               router.back();
             }}
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
           >
-            <IconSymbol name="chevron.left" size={24} color={currentColors.text} />
+            <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: currentColors.text }]}>
-            Make a Reservation
-          </Text>
+          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Reservations</Text>
           <View style={{ width: 40 }} />
-        </View>
+        </LinearGradient>
 
         <ScrollView
           style={styles.container}
@@ -219,7 +213,7 @@ export default function ReservationsScreen() {
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.formCard}
+            style={[styles.formCard, { borderColor: currentColors.border }]}
           >
             <Text style={[styles.sectionTitle, { color: currentColors.text }]}>
               Reservation Details
@@ -413,10 +407,10 @@ export default function ReservationsScreen() {
 
             {/* Submit Button */}
             <LinearGradient
-              colors={[currentColors.primary, currentColors.secondary]}
+              colors={[currentColors.secondary, currentColors.highlight]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={[styles.submitButton, { opacity: loading ? 0.6 : 1 }]}
+              style={styles.submitButton}
             >
               <Pressable
                 style={styles.submitButtonInner}
@@ -424,14 +418,11 @@ export default function ReservationsScreen() {
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator size="small" color={currentColors.card} />
+                  <ActivityIndicator size="small" color={currentColors.background} />
                 ) : (
-                  <>
-                    <IconSymbol name="checkmark.circle" size={24} color={currentColors.card} />
-                    <Text style={[styles.submitButtonText, { color: currentColors.card }]}>
-                      Make Reservation
-                    </Text>
-                  </>
+                  <Text style={[styles.submitButtonText, { color: currentColors.background }]}>
+                    Make Reservation
+                  </Text>
                 )}
               </Pressable>
             </LinearGradient>
@@ -446,7 +437,7 @@ export default function ReservationsScreen() {
 
               {loadingReservations ? (
                 <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color={currentColors.primary} />
+                  <ActivityIndicator size="large" color={currentColors.secondary} />
                 </View>
               ) : userReservations.length === 0 ? (
                 <LinearGradient
@@ -456,7 +447,7 @@ export default function ReservationsScreen() {
                   ]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.emptyCard}
+                  style={[styles.emptyCard, { borderColor: currentColors.border }]}
                 >
                   <IconSymbol name="calendar" size={48} color={currentColors.textSecondary} />
                   <Text style={[styles.emptyText, { color: currentColors.textSecondary }]}>
@@ -473,7 +464,7 @@ export default function ReservationsScreen() {
                     ]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={styles.reservationCard}
+                    style={[styles.reservationCard, { borderColor: currentColors.border }]}
                   >
                     <View style={styles.reservationHeader}>
                       <View style={styles.reservationInfo}>
@@ -525,14 +516,6 @@ export default function ReservationsScreen() {
             </View>
           )}
         </ScrollView>
-
-        <Toast
-          visible={toastVisible}
-          message={toastMessage}
-          type={toastType}
-          onHide={() => setToastVisible(false)}
-          currentColors={currentColors}
-        />
       </SafeAreaView>
     </LinearGradient>
   );
@@ -547,38 +530,51 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    borderBottomWidth: 2,
+    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    elevation: 8,
   },
   backButton: {
     width: 40,
     height: 40,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   container: {
     flex: 1,
   },
   content: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 120,
   },
   formCard: {
     borderRadius: 0,
     padding: 20,
     marginBottom: 24,
-    boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
-    elevation: 6,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
   },
   sectionTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 20,
   },
   inputGroup: {
@@ -586,13 +582,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginBottom: 8,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 2,
     borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 12,
@@ -602,6 +598,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
   },
   textAreaContainer: {
     alignItems: 'flex-start',
@@ -623,10 +620,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 16,
     gap: 8,
+    minHeight: 52,
   },
   submitButtonText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: 'Inter_700Bold',
   },
   reservationsSection: {
     marginTop: 8,
@@ -639,19 +637,22 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     padding: 40,
     alignItems: 'center',
-    boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
-    elevation: 6,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
   },
   emptyText: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
     marginTop: 12,
   },
   reservationCard: {
     borderRadius: 0,
     padding: 16,
     marginBottom: 12,
-    boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
-    elevation: 6,
+    borderWidth: 2,
+    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    elevation: 8,
   },
   reservationHeader: {
     flexDirection: 'row',
@@ -664,29 +665,31 @@ const styles = StyleSheet.create({
   },
   reservationDate: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginBottom: 4,
   },
   reservationTime: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
   },
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 0,
   },
   statusText: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   specialRequests: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     marginBottom: 12,
     fontStyle: 'italic',
   },
   cancelButton: {
-    borderWidth: 1,
+    borderWidth: 2,
     borderRadius: 0,
     paddingVertical: 8,
     alignItems: 'center',
@@ -694,6 +697,6 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
 });
