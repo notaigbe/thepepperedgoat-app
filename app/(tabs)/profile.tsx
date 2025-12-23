@@ -765,6 +765,80 @@ export default function ProfileScreen() {
                 </Pressable>
               </LinearGradient>
             )}
+            {/* Reservations Option */}
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.menuItem}
+            >
+              <Pressable
+                style={styles.menuItemInner}
+                onPress={() => handleMenuPress("/reservations")}
+              >
+                <View
+                  style={[styles.menuIcon, { backgroundColor: "#FF6B6B" + "20" }]}
+                >
+                  <IconSymbol name="calendar.badge.clock" size={24} color="#FF6B6B" />
+                </View>
+                <View style={styles.menuContent}>
+                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
+                    Reservations
+                  </Text>
+                  <Text
+                    style={[
+                      styles.menuSubtitle,
+                      { color: currentColors.textSecondary },
+                    ]}
+                  >
+                    Make or view your reservations
+                  </Text>
+                </View>
+                <IconSymbol
+                  name="chevron.right"
+                  size={24}
+                  color={currentColors.textSecondary}
+                />
+              </Pressable>
+            </LinearGradient>
+
+            {/* Invite a Friend Option */}
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.menuItem}
+            >
+              <Pressable
+                style={styles.menuItemInner}
+                onPress={() => handleMenuPress("/invite-friend")}
+              >
+                <View
+                  style={[styles.menuIcon, { backgroundColor: "#2196F3" + "20" }]}
+                >
+                  <IconSymbol name="person.2.fill" size={24} color="#2196F3" />
+                </View>
+                <View style={styles.menuContent}>
+                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
+                    Invite a Friend
+                  </Text>
+                  <Text
+                    style={[
+                      styles.menuSubtitle,
+                      { color: currentColors.textSecondary },
+                    ]}
+                  >
+                    Share your referral code and earn rewards
+                  </Text>
+                </View>
+                <IconSymbol
+                  name="chevron.right"
+                  size={24}
+                  color={currentColors.textSecondary}
+                />
+              </Pressable>
+            </LinearGradient>
+
             {/* Help & Support Option */}
             <LinearGradient
               colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
