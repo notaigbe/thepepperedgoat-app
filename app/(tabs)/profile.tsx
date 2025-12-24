@@ -32,6 +32,7 @@ export default function ProfileScreen() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   // Toast state
@@ -133,7 +134,7 @@ export default function ProfileScreen() {
           setLoading(false);
           return;
         }
-        const { error } = await signUp(email, password, name, phone);
+        const { error } = await signUp(email, password, name, phone, inviteCode);
         if (error) {
           console.error('Sign up error:', error);
           // Handle specific error messages
@@ -147,12 +148,17 @@ export default function ProfileScreen() {
             showLocalToast("error", error.message || "Sign up failed. Please try again.");
           }
         } else {
-          showLocalToast("success", "Account created! Please check your email to verify your account.");
+          let successMessage = "Account created! Please check your email to verify your account.";
+          if (inviteCode && inviteCode.trim()) {
+            successMessage += " Your referral bonus will be applied once your email is verified.";
+          }
+          showLocalToast("success", successMessage);
           // Clear form after successful signup
           setEmail("");
           setPassword("");
           setName("");
           setPhone("");
+          setInviteCode("");
           // Switch to sign in mode
           setIsSignUp(false);
           setShowPassword(false);
@@ -212,6 +218,7 @@ export default function ProfileScreen() {
             setPassword("");
             setName("");
             setPhone("");
+            setInviteCode("");
             setIsSignUp(false);
             setShowPassword(false);
             showLocalToast("success", "Signed out successfully");
@@ -373,30 +380,60 @@ export default function ProfileScreen() {
                 </LinearGradient>
 
                 {isSignUp && (
-                  <LinearGradient
-                    colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[
-                      styles.inputContainer,
-                      { borderColor: currentColors.border },
-                    ]}
-                  >
-                    <IconSymbol
-                      name="phone"
-                      size={20}
-                      color={currentColors.textSecondary}
-                    />
-                    <TextInput
-                      style={[styles.input, { color: currentColors.text }]}
-                      placeholder="Phone (optional)"
-                      placeholderTextColor={currentColors.textSecondary}
-                      value={phone}
-                      onChangeText={setPhone}
-                      keyboardType="phone-pad"
-                      editable={!loading}
-                    />
-                  </LinearGradient>
+                  <>
+                    <LinearGradient
+                      colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[
+                        styles.inputContainer,
+                        { borderColor: currentColors.border },
+                      ]}
+                    >
+                      <IconSymbol
+                        name="phone"
+                        size={20}
+                        color={currentColors.textSecondary}
+                      />
+                      <TextInput
+                        style={[styles.input, { color: currentColors.text }]}
+                        placeholder="Phone (optional)"
+                        placeholderTextColor={currentColors.textSecondary}
+                        value={phone}
+                        onChangeText={setPhone}
+                        keyboardType="phone-pad"
+                        editable={!loading}
+                      />
+                    </LinearGradient>
+
+                    <LinearGradient
+                      colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[
+                        styles.inputContainer,
+                        { borderColor: currentColors.border },
+                      ]}
+                    >
+                      <IconSymbol
+                        name="gift.fill"
+                        size={20}
+                        color={currentColors.textSecondary}
+                      />
+                      <TextInput
+                        style={[styles.input, { color: currentColors.text }]}
+                        placeholder="Invite Code (optional)"
+                        placeholderTextColor={currentColors.textSecondary}
+                        value={inviteCode}
+                        onChangeText={setInviteCode}
+                        autoCapitalize="characters"
+                        editable={!loading}
+                      />
+                    </LinearGradient>
+                    <Text style={[styles.inviteCodeHint, { color: currentColors.textSecondary }]}>
+                      Have a referral code? Enter it to earn bonus points!
+                    </Text>
+                  </>
                 )}
 
                 <LinearGradient
@@ -437,6 +474,7 @@ export default function ProfileScreen() {
                     setPassword("");
                     setName("");
                     setPhone("");
+                    setInviteCode("");
                     setShowPassword(false);
                   }}
                   disabled={loading}
@@ -727,44 +765,7 @@ export default function ProfileScreen() {
                 />
               </Pressable>
             </LinearGradient>
-						{/* Only show Payment Methods on mobile */}
-            {Platform.OS !== 'web' && (
-              <LinearGradient
-                colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.menuItem}
-              >
-                <Pressable
-                  style={styles.menuItemInner}
-                  onPress={() => handleMenuPress("/payment-methods")}
-                >
-                  <View
-                    style={[styles.menuIcon, { backgroundColor: "#4ECDC4" + "20" }]}
-                  >
-                    <IconSymbol name="creditcard.fill" size={24} color="#4ECDC4" />
-                  </View>
-                  <View style={styles.menuContent}>
-                    <Text style={[styles.menuTitle, { color: currentColors.text }]}>
-                      Payment Methods
-                    </Text>
-                    <Text
-                      style={[
-                        styles.menuSubtitle,
-                        { color: currentColors.textSecondary },
-                      ]}
-                    >
-                      {userProfile?.paymentMethods?.length || 0} cards
-                    </Text>
-                  </View>
-                  <IconSymbol
-                    name="chevron.right"
-                    size={24}
-                    color={currentColors.textSecondary}
-                  />
-                </Pressable>
-              </LinearGradient>
-            )}
+
             {/* Reservations Option */}
             <LinearGradient
               colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
@@ -1028,6 +1029,13 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 16,
   },
+  inviteCodeHint: {
+    fontSize: 12,
+    marginTop: -8,
+    marginBottom: 8,
+    marginLeft: 4,
+    fontStyle: 'italic',
+  },
   authButton: {
     borderRadius: 0,
     marginTop: 8,
@@ -1166,7 +1174,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 16,
     boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.15)',
-    // elevation: 4,
   },
   menuContent: {
     flex: 1,

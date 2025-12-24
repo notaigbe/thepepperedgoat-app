@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, name: string, phone?: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, name: string, phone?: string, inviteCode?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -61,44 +61,66 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-const signUp = async (email: string, password: string, name: string, phone?: string) => {
-  try {
-    console.log('Signing up:', email);
+  const signUp = async (email: string, password: string, name: string, phone?: string, inviteCode?: string) => {
+    try {
+      console.log('Signing up:', email, inviteCode ? `with invite code: ${inviteCode}` : 'without invite code');
 
-    // Sign up user
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name, phone },
-        // Comment out for auto-confirm in dev (email testing mode)
-        emailRedirectTo: 'https://natively.dev/email-confirmed',
-      },
-    });
+      // Sign up user
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name, phone },
+          emailRedirectTo: 'https://natively.dev/email-confirmed',
+        },
+      });
 
-    if (error) {
-      console.error('Sign-up error:', error);
+      if (error) {
+        console.error('Sign-up error:', error);
+        return { error };
+      }
+
+      // Handle confirmation or auto-signin
+      if (data.user) {
+        if (data.session) {
+          // Auto-confirmed (dev mode)
+          console.log('User auto-confirmed:', data.user.email);
+        } else {
+          // Confirmation required (production mode)
+          console.log('Confirmation email sent to:', data.user.email);
+        }
+
+        // If invite code provided, redeem it
+        if (inviteCode && inviteCode.trim()) {
+          console.log('Attempting to redeem invite code:', inviteCode);
+          try {
+            const { data: redeemData, error: redeemError } = await supabase.rpc('redeem_referral_code', {
+              p_referral_code: inviteCode.trim().toUpperCase(),
+              p_referred_user_id: data.user.id,
+            });
+
+            if (redeemError) {
+              console.error('Error redeeming invite code:', redeemError);
+              // Don't fail signup if invite code is invalid, just log it
+            } else if (redeemData && redeemData.success) {
+              console.log('Invite code redeemed successfully:', redeemData);
+            } else if (redeemData && !redeemData.success) {
+              console.warn('Invite code redemption failed:', redeemData.error);
+            }
+          } catch (inviteError) {
+            console.error('Exception redeeming invite code:', inviteError);
+            // Don't fail signup if invite code redemption fails
+          }
+        }
+      }
+
+      console.log('Sign-up complete for:', data.user?.email);
+      return { error: null };
+    } catch (error: any) {
+      console.error('Sign-up exception:', error);
       return { error };
     }
-
-    // Handle confirmation or auto-signin
-    if (data.user) {
-      if (data.session) {
-        // Auto-confirmed (dev mode)
-        console.log('User auto-confirmed:', data.user.email);
-      } else {
-        // Confirmation required (production mode)
-        console.log('Confirmation email sent to:', data.user.email);
-      }
-    }
-
-    console.log('Sign-up complete for:', data.user?.email);
-    return { error: null };
-  } catch (error: any) {
-    console.error('Sign-up exception:', error);
-    return { error };
-  }
-};
+  };
 
   const signOut = async () => {
     try {

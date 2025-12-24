@@ -366,7 +366,7 @@ export default function InviteFriendScreen() {
                   Earn Rewards
                 </Text>
                 <Text style={[styles.stepDescription, { color: currentColors.textSecondary }]}>
-                  Get bonus points when they sign up and complete their first order
+                  You both get 500 points ($5) when they sign up! Additional rewards when they complete their first order.
                 </Text>
               </View>
             </View>
