@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { supabase } from '@/app/integrations/supabase/client';
 import { JAGABANS_LOCATION } from '@/constants/LocationConfig';
+// import {BodyScrollView} from '@/components/BodyScrollView';
 import * as Haptics from 'expo-haptics';
 
 export default function CreatePostScreen() {
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   postButtonText: {
-    fontSize: 16,
+    fontSize: 10,
     fontFamily: 'Inter_600SemiBold',
   },
   content: {

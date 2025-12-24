@@ -193,18 +193,20 @@ export default function EditProfileScreen() {
     }
   };
 
- const uploadImage = async (asset: ImagePicker.ImagePickerAsset) => {
-  if (!user?.id) {
-    showToast('error', 'User not authenticated');
-    return;
-  }
-  setUploadingImage(true);
-
-  try {
-    const fileExt = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
-    const fileName = `${user.id}_${Date.now()}.${fileExt}`;
-    const filePath = `${user.id}/${fileName}`;
-    console.log('Uploading image:', filePath);
+  const uploadImage = async (asset: ImagePicker.ImagePickerAsset) => {
+    if (!user?.id) {
+      showToast('error', 'User not authenticated');
+      return;
+    }
+    setUploadingImage(true);
+    
+    try {
+      // Generate unique filename
+      const fileExt = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
+      // const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+      console.log('Uploading image:', filePath);
 
     const response = await fetch(asset.uri);
     const arrayBuffer = await response.arrayBuffer();

@@ -99,7 +99,7 @@ const MAPPING = ({
   // "calendar": "calendar-today",
   "calendar.circle": "calendar-today",
   "calendar.badge.plus": "calendar-today",
-	"doc.on.doc": "content-copy",
+  "doc.on.doc": "content-copy",
 
   // Media & Content
   "photo.fill": "image",
@@ -114,7 +114,7 @@ const MAPPING = ({
   "play.fill": "play-arrow",
   "pause.fill": "pause",
   "stop.fill": "stop",
-	"photo.on.rectangle": "add-a-photo",
+  "photo.on.rectangle": "add-a-photo",
 
   // System & Settings
   "gear": "settings",
