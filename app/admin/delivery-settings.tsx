@@ -17,11 +17,13 @@ import { colors } from '@/styles/commonStyles';
 import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { DeliveryProvider, DELIVERY_PROVIDERS } from '@/constants/DeliveryConfig';
 
 const DELIVERY_SETTINGS_KEY = 'delivery_settings';
 
 interface DeliverySettings {
   autoTriggerDelivery: boolean;
+  defaultProvider: DeliveryProvider;
   restaurantName: string;
   restaurantPhone: string;
   restaurantStreet: string;
@@ -35,6 +37,7 @@ export default function DeliverySettingsScreen() {
   const router = useRouter();
   const [settings, setSettings] = useState<DeliverySettings>({
     autoTriggerDelivery: false,
+    defaultProvider: 'uber_direct',
     restaurantName: 'Jagabans LA',
     restaurantPhone: '+1234567890',
     restaurantStreet: '123 Restaurant Street',
@@ -106,16 +109,49 @@ export default function DeliverySettingsScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Uber Direct Configuration</Text>
+            <Text style={styles.sectionTitle}>Delivery Configuration</Text>
             <Text style={styles.sectionDescription}>
-              Configure your Uber Direct delivery settings. Make sure to set up API credentials in Supabase Edge Functions.
+              Configure your delivery settings. Make sure to set up API credentials in Supabase Edge Functions.
             </Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Default Delivery Provider</Text>
+              <View style={styles.providerSelector}>
+                {(Object.keys(DELIVERY_PROVIDERS) as DeliveryProvider[]).map((provider) => (
+                  <Pressable
+                    key={provider}
+                    style={[
+                      styles.providerButton,
+                      settings.defaultProvider === provider && styles.providerButtonActive,
+                    ]}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                      updateSetting('defaultProvider', provider);
+                    }}
+                  >
+                    <IconSymbol 
+                      name={DELIVERY_PROVIDERS[provider].icon} 
+                      size={20} 
+                      color={settings.defaultProvider === provider ? colors.background : colors.text} 
+                    />
+                    <Text style={[
+                      styles.providerButtonText,
+                      settings.defaultProvider === provider && styles.providerButtonTextActive,
+                    ]}>
+                      {DELIVERY_PROVIDERS[provider].name}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
 
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Auto-trigger Delivery</Text>
                 <Text style={styles.settingDescription}>
-                  Automatically trigger Uber Direct delivery when order status changes to "Ready"
+                  Automatically trigger delivery when order status changes to "Ready"
                 </Text>
               </View>
               <Switch
@@ -236,8 +272,16 @@ export default function DeliverySettingsScreen() {
           <View style={styles.infoBox}>
             <IconSymbol name="info.circle.fill" size={20} color={colors.primary} />
             <Text style={styles.infoText}>
-              To complete the Uber Direct setup, you need to configure API credentials in Supabase Edge Functions. 
+              To complete the delivery setup, you need to configure API credentials in Supabase Edge Functions for your chosen provider. 
               See the documentation for detailed instructions.
+            </Text>
+          </View>
+
+          <View style={[styles.infoBox, { borderColor: colors.secondary, marginTop: 16 }]}>
+            <IconSymbol name="lightbulb.fill" size={20} color={colors.secondary} />
+            <Text style={styles.infoText}>
+              <Text style={{ fontWeight: '700' }}>Uber Direct:</Text> Requires UBER_CLIENT_ID, UBER_CLIENT_SECRET, and UBER_CUSTOMER_ID.{'\n\n'}
+              <Text style={{ fontWeight: '700' }}>DoorDash:</Text> Requires DOORDASH_DEVELOPER_ID, DOORDASH_KEY_ID, and DOORDASH_SIGNING_SECRET.
             </Text>
           </View>
         </View>
@@ -378,5 +422,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text,
     lineHeight: 18,
+  },
+  providerSelector: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  providerButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
+  providerButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  providerButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  providerButtonTextActive: {
+    color: colors.background,
   },
 });

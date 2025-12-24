@@ -26,6 +26,8 @@ export interface Order {
   deliveryAddress?: string;
   pickupNotes?: string;
   paymentId?: string;
+  
+  // Uber Direct fields
   uberDeliveryId?: string;
   uberDeliveryStatus?: string;
   uberTrackingUrl?: string;
@@ -41,6 +43,26 @@ export interface Order {
     photoUrl?: string;
     notes?: string;
   };
+  
+  // DoorDash fields
+  doordashDeliveryId?: string;
+  doordashDeliveryStatus?: string;
+  doordashTrackingUrl?: string;
+  doordashDasherName?: string;
+  doordashDasherPhone?: string;
+  doordashDasherLocation?: {
+    lat: number;
+    lng: number;
+  };
+  doordashDeliveryEta?: string;
+  doordashProofOfDelivery?: {
+    signatureImageUrl?: string;
+    photoUrl?: string;
+    notes?: string;
+  };
+  
+  // Common delivery fields
+  deliveryProvider?: 'uber_direct' | 'doordash';
   deliveryTriggeredAt?: string;
 }
 
