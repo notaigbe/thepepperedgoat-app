@@ -20,7 +20,8 @@ import { supabase } from '@/app/integrations/supabase/client';
 import Dialog from '@/components/Dialog';
 import Toast from '@/components/Toast';
 import { DeliveryTracking } from '@/components/DeliveryTracking';
-import { RESTAURANT_PICKUP_ADDRESS } from '@/constants/DeliveryConfig';
+import { RESTAURANT_PICKUP_ADDRESS, DeliveryProvider } from '@/constants/DeliveryConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface OrderWithItems extends Order {
   items: CartItem[];
@@ -158,6 +159,15 @@ export default function AdminOrderManagement() {
           uberCourierLocation: updatedOrder.uber_courier_location,
           uberDeliveryEta: updatedOrder.uber_delivery_eta,
           uberProofOfDelivery: updatedOrder.uber_proof_of_delivery,
+          doordashDeliveryId: updatedOrder.doordash_delivery_id,
+          doordashDeliveryStatus: updatedOrder.doordash_delivery_status,
+          doordashTrackingUrl: updatedOrder.doordash_tracking_url,
+          doordashDasherName: updatedOrder.doordash_dasher_name,
+          doordashDasherPhone: updatedOrder.doordash_dasher_phone,
+          doordashDasherLocation: updatedOrder.doordash_dasher_location,
+          doordashDeliveryEta: updatedOrder.doordash_delivery_eta,
+          doordashProofOfDelivery: updatedOrder.doordash_proof_of_delivery,
+          deliveryProvider: updatedOrder.delivery_provider,
           deliveryTriggeredAt: updatedOrder.delivery_triggered_at,
         };
 
@@ -176,12 +186,18 @@ export default function AdminOrderManagement() {
           console.log('Notification sent to user:', userId);
         }
 
-        // Trigger Uber Direct delivery if status is "ready" and has delivery address
-        if (newStatus === 'ready' && transformedOrder.deliveryAddress && !transformedOrder.uberDeliveryId) {
-          console.log('Triggering Uber Direct delivery for order:', orderId);
+        // Trigger delivery if status is "ready" and has delivery address
+        if (newStatus === 'ready' && transformedOrder.deliveryAddress && !transformedOrder.uberDeliveryId && !transformedOrder.doordashDeliveryId) {
+          console.log('Triggering delivery for order:', orderId);
+          
+          // Get default provider from settings
+          const settingsJson = await AsyncStorage.getItem('delivery_settings');
+          const settings = settingsJson ? JSON.parse(settingsJson) : { defaultProvider: 'uber_direct' };
+          const defaultProvider: DeliveryProvider = settings.defaultProvider || 'uber_direct';
+          
           showDialog(
             'Trigger Delivery?',
-            'Do you want to trigger Uber Direct delivery for this order?',
+            `Do you want to trigger ${defaultProvider === 'doordash' ? 'DoorDash' : 'Uber Direct'} delivery for this order?`,
             [
               {
                 text: 'Cancel',
@@ -189,9 +205,14 @@ export default function AdminOrderManagement() {
                 onPress: () => console.log('Delivery trigger canceled'),
               },
               {
-                text: 'Trigger Delivery',
+                text: `Use ${defaultProvider === 'doordash' ? 'DoorDash' : 'Uber Direct'}`,
                 style: 'default',
-                onPress: () => triggerUberDelivery(orderId, transformedOrder),
+                onPress: () => triggerDelivery(orderId, transformedOrder, defaultProvider),
+              },
+              {
+                text: `Use ${defaultProvider === 'doordash' ? 'Uber Direct' : 'DoorDash'}`,
+                style: 'default',
+                onPress: () => triggerDelivery(orderId, transformedOrder, defaultProvider === 'doordash' ? 'uber_direct' : 'doordash'),
               },
             ]
           );
@@ -205,9 +226,10 @@ export default function AdminOrderManagement() {
     })();
   };
 
-  const triggerUberDelivery = async (orderId: string, order: OrderWithItems) => {
+  const triggerDelivery = async (orderId: string, order: OrderWithItems, provider: DeliveryProvider) => {
     try {
-      showToast('info', 'Triggering Uber Direct delivery...');
+      const providerName = provider === 'doordash' ? 'DoorDash' : 'Uber Direct';
+      showToast('info', `Triggering ${providerName} delivery...`);
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
@@ -228,8 +250,10 @@ export default function AdminOrderManagement() {
         country: 'US',
       };
 
+      const functionName = provider === 'doordash' ? 'trigger-doordash-delivery' : 'trigger-uber-delivery';
+
       const response = await fetch(
-        `${supabase.supabaseUrl}/functions/v1/trigger-uber-delivery`,
+        `${supabase.supabaseUrl}/functions/v1/${functionName}`,
         {
           method: 'POST',
           headers: {
@@ -256,13 +280,13 @@ export default function AdminOrderManagement() {
         throw new Error(result.error || 'Failed to trigger delivery');
       }
 
-      console.log('Uber Direct delivery triggered:', result);
-      showToast('success', 'Uber Direct delivery triggered successfully!');
+      console.log(`${providerName} delivery triggered:`, result);
+      showToast('success', `${providerName} delivery triggered successfully!`);
       
       // Refresh orders to get updated delivery info
       await fetchOrders();
     } catch (err) {
-      console.error('Failed to trigger Uber Direct delivery:', err);
+      console.error(`Failed to trigger delivery:`, err);
       showToast('error', `Failed to trigger delivery: ${err.message}`);
     }
   };
@@ -418,7 +442,7 @@ export default function AdminOrderManagement() {
                     </View>
                   </View>
 
-                  {order.uberDeliveryId && (
+                  {(order.uberDeliveryId || order.doordashDeliveryId) && (
                     <View style={styles.deliveryTrackingContainer}>
                       <DeliveryTracking order={order} onRefresh={fetchOrders} />
                     </View>

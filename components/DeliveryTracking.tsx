@@ -23,76 +23,170 @@ export function DeliveryTracking({ order, onRefresh }: DeliveryTrackingProps) {
   };
 
   const handleOpenTracking = () => {
-    if (order.uberTrackingUrl) {
-      Linking.openURL(order.uberTrackingUrl);
+    const trackingUrl = order.deliveryProvider === 'doordash' 
+      ? order.doordashTrackingUrl 
+      : order.uberTrackingUrl;
+    
+    if (trackingUrl) {
+      Linking.openURL(trackingUrl);
     }
   };
 
-  const handleCallCourier = () => {
-    if (order.uberCourierPhone) {
-      Linking.openURL(`tel:${order.uberCourierPhone}`);
+  const handleCallDriver = () => {
+    const driverPhone = order.deliveryProvider === 'doordash'
+      ? order.doordashDasherPhone
+      : order.uberCourierPhone;
+    
+    if (driverPhone) {
+      Linking.openURL(`tel:${driverPhone}`);
     }
   };
 
-  const getDeliveryStatusInfo = (status?: string) => {
-    switch (status) {
-      case 'pending':
-        return {
-          label: 'Pending',
-          icon: 'clock',
-          color: '#FFA500',
-          description: 'Waiting for driver assignment',
-        };
-      case 'en_route_to_pickup':
-        return {
-          label: 'Driver En Route',
-          icon: 'car',
-          color: '#4ECDC4',
-          description: 'Driver is heading to the restaurant',
-        };
-      case 'at_pickup':
-        return {
-          label: 'At Restaurant',
-          icon: 'storefront',
-          color: '#4ECDC4',
-          description: 'Driver is picking up your order',
-        };
-      case 'en_route_to_dropoff':
-        return {
-          label: 'On the Way',
-          icon: 'local-shipping',
-          color: '#95E1D3',
-          description: 'Your order is on the way!',
-        };
-      case 'delivered':
-        return {
-          label: 'Delivered',
-          icon: 'check-circle',
-          color: '#4CAF50',
-          description: 'Order has been delivered',
-        };
-      case 'canceled':
-        return {
-          label: 'Canceled',
-          icon: 'cancel',
-          color: '#F44336',
-          description: 'Delivery was canceled',
-        };
+  const getDeliveryStatusInfo = (status?: string, provider?: string) => {
+    if (provider === 'doordash') {
+      switch (status) {
+        case 'created':
+          return {
+            label: 'Created',
+            icon: 'clock',
+            color: '#FFA500',
+            description: 'Delivery request created',
+          };
+        case 'confirmed':
+          return {
+            label: 'Dasher Assigned',
+            icon: 'person',
+            color: '#4ECDC4',
+            description: 'A dasher has been assigned to your order',
+          };
+        case 'picked_up':
+          return {
+            label: 'On the Way',
+            icon: 'local-shipping',
+            color: '#95E1D3',
+            description: 'Your order is on the way!',
+          };
+        case 'delivered':
+          return {
+            label: 'Delivered',
+            icon: 'check-circle',
+            color: '#4CAF50',
+            description: 'Order has been delivered',
+          };
+        case 'cancelled':
+          return {
+            label: 'Canceled',
+            icon: 'cancel',
+            color: '#F44336',
+            description: 'Delivery was canceled',
+          };
+        default:
+          return {
+            label: 'Unknown',
+            icon: 'help',
+            color: colors.textSecondary,
+            description: 'Status unknown',
+          };
+      }
+    } else {
+      // Uber Direct statuses
+      switch (status) {
+        case 'pending':
+          return {
+            label: 'Pending',
+            icon: 'clock',
+            color: '#FFA500',
+            description: 'Waiting for driver assignment',
+          };
+        case 'en_route_to_pickup':
+          return {
+            label: 'Driver En Route',
+            icon: 'car',
+            color: '#4ECDC4',
+            description: 'Driver is heading to the restaurant',
+          };
+        case 'at_pickup':
+          return {
+            label: 'At Restaurant',
+            icon: 'storefront',
+            color: '#4ECDC4',
+            description: 'Driver is picking up your order',
+          };
+        case 'en_route_to_dropoff':
+          return {
+            label: 'On the Way',
+            icon: 'local-shipping',
+            color: '#95E1D3',
+            description: 'Your order is on the way!',
+          };
+        case 'delivered':
+          return {
+            label: 'Delivered',
+            icon: 'check-circle',
+            color: '#4CAF50',
+            description: 'Order has been delivered',
+          };
+        case 'canceled':
+          return {
+            label: 'Canceled',
+            icon: 'cancel',
+            color: '#F44336',
+            description: 'Delivery was canceled',
+          };
+        default:
+          return {
+            label: 'Unknown',
+            icon: 'help',
+            color: colors.textSecondary,
+            description: 'Status unknown',
+          };
+      }
+    }
+  };
+
+  const getProviderName = (provider?: string) => {
+    switch (provider) {
+      case 'doordash':
+        return 'DoorDash';
+      case 'uber_direct':
+        return 'Uber Direct';
       default:
-        return {
-          label: 'Unknown',
-          icon: 'help',
-          color: colors.textSecondary,
-          description: 'Status unknown',
-        };
+        return 'Delivery';
     }
   };
 
-  if (!order.uberDeliveryId) {
+  // Check if there's an active delivery
+  const hasDelivery = order.uberDeliveryId || order.doordashDeliveryId;
+  
+  if (!hasDelivery) {
     return null;
   }
 
-  const statusInfo = getDeliveryStatusInfo(order.uberDeliveryStatus);
+  const deliveryStatus = order.deliveryProvider === 'doordash' 
+    ? order.doordashDeliveryStatus 
+    : order.uberDeliveryStatus;
+  
+  const statusInfo = getDeliveryStatusInfo(deliveryStatus, order.deliveryProvider);
+  
+  const driverName = order.deliveryProvider === 'doordash'
+    ? order.doordashDasherName
+    : order.uberCourierName;
+  
+  const driverPhone = order.deliveryProvider === 'doordash'
+    ? order.doordashDasherPhone
+    : order.uberCourierPhone;
+  
+  const deliveryEta = order.deliveryProvider === 'doordash'
+    ? order.doordashDeliveryEta
+    : order.uberDeliveryEta;
+  
+  const trackingUrl = order.deliveryProvider === 'doordash'
+    ? order.doordashTrackingUrl
+    : order.uberTrackingUrl;
+  
+  const proofOfDelivery = order.deliveryProvider === 'doordash'
+    ? order.doordashProofOfDelivery
+    : order.uberProofOfDelivery;
 
   return (
     <View style={styles.container}>
@@ -106,7 +200,7 @@ export function DeliveryTracking({ order, onRefresh }: DeliveryTrackingProps) {
           <View style={styles.headerLeft}>
             <IconSymbol name={statusInfo.icon} size={24} color={statusInfo.color} />
             <View style={styles.headerText}>
-              <Text style={styles.title}>Delivery Tracking</Text>
+              <Text style={styles.title}>{getProviderName(order.deliveryProvider)} Tracking</Text>
               <Text style={[styles.status, { color: statusInfo.color }]}>
                 {statusInfo.label}
               </Text>
@@ -123,14 +217,14 @@ export function DeliveryTracking({ order, onRefresh }: DeliveryTrackingProps) {
 
         <Text style={styles.description}>{statusInfo.description}</Text>
 
-        {order.uberCourierName && (
-          <View style={styles.courierInfo}>
-            <View style={styles.courierHeader}>
+        {driverName && (
+          <View style={styles.driverInfo}>
+            <View style={styles.driverHeader}>
               <IconSymbol name="person" size={20} color={colors.text} />
-              <Text style={styles.courierName}>{order.uberCourierName}</Text>
+              <Text style={styles.driverName}>{driverName}</Text>
             </View>
-            {order.uberCourierPhone && (
-              <Pressable onPress={handleCallCourier} style={styles.callButton}>
+            {driverPhone && (
+              <Pressable onPress={handleCallDriver} style={styles.callButton}>
                 <IconSymbol name="phone" size={16} color={colors.primary} />
                 <Text style={styles.callButtonText}>Call Driver</Text>
               </Pressable>
@@ -138,11 +232,11 @@ export function DeliveryTracking({ order, onRefresh }: DeliveryTrackingProps) {
           </View>
         )}
 
-        {order.uberDeliveryEta && (
+        {deliveryEta && (
           <View style={styles.etaContainer}>
             <IconSymbol name="schedule" size={18} color={colors.textSecondary} />
             <Text style={styles.etaText}>
-              ETA: {new Date(order.uberDeliveryEta).toLocaleTimeString([], { 
+              ETA: {new Date(deliveryEta).toLocaleTimeString([], { 
                 hour: '2-digit', 
                 minute: '2-digit' 
               })}
@@ -150,31 +244,31 @@ export function DeliveryTracking({ order, onRefresh }: DeliveryTrackingProps) {
           </View>
         )}
 
-        {order.uberTrackingUrl && (
+        {trackingUrl && (
           <Pressable onPress={handleOpenTracking} style={styles.trackButton}>
             <IconSymbol name="map" size={18} color="#FFFFFF" />
             <Text style={styles.trackButtonText}>Track on Map</Text>
           </Pressable>
         )}
 
-        {order.uberProofOfDelivery && (
+        {proofOfDelivery && (
           <View style={styles.proofContainer}>
             <Text style={styles.proofTitle}>Proof of Delivery</Text>
-            {order.uberProofOfDelivery.notes && (
-              <Text style={styles.proofNotes}>{order.uberProofOfDelivery.notes}</Text>
+            {proofOfDelivery.notes && (
+              <Text style={styles.proofNotes}>{proofOfDelivery.notes}</Text>
             )}
-            {order.uberProofOfDelivery.signatureImageUrl && (
+            {proofOfDelivery.signatureImageUrl && (
               <Pressable
-                onPress={() => Linking.openURL(order.uberProofOfDelivery!.signatureImageUrl!)}
+                onPress={() => Linking.openURL(proofOfDelivery.signatureImageUrl!)}
                 style={styles.proofLink}
               >
                 <IconSymbol name="draw" size={16} color={colors.primary} />
                 <Text style={styles.proofLinkText}>View Signature</Text>
               </Pressable>
             )}
-            {order.uberProofOfDelivery.photoUrl && (
+            {proofOfDelivery.photoUrl && (
               <Pressable
-                onPress={() => Linking.openURL(order.uberProofOfDelivery!.photoUrl!)}
+                onPress={() => Linking.openURL(proofOfDelivery.photoUrl!)}
                 style={styles.proofLink}
               >
                 <IconSymbol name="photo" size={16} color={colors.primary} />
@@ -233,19 +327,19 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: 16,
   },
-  courierInfo: {
+  driverInfo: {
     backgroundColor: colors.background,
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
   },
-  courierHeader: {
+  driverHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginBottom: 8,
   },
-  courierName: {
+  driverName: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.text,

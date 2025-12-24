@@ -18,3 +18,25 @@ export const UBER_DELIVERY_CONFIG = {
   // Time in minutes for estimated dropoff ready time
   dropoffReadyDelayMinutes: 30,
 };
+
+export const DOORDASH_DELIVERY_CONFIG = {
+  // Time in minutes to wait before pickup is ready
+  pickupReadyDelayMinutes: 0,
+  // Time in minutes for estimated dropoff ready time
+  dropoffReadyDelayMinutes: 30,
+};
+
+export type DeliveryProvider = 'uber_direct' | 'doordash';
+
+export const DELIVERY_PROVIDERS = {
+  uber_direct: {
+    name: 'Uber Direct',
+    description: 'Fast and reliable delivery with Uber',
+    icon: 'car',
+  },
+  doordash: {
+    name: 'DoorDash',
+    description: 'Trusted delivery with DoorDash',
+    icon: 'local-shipping',
+  },
+};

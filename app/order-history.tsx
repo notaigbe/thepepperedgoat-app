@@ -286,7 +286,7 @@ export default function OrderHistoryScreen() {
                               </Pressable>
                             </LinearGradient>
 
-                            {order.uberDeliveryId && (
+                            {(order.uberDeliveryId || order.doordashDeliveryId) && (
                               <View style={styles.deliveryTrackingContainer}>
                                 <DeliveryTracking 
                                   order={order} 

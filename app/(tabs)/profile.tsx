@@ -391,7 +391,7 @@ export default function ProfileScreen() {
                       ]}
                     >
                       <IconSymbol
-                        name="phone"
+                        name="phone.fill"
                         size={20}
                         color={currentColors.textSecondary}
                       />
