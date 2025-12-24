@@ -125,6 +125,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           .from('user_profiles')
           .insert({
             id: user.id,
+            user_id: user.id,
             name: user.user_metadata?.name || 'User',
             email: user.email || '',
             phone: user.user_metadata?.phone || '',
