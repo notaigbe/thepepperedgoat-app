@@ -247,6 +247,8 @@ function CheckoutContent() {
     if (addressValidation?.formattedAddress) {
       setDeliveryAddress(addressValidation.formattedAddress);
       setValidatedAddress(addressValidation.formattedAddress);
+      // Mark this as the final validated address - no need to revalidate
+      setAddressTouched(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   }, [addressValidation]);

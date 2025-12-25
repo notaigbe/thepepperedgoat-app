@@ -16,7 +16,7 @@ import { colors } from '@/styles/commonStyles';
 import { Order, CartItem } from '@/types';
 import { orderService, notificationService } from '@/services/supabaseService';
 import * as Haptics from 'expo-haptics';
-import { supabase } from '@/app/integrations/supabase/client';
+import { supabase, SUPABASE_URL } from '@/app/integrations/supabase/client';
 import Dialog from '@/components/Dialog';
 import Toast from '@/components/Toast';
 import { DeliveryTracking } from '@/components/DeliveryTracking';
@@ -253,7 +253,7 @@ export default function AdminOrderManagement() {
       const functionName = provider === 'doordash' ? 'trigger-doordash-delivery' : 'trigger-uber-delivery';
 
       const response = await fetch(
-        `${supabase.supabaseUrl}/functions/v1/${functionName}`,
+        `${SUPABASE_URL}/functions/v1/${functionName}`,
         {
           method: 'POST',
           headers: {
@@ -285,7 +285,7 @@ export default function AdminOrderManagement() {
       
       // Refresh orders to get updated delivery info
       await fetchOrders();
-    } catch (err) {
+    } catch (err: any) {
       console.error(`Failed to trigger delivery:`, err);
       showToast('error', `Failed to trigger delivery: ${err.message}`);
     }

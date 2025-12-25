@@ -33,7 +33,7 @@ interface StoredCard {
 export default function PaymentMethodsScreen() {
   const router = useRouter();
   const { userProfile, currentColors, loadUserProfile } = useApp();
-  const { confirmSetupIntent } = useStripe();
+  const stripe = useStripe();
   
   const [storedCards, setStoredCards] = useState<StoredCard[]>([]);
   const [loading, setLoading] = useState(false);
@@ -77,6 +77,12 @@ export default function PaymentMethodsScreen() {
 
       if (error) throw error;
 
+      if (!stripe) {
+        showToast('error', 'Payment system not ready. Try again.');
+        return;
+      }
+
+
       if (data && data.length > 0) {
         const cards: StoredCard[] = data.map((card: any) => ({
           id: card.id,
@@ -118,6 +124,11 @@ export default function PaymentMethodsScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
+      if (!stripe) {
+        showToast('error', 'Payment system not ready. Try again.');
+        return;
+      }
+
       // Create setup intent (this will also create a Stripe customer if needed)
       const setupIntentResponse = await fetch(`${SUPABASE_URL}/functions/v1/create-setup-intent`, {
         method: 'POST',
@@ -136,17 +147,25 @@ export default function PaymentMethodsScreen() {
       console.log('Setup intent created with customer:', customerId);
 
       // Confirm setup intent with card details
-      const { setupIntent, error: confirmError } = await confirmSetupIntent(clientSecret, {
-        paymentMethodType: 'Card',
-      });
+      const { setupIntent, error: confirmError } = await stripe.confirmSetupIntent(
+        clientSecret,
+        {
+          paymentMethodType: 'Card',
+        }
+      );
+
 
       if (confirmError) {
         throw new Error(confirmError.message);
       }
 
-      if (setupIntent?.status !== 'Succeeded') {
-        throw new Error('Failed to save card');
-      }
+      if (
+          !setupIntent ||
+          !['Succeeded', 'RequiresAction', 'Processing'].includes(setupIntent.status)
+        ) {
+          throw new Error('Failed to save card');
+        }
+
 
       // Save payment method
       const saveResponse = await fetch(`${SUPABASE_URL}/functions/v1/save-payment-method`, {
