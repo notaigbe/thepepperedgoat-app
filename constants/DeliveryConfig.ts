@@ -1,12 +1,12 @@
 
 export const RESTAURANT_PICKUP_ADDRESS = {
-  name: 'Jagabans LA',
-  phoneNumber: '+1234567890', // Replace with actual restaurant phone
+  name: process.env.RESTAURANT_NAME || 'Jagabans L.A.', // Replace with actual restaurant name
+  phoneNumber: process.env.RESTAURANT_PHONE || '+8182106659', // Replace with actual restaurant phone
   address: {
-    street: '123 Restaurant Street', // Replace with actual address
+    street: '1423 W Pico Blvd', // Replace with actual address
     city: 'Los Angeles',
     state: 'CA',
-    zipCode: '90001',
+    zipCode: '90015',
     country: 'US',
   },
   notes: 'Please call upon arrival',
