@@ -1,14 +1,14 @@
 // Jagabans L.A. Restaurant Location
 // Replace with actual restaurant coordinates
 export const RESTAURANT_LOCATION = {
-  latitude: 34.0522, // Los Angeles latitude (replace with actual)
-  longitude: -118.2437, // Los Angeles longitude (replace with actual)
-  name: 'Jagabans L.A.',
-  address: '123 Restaurant Street, Los Angeles, CA 90001', // Replace with actual
+  latitude: process.env.GEOFENCE_LATITUDE ? parseFloat(process.env.GEOFENCE_LATITUDE) : 34.0438676, // Los Angeles latitude (replace with actual)
+  longitude: process.env.GEOFENCE_LONGITUDE ? parseFloat(process.env.GEOFENCE_LONGITUDE) : -118.2772777, // Los Angeles longitude (replace with actual)
+  name: process.env.RESTAURANT_NAME || 'Jagabans L.A.', // Replace with actual
+  address: process.env.RESTAURANT_ADDRESS || '1423 W Pico Blvd, Los Angeles, CA 90015', // Replace with actual
 };
 
 // Geofence radius in meters (e.g., 100 meters = ~328 feet)
-export const GEOFENCE_RADIUS_METERS = 100;
+export const GEOFENCE_RADIUS_METERS = process.env.GEOFENCE_RADIUS_METERS ? parseInt(process.env.GEOFENCE_RADIUS_METERS) : 500; // Default to 500 meters
 
 // Alias for consistency with social features
 export const JAGABANS_LOCATION = {
@@ -54,6 +54,6 @@ export function isWithinGeofence(
 
 // Referral bonus configuration
 export const REFERRAL_CONFIG = {
-  signupBonusPoints: 50, // Points awarded when referred user signs up
-  firstOrderBonusPoints: 100, // Points awarded when referred user completes first order
+  signupBonusPoints: 500, // Points awarded when referred user signs up
+  firstOrderBonusPoints: 500, // Points awarded when referred user completes first order
 };

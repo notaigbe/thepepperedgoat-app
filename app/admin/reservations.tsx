@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -20,6 +19,7 @@ import { reservationService } from '@/services/supabaseService';
 import { Reservation } from '@/types';
 import Dialog from '@/components/Dialog';
 import Toast from '@/components/Toast';
+import { formatLocalDate } from '@/utils/dateUtils';
 
 export default function AdminReservations() {
   const router = useRouter();
@@ -84,6 +84,12 @@ export default function AdminReservations() {
           tableNumber: res.table_number,
           createdAt: res.created_at,
         }));
+        
+        // Sort by createdAt in descending order (most recent first)
+        formattedReservations.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        
         setReservations(formattedReservations);
       }
     } catch (error) {
@@ -256,6 +262,7 @@ export default function AdminReservations() {
     );
   }
 
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -383,7 +390,7 @@ export default function AdminReservations() {
                   <View style={styles.detailRow}>
                     <IconSymbol name="calendar.badge.plus" size={16} color={colors.textSecondary} />
                     <Text style={styles.detailText}>
-                      {new Date(reservation.date).toLocaleDateString('en-US', {
+                      {formatLocalDate(reservation.date, {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
@@ -453,11 +460,12 @@ export default function AdminReservations() {
                   <View style={styles.modalDetailRow}>
                     <IconSymbol name="calendar.badge.plus" size={20} color={colors.textSecondary} />
                     <Text style={styles.modalDetailText}>
-                      {new Date(selectedReservation.date).toLocaleDateString('en-US', {
+                      {formatLocalDate(selectedReservation.date, {
                         weekday: 'long',
                         month: 'long',
                         day: 'numeric',
                         year: 'numeric',
+                        timeZone: 'America/Los_Angeles',
                       })}
                     </Text>
                   </View>

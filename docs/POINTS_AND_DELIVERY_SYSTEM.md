@@ -7,13 +7,13 @@ This document describes the updated points system and delivery flow for the Jaga
 ## Points System
 
 ### Conversion Rate
-- **$100 = 1 point**
+- **$1 = 100 point**
 - Points are stored as integers in the database
 - Example: A $250 order earns 2 points (2.5 rounded down)
 
 ### Earning Points
-- Users earn **10% of their order total** (after discount, before tax) as points
-- Points are calculated using the formula: `Math.floor((subtotalAfterDiscount * 0.10) / 100)`
+- Users earn **15% of their order total** (after discount, before tax) as points
+- Points are calculated using the formula: `Math.floor((subtotalAfterDiscount * 0.15) / 100)`
 - Points are awarded automatically after successful payment via the Stripe webhook
 
 ### Using Points

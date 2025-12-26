@@ -1,4 +1,3 @@
-
 import React, { useCallback } from 'react';
 import {
   View,
@@ -265,103 +264,98 @@ export default function AdminMerchManagement() {
   };
 
   const renderForm = (isEdit: boolean) => (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.formContainer}
+    <ScrollView 
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.formScrollContent}
     >
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.formScrollContent}
-      >
-        <Text style={styles.formLabel}>Name *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.name}
-          onChangeText={(text) => setFormData({ ...formData, name: text })}
-          placeholder="Enter merchandise name"
-          placeholderTextColor={colors.textSecondary}
-        />
+      <Text style={styles.formLabel}>Name *</Text>
+      <TextInput
+        style={styles.input}
+        value={formData.name}
+        onChangeText={(text) => setFormData({ ...formData, name: text })}
+        placeholder="Enter merchandise name"
+        placeholderTextColor={colors.textSecondary}
+      />
 
-        <Text style={styles.formLabel}>Description *</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={formData.description}
-          onChangeText={(text) => setFormData({ ...formData, description: text })}
-          placeholder="Enter description"
-          placeholderTextColor={colors.textSecondary}
-          multiline
-          numberOfLines={3}
-        />
+      <Text style={styles.formLabel}>Description *</Text>
+      <TextInput
+        style={[styles.input, styles.textArea]}
+        value={formData.description}
+        onChangeText={(text) => setFormData({ ...formData, description: text })}
+        placeholder="Enter description"
+        placeholderTextColor={colors.textSecondary}
+        multiline
+        numberOfLines={3}
+      />
 
-        <Text style={styles.formLabel}>Points Cost *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.pointsCost}
-          onChangeText={(text) => setFormData({ ...formData, pointsCost: text })}
-          placeholder="Enter points cost"
-          placeholderTextColor={colors.textSecondary}
-          keyboardType="numeric"
-        />
+      <Text style={styles.formLabel}>Points Cost *</Text>
+      <TextInput
+        style={styles.input}
+        value={formData.pointsCost}
+        onChangeText={(text) => setFormData({ ...formData, pointsCost: text })}
+        placeholder="Enter points cost"
+        placeholderTextColor={colors.textSecondary}
+        keyboardType="numeric"
+      />
 
-        <ImagePicker
-          currentImageUrl={formData.image}
-          onImageSelected={(imageUrl) => setFormData({ ...formData, image: imageUrl })}
-          bucket="merchandise"
-          folder="items"
-          label="Merchandise Image *"
+      <ImagePicker
+        currentImageUrl={formData.image}
+        onImageSelected={(imageUrl) => setFormData({ ...formData, image: imageUrl })}
+        bucket="merchandise"
+        folder="items"
+        label="Merchandise Image *"
+        disabled={submitting}
+      />
+
+      <View style={styles.stockToggleContainer}>
+        <Text style={styles.formLabel}>In Stock</Text>
+        <Pressable
+          style={[
+            styles.stockToggle,
+            formData.inStock ? styles.stockToggleActive : styles.stockToggleInactive,
+          ]}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            setFormData({ ...formData, inStock: !formData.inStock });
+          }}
+        >
+          <Text style={styles.stockToggleText}>
+            {formData.inStock ? 'Yes' : 'No'}
+          </Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.formButtons}>
+        <Pressable
+          style={[styles.button, styles.cancelButton]}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            closeModals();
+          }}
           disabled={submitting}
-        />
+        >
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </Pressable>
 
-        <View style={styles.stockToggleContainer}>
-          <Text style={styles.formLabel}>In Stock</Text>
-          <Pressable
-            style={[
-              styles.stockToggle,
-              formData.inStock ? styles.stockToggleActive : styles.stockToggleInactive,
-            ]}
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              setFormData({ ...formData, inStock: !formData.inStock });
-            }}
-          >
-            <Text style={styles.stockToggleText}>
-              {formData.inStock ? 'Yes' : 'No'}
+        <Pressable
+          style={[styles.button, styles.submitButton, submitting && styles.buttonDisabled]}
+          onPress={isEdit ? handleUpdateItem : handleAddItem}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.submitButtonText}>
+              {isEdit ? 'Update' : 'Add'}
             </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.formButtons}>
-          <Pressable
-            style={[styles.button, styles.cancelButton]}
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              closeModals();
-            }}
-            disabled={submitting}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.button, styles.submitButton, submitting && styles.buttonDisabled]}
-            onPress={isEdit ? handleUpdateItem : handleAddItem}
-            disabled={submitting}
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.submitButtonText}>
-                {isEdit ? 'Update' : 'Add'}
-              </Text>
-            )}
-          </Pressable>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          )}
+        </Pressable>
+      </View>
+    </ScrollView>
   );
 
   return (
@@ -461,17 +455,22 @@ export default function AdminMerchManagement() {
         transparent={true}
         onRequestClose={closeModals}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Merchandise Item</Text>
-              <Pressable onPress={closeModals} style={styles.closeButton}>
-                <IconSymbol name="xmark" size={24} color={colors.text} />
-              </Pressable>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Add Merchandise Item</Text>
+                <Pressable onPress={closeModals} style={styles.closeButton}>
+                  <IconSymbol name="xmark" size={24} color={colors.text} />
+                </Pressable>
+              </View>
+              {renderForm(false)}
             </View>
-            {renderForm(false)}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Edit Modal */}
@@ -481,17 +480,22 @@ export default function AdminMerchManagement() {
         transparent={true}
         onRequestClose={closeModals}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Merchandise Item</Text>
-              <Pressable onPress={closeModals} style={styles.closeButton}>
-                <IconSymbol name="xmark" size={24} color={colors.text} />
-              </Pressable>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Edit Merchandise Item</Text>
+                <Pressable onPress={closeModals} style={styles.closeButton}>
+                  <IconSymbol name="xmark" size={24} color={colors.text} />
+                </Pressable>
+              </View>
+              {renderForm(true)}
             </View>
-            {renderForm(true)}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
       <Toast
         visible={toastVisible}
@@ -673,9 +677,6 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 4,
-  },
-  formContainer: {
-    flex: 1,
   },
   formScrollContent: {
     padding: 20,
