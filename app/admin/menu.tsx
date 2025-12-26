@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   View,
@@ -16,13 +15,14 @@ import { useRouter } from "expo-router";
 import { IconSymbol } from "@/components/IconSymbol";
 import { colors } from "@/styles/commonStyles";
 import { menuItems as staticMenuItems } from "@/data/menuData";
-import { menuService, imageService } from "@/services/supabaseService";
+import { menuService } from "@/services/supabaseService";
 import { MenuItem } from "@/types";
 import * as Haptics from "expo-haptics";
-import * as ImagePicker from "expo-image-picker";
+import ImagePicker from "@/components/ImagePicker";
 import Dialog from "@/components/Dialog";
 import Toast from "@/components/Toast";
 import { useApp } from "@/contexts/AppContext";
+
 
 export default function AdminMenuManagement() {
   const router = useRouter();
@@ -31,7 +31,6 @@ export default function AdminMenuManagement() {
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -53,6 +52,7 @@ export default function AdminMenuManagement() {
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
     setDialogConfig({ title, message, buttons });
@@ -65,6 +65,11 @@ export default function AdminMenuManagement() {
     setToastVisible(true);
   };
 
+  const handleImageSelected = (imageUrl: string) => {
+    setFormData({ ...formData, image: imageUrl });
+    showToast('success', 'Image uploaded successfully');
+  };
+
   // Check user role - only super_admin should see analytics/order totals
   const isSuperAdmin = userProfile?.userRole === 'super_admin';
 
@@ -72,74 +77,6 @@ export default function AdminMenuManagement() {
     "All",
     ...Array.from(new Set(items.map((i) => i.category))),
   ];
-
-  const handlePickImage = async () => {
-    try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (permissionResult.granted === false) {
-        showDialog('Permission Required', 'Please allow access to your photo library', [
-          { text: 'OK', onPress: () => {}, style: 'default' }
-        ]);
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        await uploadImage(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error("Error picking image:", error);
-      showToast('error', 'Failed to pick image');
-    }
-  };
-
-  const uploadImage = async (uri: string) => {
-    try {
-      setUploadingImage(true);
-
-      // Fetch the image as a blob
-      const response = await fetch(uri);
-      const blob = await response.blob();
-
-      // Generate a unique filename
-      const filename = `menu-${Date.now()}.jpg`;
-      const path = `menu/${filename}`;
-
-      // Upload to Supabase Storage
-      const uploadResult = await imageService.uploadImage(
-        "menu",
-        path,
-        blob,
-        { contentType: "image/jpeg", upsert: true }
-      );
-
-      if (uploadResult.error) {
-        throw uploadResult.error;
-      }
-
-      // Get the public URL
-      const publicUrl = imageService.getPublicUrl("menu", path);
-
-      if (publicUrl) {
-        setFormData({ ...formData, image: publicUrl });
-        showToast('success', 'Image uploaded successfully');
-      } else {
-        throw new Error("Failed to get public URL");
-      }
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      showToast('error', 'Failed to upload image');
-    } finally {
-      setUploadingImage(false);
-    }
-  };
 
   const handleAddItem = () => {
     console.log("Adding new menu item");
@@ -347,44 +284,35 @@ export default function AdminMenuManagement() {
       </View>
 
       <View style={styles.imageSection}>
-        <Text style={styles.inputLabel}>Image:</Text>
+        <Text style={styles.inputLabel}>Menu Image:</Text>
+        
         {formData.image ? (
           <View style={styles.imagePreviewContainer}>
-            <Image source={{ uri: formData.image }} style={styles.imagePreview} />
+            <Image 
+              source={{ uri: formData.image }} 
+              style={styles.imagePreview}
+              resizeMode="cover"
+            />
             <Pressable
               style={styles.removeImageButton}
-              onPress={() => setFormData({ ...formData, image: "" })}
+              onPress={() => {
+                setFormData({ ...formData, image: "" });
+                showToast('info', 'Image removed');
+              }}
             >
               <IconSymbol name="xmark" size={16} color="#FFFFFF" />
             </Pressable>
           </View>
         ) : null}
-        
-        <Pressable
-          style={styles.uploadButton}
-          onPress={handlePickImage}
-          disabled={uploadingImage}
-        >
-          {uploadingImage ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <React.Fragment>
-              <IconSymbol name="photo.fill" size={20} color={colors.primary} />
-              <Text style={styles.uploadButtonText}>
-                {formData.image ? "Change Image" : "Upload Image"}
-              </Text>
-            </React.Fragment>
-          )}
-        </Pressable>
-      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Or paste Image URL"
-        placeholderTextColor={colors.textSecondary}
-        value={formData.image}
-        onChangeText={(text) => setFormData({ ...formData, image: text })}
-      />
+        <ImagePicker
+          currentImageUrl={formData.image}
+          onImageSelected={handleImageSelected}
+          bucket="menu"
+          folder="items"
+          label=""
+        />
+      </View>
 
       <View style={styles.formButtons}>
         <Pressable
@@ -635,6 +563,8 @@ const styles = StyleSheet.create({
   imagePreviewContainer: {
     position: "relative",
     marginBottom: 12,
+    borderRadius: 12,
+    overflow: "hidden",
   },
   imagePreview: {
     width: "100%",
@@ -652,23 +582,6 @@ const styles = StyleSheet.create({
     height: 32,
     justifyContent: "center",
     alignItems: "center",
-  },
-  uploadButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 12,
-  },
-  uploadButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.primary,
   },
   formButtons: {
     flexDirection: "row",
