@@ -103,6 +103,80 @@ export const socialService = {
   },
 
   /**
+   * Get a single post by ID
+   */
+  async getPostById(postId: string) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUserId = session?.user?.id;
+
+      // Get the post
+      const { data: postData, error: postError } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', postId)
+        .eq('is_hidden', false)
+        .single();
+
+      if (postError) throw postError;
+      if (!postData) {
+        return { data: null, error: new Error('Post not found') };
+      }
+
+      // Get user profile
+      const { data: userData, error: userError } = await supabase
+        .from('user_profiles')
+        .select('user_id, name, profile_image')
+        .eq('user_id', postData.user_id)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user profile:', userError);
+      }
+
+      // Check if current user has liked the post
+      let isLikedByCurrentUser = false;
+      if (currentUserId) {
+        const { data: likeData } = await supabase
+          .from('post_likes')
+          .select('id')
+          .eq('post_id', postId)
+          .eq('user_id', currentUserId)
+          .maybeSingle();
+
+        isLikedByCurrentUser = !!likeData;
+      }
+
+      const post: Post = {
+        id: postData.id,
+        userId: postData.user_id,
+        imageUrl: postData.image_url,
+        caption: postData.caption,
+        latitude: postData.latitude,
+        longitude: postData.longitude,
+        locationVerified: postData.location_verified,
+        likesCount: postData.likes_count,
+        commentsCount: postData.comments_count,
+        isFeatured: postData.is_featured,
+        isHidden: postData.is_hidden,
+        createdAt: postData.created_at,
+        updatedAt: postData.updated_at,
+        user: userData ? {
+          id: userData.user_id,
+          name: userData.name,
+          profileImage: userData.profile_image,
+        } : undefined,
+        isLikedByCurrentUser,
+      };
+
+      return { data: post, error: null };
+    } catch (error) {
+      console.error('Get post by ID error:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
    * Get discovery feed (all posts, ranked by engagement)
    */
   async getDiscoveryFeed(limit = 20, offset = 0) {
