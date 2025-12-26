@@ -325,85 +325,122 @@ export default function PostDetailScreen() {
               end={{ x: 1, y: 1 }}
               style={[styles.postCard, { borderColor: currentColors.border }]}
             >
-              {/* User Info */}
-              <View style={styles.postHeader}>
-                <View style={styles.userInfo}>
-                  {post.user?.profileImage ? (
-                    <Image source={{ uri: post.user.profileImage }} style={styles.avatar} />
-                  ) : (
-                    <View style={[styles.avatar, { backgroundColor: currentColors.secondary }]}>
-                      <IconSymbol
-                        name="person.fill"
-                        size={20}
-                        color={currentColors.background}
-                      />
+              {/* Decorative corner accents */}
+              <View style={[styles.cornerAccent, styles.cornerTopLeft, { borderColor: currentColors.secondary }]} />
+              <View style={[styles.cornerAccent, styles.cornerTopRight, { borderColor: currentColors.secondary }]} />
+              <View style={[styles.cornerAccent, styles.cornerBottomLeft, { borderColor: currentColors.secondary }]} />
+              <View style={[styles.cornerAccent, styles.cornerBottomRight, { borderColor: currentColors.secondary }]} />
+
+              {/* Post Image with overlay gradient and user info */}
+              <View style={styles.imageContainer}>
+                <Image source={{ uri: post.imageUrl }} style={styles.postImage} />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  style={styles.imageOverlay}
+                />
+                
+                {/* User Info Overlay */}
+                <View style={styles.userInfoOverlay}>
+                  <View style={styles.userInfo}>
+                    <View style={[styles.avatarContainer, { borderColor: currentColors.secondary }]}>
+                      {post.user?.profileImage ? (
+                        <Image source={{ uri: post.user.profileImage }} style={styles.avatar} />
+                      ) : (
+                        <LinearGradient
+                          colors={[currentColors.secondary, currentColors.highlight]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.avatar}
+                        >
+                          <IconSymbol
+                            name="person.fill"
+                            size={20}
+                            color={currentColors.background}
+                          />
+                        </LinearGradient>
+                      )}
                     </View>
-                  )}
-                  <View style={styles.userDetails}>
-                    <Text style={[styles.userName, { color: currentColors.text }]}>
-                      {post.user?.name || 'Unknown User'}
-                    </Text>
-                    {post.locationVerified && (
-                      <View style={styles.verifiedBadge}>
-                        <IconSymbol
-                          name="checkmark.seal.fill"
-                          size={14}
-                          color={currentColors.primary}
-                        />
-                        <Text style={[styles.verifiedText, { color: currentColors.primary }]}>
-                          Taken at Jagabans L.A.
-                        </Text>
-                      </View>
-                    )}
+                    <View style={styles.userDetails}>
+                      <Text style={[styles.userName, { color: '#FFFFFF' }]}>
+                        {post.user?.name || 'Unknown User'}
+                      </Text>
+                      {post.locationVerified && (
+                        <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                          <IconSymbol
+                            name="checkmark.seal.fill"
+                            size={13}
+                            color={currentColors.secondary}
+                          />
+                          <Text style={[styles.verifiedText, { color: '#FFFFFF' }]}>
+                            Taken at Jagabans L.A.
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                 </View>
               </View>
 
-              {/* Post Image */}
-              <Image source={{ uri: post.imageUrl }} style={styles.postImage} />
-
-              {/* Post Actions */}
-              <View style={styles.postActions}>
+              {/* Post Actions with enhanced styling */}
+              <View style={[styles.postActions, { borderTopColor: `${currentColors.border}40` }]}>
                 <TouchableOpacity
                   style={styles.actionButton}
                   onPress={handleLike}
+                  activeOpacity={0.7}
                 >
-                  <IconSymbol
-                    name={post.isLikedByCurrentUser ? 'heart.fill' : 'heart'}
-                    size={24}
-                    color={post.isLikedByCurrentUser ? '#FF3B30' : currentColors.text}
-                  />
+                  <View style={[
+                    styles.actionIconWrapper,
+                    post.isLikedByCurrentUser && { backgroundColor: '#FF3B3015' }
+                  ]}>
+                    <IconSymbol
+                      name={post.isLikedByCurrentUser ? 'heart.fill' : 'heart'}
+                      size={22}
+                      color={post.isLikedByCurrentUser ? '#FF3B30' : currentColors.text}
+                    />
+                  </View>
                   <Text style={[styles.actionText, { color: currentColors.text }]}>
                     {post.likesCount}
                   </Text>
                 </TouchableOpacity>
 
                 <View style={styles.actionButton}>
-                  <IconSymbol
-                    name="bubble.left"
-                    size={24}
-                    color={currentColors.text}
-                  />
+                  <View style={styles.actionIconWrapper}>
+                    <IconSymbol
+                      name="message"
+                      size={22}
+                      color={currentColors.text}
+                    />
+                  </View>
                   <Text style={[styles.actionText, { color: currentColors.text }]}>
                     {post.commentsCount}
                   </Text>
                 </View>
               </View>
 
-              {/* Caption */}
+              {/* Caption with refined typography */}
               {post.caption && (
                 <View style={styles.captionContainer}>
                   <Text style={[styles.caption, { color: currentColors.text }]}>
-                    <Text style={styles.captionUsername}>{post.user?.name || 'User'}</Text>{' '}
-                    {post.caption}
+                    <Text style={[styles.captionUsername, { color: currentColors.text }]}>
+                      {post.user?.name || 'User'}
+                    </Text>
+                    <Text style={[styles.captionText, { color: currentColors.textSecondary }]}>
+                      {' '}{post.caption}
+                    </Text>
                   </Text>
                 </View>
               )}
 
-              {/* Timestamp */}
-              <Text style={[styles.timestamp, { color: currentColors.textSecondary }]}>
-                {new Date(post.createdAt).toLocaleDateString()}
-              </Text>
+              {/* Timestamp with divider */}
+              <View style={[styles.timestampContainer, { borderTopColor: `${currentColors.border}20` }]}>
+                <Text style={[styles.timestamp, { color: currentColors.textSecondary }]}>
+                  {new Date(post.createdAt).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </Text>
+              </View>
             </LinearGradient>
 
             {/* Comments Section */}
@@ -574,79 +611,153 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
+    position: 'relative',
   },
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
+  cornerAccent: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderWidth: 2,
+    zIndex: 10,
   },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  cornerTopLeft: {
+    top: -1,
+    left: -1,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
   },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+  cornerTopRight: {
+    top: -1,
+    right: -1,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
   },
-  userDetails: {
-    flex: 1,
+  cornerBottomLeft: {
+    bottom: -1,
+    left: -1,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
   },
-  userName: {
-    fontSize: 16,
-    fontFamily: 'Inter_600SemiBold',
-    marginBottom: 2,
+  cornerBottomRight: {
+    bottom: -1,
+    right: -1,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
   },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  verifiedText: {
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
-    marginLeft: 4,
+  imageContainer: {
+    position: 'relative',
   },
   postImage: {
     width: '100%',
     height: 400,
     resizeMode: 'cover',
   },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+  },
+  userInfoOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    borderWidth: 2,
+    borderRadius: 22,
+    padding: 2,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  userDetails: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  userName: {
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
+    marginBottom: 4,
+    letterSpacing: 0.2,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  verifiedText: {
+    fontSize: 11,
+    fontFamily: 'Inter_500Medium',
+    marginLeft: 4,
+    letterSpacing: 0.3,
+  },
   postActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderTopWidth: 1,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 20,
+  },
+  actionIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    marginLeft: 4,
+    marginLeft: 8,
+    letterSpacing: 0.3,
   },
   captionContainer: {
-    paddingHorizontal: 12,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   caption: {
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 20,
+    lineHeight: 22,
   },
   captionUsername: {
     fontFamily: 'Inter_600SemiBold',
+    letterSpacing: 0.2,
+  },
+  captionText: {
+    letterSpacing: 0.1,
+  },
+  timestampContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
   },
   timestamp: {
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
-    paddingHorizontal: 12,
-    paddingBottom: 12,
+    fontSize: 11,
+    fontFamily: 'Inter_500Medium',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   commentsSection: {
     marginBottom: 20,
