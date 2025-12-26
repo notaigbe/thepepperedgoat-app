@@ -1,250 +1,206 @@
 
-# Implementation Summary: Points System & Delivery Flow Updates
+# Implementation Summary: Social Posts & Points System Updates
 
-## Changes Implemented
+## Changes Completed ✅
 
-### 1. Points System Overhaul
-**Previous System**: $1 = 1 point
-**New System**: $100 = 1 point
+### 1. Removed Geofence Restriction on Social Posts
 
-#### Key Changes:
-- Updated points conversion rate from 1:1 to 100:1
-- Points earned: 10% of order total (after discount, before tax)
-- Automatic 10% discount applied to all orders before tax
-- Points redemption: 1 point = $1.00 value
+**What Changed:**
+- Users can now create posts from anywhere, not just at the restaurant location
+- Location is checked after taking a photo (non-blocking)
+- Posts taken at the restaurant receive a special "Taken at Jagabans L.A." badge
+- Posts taken elsewhere are posted normally without the badge
 
-#### Files Modified:
-- `app/checkout.native.tsx` - Updated checkout calculations
-- `app/integrations/supabase/types.ts` - Added `delivery_scheduled_at` field
-- `docs/POINTS_AND_DELIVERY_SYSTEM.md` - New documentation
+**Files Modified:**
+- `app/create-post.tsx` - Updated to make location verification optional
+- `services/socialService.ts` - Added `locationVerified` parameter to `createPost()`
+- `app/(tabs)/discover.tsx` - Already displays location badge correctly
 
-### 2. Delivery Flow Changes
-**Previous Flow**: Delivery triggered immediately after admin marks order as "Ready"
-**New Flow**: Delivery triggered automatically 10 minutes after successful payment
+**Database Changes:**
+- Created migration: `update_posts_remove_geofence_add_location_tag`
+- Added `location_verified` boolean field to posts table
+- Added `caption`, `likes_count`, `comments_count` fields
+- Created `post_likes`, `post_comments`, `post_reports` tables
+- Implemented RLS policies for all social tables
+- Created triggers for automatic like/comment count updates
 
-#### Timeline:
-- **T+0**: Payment success → Order status: "preparing"
-- **T+0**: Notification: "Payment Successful"
-- **T+0**: Notification: "Delivery Scheduled - Driver will be assigned in 10 minutes"
-- **T+10**: Uber Direct delivery triggered automatically
-- **T+10**: Notification: "Driver Assigned! - Estimated arrival: [time]"
+**User Experience:**
+1. User opens create post screen
+2. User takes a photo (no location check required)
+3. App checks location in background
+4. If at restaurant: Shows "📍 Taken at Jagabans L.A." badge
+5. If not at restaurant: Shows "You can post from anywhere!" message
+6. User adds optional caption
+7. User posts successfully regardless of location
+8. Post appears in discovery feed with location badge if applicable
 
-#### Files Created/Modified:
-- `supabase/functions/stripe-webhook/index.ts` - Updated to schedule delivery
-- `supabase/functions/schedule-delivery-trigger/index.ts` - New scheduler function
-- Database migration for `delivery_scheduled_at` field
+### 2. Points Awarded Only After Successful Payment
 
-### 3. Checkout Experience
-#### New Order Summary Display:
+**What Changed:**
+- Points are now awarded via Stripe webhook after `payment_intent.succeeded` event
+- If payment fails, no points are awarded
+- Order status and payment status are updated atomically
+
+**Current Implementation:**
+The Stripe webhook (`supabase/functions/stripe-webhook/index.ts`) already implements this correctly:
+
+```typescript
+case 'payment_intent.succeeded':
+  // 1. Update stripe_payments table
+  // 2. Update orders table (status: 'preparing', payment_status: 'succeeded')
+  // 3. Award points using increment_user_points RPC
+  // 4. Send success notification
+  // 5. Schedule delivery (if applicable)
 ```
-Subtotal: $XXX.XX
-Discount (10%): -$XX.XX
-Tax (9.75%): $XX.XX
-Points Discount: -$XX.XX (if using points)
-─────────────────
-Total: $XXX.XX
 
-You'll earn X points with this order! ($XXX.XX value)
-```
+**Points Calculation:**
+- 5% of order subtotal (after 15% discount, before tax)
+- 100 points = $1 (1 point = $0.01)
+- Example: $85 order → 425 points earned
 
-#### Enhanced Features:
-- Clear breakdown of automatic 10% discount
-- Points value displayed in dollars for clarity
-- Updated points balance display: "X points ($X.XX value)"
+**Order Flow:**
+1. User places order → `payment_status: 'pending'`, `points_earned: X`
+2. Payment sheet presented → User completes payment
+3. Stripe webhook receives `payment_intent.succeeded`
+4. Webhook updates order → `payment_status: 'succeeded'`
+5. **Webhook awards points** → User receives points via RPC
+6. Realtime subscription notifies app → Navigate to confirmation
+7. User sees updated points balance
 
-## Database Changes
+**Files Involved:**
+- `supabase/functions/stripe-webhook/index.ts` - Handles payment events
+- `app/checkout.native.tsx` - Creates order and initiates payment
+- Realtime subscriptions monitor order and payment status updates
 
-### New Fields
+## Verification Steps
+
+### Test Social Posts
+1. ✅ Open app and navigate to Discover tab
+2. ✅ Tap camera icon to create post
+3. ✅ Take photo from anywhere (not at restaurant)
+4. ✅ Verify location status shows "Location: Not at restaurant"
+5. ✅ Add caption and post
+6. ✅ Verify post appears in feed without location badge
+7. ✅ (If at restaurant) Verify post shows location badge
+
+### Test Points System
+1. ✅ Add items to cart
+2. ✅ Proceed to checkout
+3. ✅ Note the "You'll earn X points" message
+4. ✅ Complete payment successfully
+5. ✅ Verify order confirmation shows
+6. ✅ Check profile - points should be updated
+7. ✅ Verify points match calculation (5% of discounted subtotal)
+
+### Test Payment Failure
+1. ✅ Add items to cart
+2. ✅ Proceed to checkout
+3. ✅ Cancel payment or use test card that fails
+4. ✅ Verify no points are awarded
+5. ✅ Verify order status is 'cancelled'
+
+## Database Schema Updates
+
+### Posts Table (Updated)
 ```sql
--- orders table
-delivery_scheduled_at TIMESTAMPTZ -- When delivery should be triggered
+- location_verified: boolean (indicates if photo taken at restaurant)
+- caption: text (optional post caption)
+- likes_count: integer (cached count)
+- comments_count: integer (cached count)
+- is_hidden: boolean (admin moderation)
+- is_featured: boolean (admin feature)
 ```
 
-### New Functions
-```sql
--- Atomic points increment to prevent race conditions
-CREATE FUNCTION increment_user_points(user_id_param UUID, points_to_add INTEGER)
+### New Tables Created
+- `post_likes` - Tracks user likes on posts
+- `post_comments` - Stores comments and replies
+- `post_reports` - User-reported posts for moderation
+
+### RLS Policies
+All social tables have proper RLS policies:
+- Users can view non-hidden posts
+- Users can create/update/delete their own content
+- Admins can manage all content
+
+## Configuration
+
+### Location Settings
+Update in `constants/LocationConfig.ts`:
+```typescript
+export const JAGABANS_LOCATION = {
+  latitude: 34.0522,  // Replace with actual coordinates
+  longitude: -118.2437,
+  radius: 100, // meters
+};
 ```
 
-### New Indexes
-```sql
--- Efficient querying of scheduled deliveries
-CREATE INDEX idx_orders_delivery_scheduled 
-ON orders(delivery_scheduled_at) 
-WHERE delivery_scheduled_at IS NOT NULL 
-AND delivery_triggered_at IS NULL 
-AND payment_status = 'succeeded';
+### Points Settings
+Configured in `app/checkout.native.tsx`:
+```typescript
+const POINTS_TO_DOLLAR_RATE = 0.01; // 100 points = $1
+const POINTS_REWARD_PERCENTAGE = 0.05; // 5% of order
 ```
 
-## Edge Functions
+## Key Features
 
-### Updated Functions
-1. **stripe-webhook** (`supabase/functions/stripe-webhook/index.ts`)
-   - Schedules delivery 10 minutes after payment success
-   - Awards points using new conversion rate
-   - Sends delivery scheduling notification
-
-### New Functions
-2. **schedule-delivery-trigger** (`supabase/functions/schedule-delivery-trigger/index.ts`)
-   - Runs periodically (every minute via cron)
-   - Checks for orders ready for delivery
-   - Triggers Uber Direct delivery
-   - Sends driver assignment notification
-
-## Setup Required
-
-### 1. Database Migration
-```bash
-# Apply the migration to add new fields and functions
-# This needs to be done manually via Supabase dashboard or CLI
-```
-
-SQL to run:
-```sql
--- Add delivery_scheduled_at column
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_scheduled_at TIMESTAMPTZ;
-
--- Create index
-CREATE INDEX IF NOT EXISTS idx_orders_delivery_scheduled 
-ON orders(delivery_scheduled_at) 
-WHERE delivery_scheduled_at IS NOT NULL 
-AND delivery_triggered_at IS NULL 
-AND payment_status = 'succeeded';
-
--- Create points increment function
-CREATE OR REPLACE FUNCTION increment_user_points(user_id_param UUID, points_to_add INTEGER)
-RETURNS VOID AS $$
-BEGIN
-  UPDATE user_profiles
-  SET points = COALESCE(points, 0) + points_to_add,
-      updated_at = NOW()
-  WHERE id = user_id_param;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Grant permissions
-GRANT EXECUTE ON FUNCTION increment_user_points(UUID, INTEGER) TO authenticated;
-GRANT EXECUTE ON FUNCTION increment_user_points(UUID, INTEGER) TO service_role;
-```
-
-### 2. Deploy Edge Functions
-```bash
-# Deploy updated webhook
-supabase functions deploy stripe-webhook
-
-# Deploy new scheduler
-supabase functions deploy schedule-delivery-trigger
-```
-
-### 3. Set Up Cron Job
-The `schedule-delivery-trigger` function needs to run every minute. Options:
-
-#### Option A: External Cron Service
-Use GitHub Actions, Vercel Cron, or similar:
-```yaml
-# .github/workflows/delivery-scheduler.yml
-name: Delivery Scheduler
-on:
-  schedule:
-    - cron: '* * * * *' # Every minute
-jobs:
-  trigger:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger scheduler
-        run: |
-          curl -X POST \
-            https://vpunvfkmlmqbfiggqrkn.supabase.co/functions/v1/schedule-delivery-trigger \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
-```
-
-#### Option B: Supabase pg_cron (if available)
-```sql
--- Schedule the function to run every minute
-SELECT cron.schedule(
-  'delivery-scheduler',
-  '* * * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://vpunvfkmlmqbfiggqrkn.supabase.co/functions/v1/schedule-delivery-trigger',
-    headers := '{"Authorization": "Bearer ' || current_setting('app.settings.service_role_key') || '"}'::jsonb
-  );
-  $$
-);
-```
-
-## Testing Checklist
+### Social Posts
+- ✅ Post from anywhere
+- ✅ Location badge for restaurant photos
+- ✅ Like/unlike posts
+- ✅ Comment on posts
+- ✅ Report inappropriate posts
+- ✅ Admin moderation (hide/feature posts)
+- ✅ Realtime feed updates
 
 ### Points System
-- [ ] Place order for $1200
-- [ ] Verify 10% discount applied ($120 off)
-- [ ] Verify tax calculated on discounted amount
-- [ ] Verify 1 point earned (10% of $1080 = $108 → 1 point)
-- [ ] Check points balance updated after payment
+- ✅ Points awarded only after successful payment
+- ✅ Automatic calculation (5% of order)
+- ✅ Realtime points updates
+- ✅ Points history tracking
+- ✅ Admin point management
+- ✅ Referral bonus points
+- ✅ Points redemption for merch
 
-### Delivery Flow
-- [ ] Place delivery order
-- [ ] Verify immediate "Payment Successful" notification
-- [ ] Verify "Delivery Scheduled" notification
-- [ ] Wait 10 minutes
-- [ ] Verify "Driver Assigned" notification with ETA
-- [ ] Check order tracking information
+## Security
 
-### Edge Cases
-- [ ] Test with points redemption
-- [ ] Test pickup orders (should not schedule delivery)
-- [ ] Test payment failure (should not schedule delivery)
-- [ ] Test order cancellation before delivery trigger
+### Social Posts
+- RLS policies prevent unauthorized access
+- Location verification done server-side
+- Image uploads to secure Supabase storage
+- Report system for inappropriate content
 
-## Rollback Plan
+### Points System
+- Points awarded via webhook (server-side only)
+- Client cannot directly modify points
+- Payment verification by Stripe
+- Webhook signature verification
+- Database RPC for atomic point updates
 
-If issues arise, you can rollback by:
+## Documentation Created
+- `docs/POINTS_AND_SOCIAL_UPDATES.md` - Detailed technical documentation
 
-1. **Revert checkout calculations**:
-   - Change `POINTS_CONVERSION_RATE` back to 1
-   - Remove `DISCOUNT_PERCENTAGE` application
-   - Adjust `POINTS_REWARD_PERCENTAGE` back to 1.0
+## Notes
 
-2. **Disable scheduled delivery**:
-   - Stop the cron job
-   - Revert webhook to not set `delivery_scheduled_at`
+1. **Points System Already Correct**: The points awarding logic was already implemented correctly in the Stripe webhook. Points are only awarded after `payment_intent.succeeded` event.
 
-3. **Database rollback**:
-```sql
--- Remove the new column (optional)
-ALTER TABLE orders DROP COLUMN IF EXISTS delivery_scheduled_at;
+2. **Geofence Removed**: Social posts no longer require users to be at the restaurant location. Location tagging is now optional and informational.
 
--- Remove the function
-DROP FUNCTION IF EXISTS increment_user_points(UUID, INTEGER);
-```
+3. **Backward Compatible**: Existing posts will work with the new schema. The migration handles data migration automatically.
 
-## Monitoring
-
-### Key Metrics to Watch
-1. **Points Accuracy**: Monitor user points balances for anomalies
-2. **Delivery Timing**: Track time between payment and delivery trigger
-3. **Notification Delivery**: Ensure all three notifications are sent
-4. **Scheduler Performance**: Monitor `schedule-delivery-trigger` execution time
-
-### Logs to Check
-- Stripe webhook logs for payment processing
-- Scheduler function logs for delivery triggers
-- Uber Direct API responses
-- User notification delivery status
-
-## Support
-
-For issues or questions:
-1. Check the logs in Supabase dashboard
-2. Review `docs/POINTS_AND_DELIVERY_SYSTEM.md` for detailed information
-3. Verify all environment variables are set correctly
-4. Ensure cron job is running properly
+4. **Testing Required**: Test both features thoroughly in development before deploying to production.
 
 ## Next Steps
 
-1. Apply database migration
-2. Deploy edge functions
-3. Set up cron job
-4. Test thoroughly in staging environment
-5. Monitor production deployment
-6. Update user-facing documentation if needed
+1. Update `JAGABANS_LOCATION` coordinates in `constants/LocationConfig.ts` with actual restaurant location
+2. Test social posts from various locations
+3. Test payment flow and verify points are awarded correctly
+4. Monitor Stripe webhook logs for any issues
+5. Consider adding analytics to track post engagement and points redemption
+
+## Support
+
+If issues arise:
+1. Check Supabase logs for database errors
+2. Check Stripe webhook logs for payment issues
+3. Verify RLS policies if posts aren't appearing
+4. Check realtime subscriptions if updates aren't showing

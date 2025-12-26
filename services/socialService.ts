@@ -1,3 +1,4 @@
+
 import { supabase, SUPABASE_URL } from '@/app/integrations/supabase/client';
 
 export interface Post {
@@ -60,13 +61,19 @@ export const socialService = {
   // ============================================
 
   /**
-   * Create a new post with location verification
+   * Create a new post with optional location tagging
+   * @param imageUrl - URL of the uploaded image
+   * @param latitude - Latitude where photo was taken
+   * @param longitude - Longitude where photo was taken
+   * @param caption - Optional caption for the post
+   * @param locationVerified - Whether the photo was taken at the restaurant location
    */
   async createPost(
     imageUrl: string,
     latitude: number,
     longitude: number,
-    caption?: string
+    caption?: string,
+    locationVerified: boolean = false
   ) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -80,7 +87,9 @@ export const socialService = {
           caption: caption || null,
           latitude,
           longitude,
-          location_verified: true,
+          location_verified: locationVerified,
+          is_hidden: false,
+          is_featured: false,
         })
         .select()
         .single();

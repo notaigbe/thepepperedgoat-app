@@ -18,26 +18,37 @@ import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { socialService } from '@/services/socialService';
 import { IconSymbol } from '@/components/IconSymbol';
+import Toast from '@/components/Toast';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { supabase } from '@/app/integrations/supabase/client';
 import { JAGABANS_LOCATION } from '@/constants/LocationConfig';
-// import {BodyScrollView} from '@/components/BodyScrollView';
 import * as Haptics from 'expo-haptics';
 
 export default function CreatePostScreen() {
   const router = useRouter();
-  const { currentColors, showToast } = useApp();
+  const { currentColors } = useApp();
   const { user } = useAuth();
   const [caption, setCaption] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [verifyingLocation, setVerifyingLocation] = useState(false);
-  const [locationVerified, setLocationVerified] = useState(false);
+  const [checkingLocation, setCheckingLocation] = useState(false);
+  const [isAtRestaurant, setIsAtRestaurant] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
+
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  };
 
   useEffect(() => {
     requestPermissions();
@@ -72,8 +83,8 @@ export default function CreatePostScreen() {
     return R * c; // Distance in meters
   };
 
-  const verifyLocation = async () => {
-    setVerifyingLocation(true);
+  const checkLocationTag = async () => {
+    setCheckingLocation(true);
     try {
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
@@ -88,28 +99,26 @@ export default function CreatePostScreen() {
 
       console.log('Distance from Jagabans:', distance, 'meters');
 
-      if (distance <= JAGABANS_LOCATION.radius) {
-        setLocationVerified(true);
-        setCurrentLocation({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
-        showToast('Location verified! You are at Jagabans L.A.', 'success');
-        return true;
-      } else {
-        setLocationVerified(false);
-        showToast(
-          `You must be at Jagabans L.A. to post. You are ${Math.round(distance)}m away.`,
-          'error'
-        );
-        return false;
+      const atRestaurant = distance <= JAGABANS_LOCATION.radius;
+      setIsAtRestaurant(atRestaurant);
+      setCurrentLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      if (atRestaurant) {
+        showToast('📍 Photo taken at Jagabans L.A.!', 'success');
       }
+
+      return atRestaurant;
     } catch (error) {
-      console.error('Location verification error:', error);
-      showToast('Failed to verify location', 'error');
+      console.error('Location check error:', error);
+      // Don't block posting if location check fails
+      setIsAtRestaurant(false);
+      setCurrentLocation(null);
       return false;
     } finally {
-      setVerifyingLocation(false);
+      setCheckingLocation(false);
     }
   };
 
@@ -117,12 +126,6 @@ export default function CreatePostScreen() {
     try {
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-
-      // Verify location first
-      const isLocationValid = await verifyLocation();
-      if (!isLocationValid) {
-        return;
       }
 
       const result = await ImagePicker.launchCameraAsync({
@@ -134,6 +137,8 @@ export default function CreatePostScreen() {
 
       if (!result.canceled && result.assets[0]) {
         setImageUri(result.assets[0].uri);
+        // Check location after taking photo (non-blocking)
+        await checkLocationTag();
       }
     } catch (error) {
       console.error('Camera error:', error);
@@ -186,11 +191,6 @@ export default function CreatePostScreen() {
       return;
     }
 
-    if (!locationVerified || !currentLocation) {
-      showToast('Location not verified', 'error');
-      return;
-    }
-
     setLoading(true);
     try {
       // Upload image
@@ -199,18 +199,23 @@ export default function CreatePostScreen() {
         throw new Error('Failed to upload image');
       }
 
-      // Create post
+      // Create post with location tag
       const { data, error } = await socialService.createPost(
         imageUrl,
-        currentLocation.latitude,
-        currentLocation.longitude,
-        caption || undefined
+        currentLocation?.latitude || 0,
+        currentLocation?.longitude || 0,
+        caption || undefined,
+        isAtRestaurant
       );
 
       if (error) throw error;
 
       showToast('Post created successfully!', 'success');
-      router.back();
+      
+      // Wait a bit for toast to show before navigating
+      setTimeout(() => {
+        router.back();
+      }, 1000);
     } catch (error) {
       console.error('Create post error:', error);
       showToast('Failed to create post', 'error');
@@ -252,7 +257,7 @@ export default function CreatePostScreen() {
           <Text style={[styles.headerTitle, { color: currentColors.text }]}>Create Post</Text>
           <TouchableOpacity
             onPress={handlePost}
-            disabled={loading || !imageUri || !locationVerified}
+            disabled={loading || !imageUri}
             style={[styles.postButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
           >
             {loading ? (
@@ -262,10 +267,7 @@ export default function CreatePostScreen() {
                 style={[
                   styles.postButtonText,
                   {
-                    color:
-                      !imageUri || !locationVerified
-                        ? currentColors.textSecondary
-                        : currentColors.secondary,
+                    color: !imageUri ? currentColors.textSecondary : currentColors.secondary,
                   },
                 ]}
               >
@@ -277,35 +279,39 @@ export default function CreatePostScreen() {
 
         <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Location Status */}
-          <LinearGradient
-            colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[
-              styles.locationCard,
-              {
-                borderColor: locationVerified ? '#4CAF50' : currentColors.border,
-              },
-            ]}
-          >
-            <View style={styles.locationHeader}>
-              <IconSymbol
-                name={locationVerified ? 'checkmark.seal.fill' : 'location.fill'}
-                size={24}
-                color={locationVerified ? '#4CAF50' : currentColors.textSecondary}
-              />
-              <Text style={[styles.locationText, { color: currentColors.text }]}>
-                {locationVerified
-                  ? 'Location Verified - At Jagabans L.A.'
-                  : 'Location Not Verified'}
-              </Text>
-            </View>
-            {!locationVerified && (
+          {imageUri && (
+            <LinearGradient
+              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[
+                styles.locationCard,
+                {
+                  borderColor: isAtRestaurant ? '#4CAF50' : currentColors.border,
+                },
+              ]}
+            >
+              <View style={styles.locationHeader}>
+                <IconSymbol
+                  name={isAtRestaurant ? 'mappin.and.ellipse' : 'location.fill'}
+                  size={24}
+                  color={isAtRestaurant ? '#4CAF50' : currentColors.textSecondary}
+                />
+                <Text style={[styles.locationText, { color: currentColors.text }]}>
+                  {checkingLocation
+                    ? 'Checking location...'
+                    : isAtRestaurant
+                    ? '📍 Taken at Jagabans L.A.'
+                    : 'Location: Not at restaurant'}
+                </Text>
+              </View>
               <Text style={[styles.locationSubtext, { color: currentColors.textSecondary }]}>
-                You must be at the restaurant to post
+                {isAtRestaurant
+                  ? 'Your post will be tagged with the restaurant location'
+                  : 'You can post from anywhere! Photos taken at the restaurant get a special badge.'}
               </Text>
-            )}
-          </LinearGradient>
+            </LinearGradient>
+          )}
 
           {/* Camera Button */}
           {!imageUri && (
@@ -318,9 +324,9 @@ export default function CreatePostScreen() {
               <TouchableOpacity
                 style={styles.cameraButtonInner}
                 onPress={takePhoto}
-                disabled={verifyingLocation}
+                disabled={checkingLocation}
               >
-                {verifyingLocation ? (
+                {checkingLocation ? (
                   <ActivityIndicator size="large" color={currentColors.secondary} />
                 ) : (
                   <>
@@ -333,7 +339,7 @@ export default function CreatePostScreen() {
                       Take Photo
                     </Text>
                     <Text style={[styles.cameraButtonSubtext, { color: currentColors.textSecondary }]}>
-                      Location will be verified when you take the photo
+                      Share your experience from anywhere!
                     </Text>
                   </>
                 )}
@@ -345,6 +351,12 @@ export default function CreatePostScreen() {
           {imageUri && (
             <View style={styles.imagePreviewContainer}>
               <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+              {isAtRestaurant && (
+                <View style={styles.locationBadge}>
+                  <IconSymbol name="mappin.circle.fill" size={16} color="#fff" />
+                  <Text style={styles.locationBadgeText}>Jagabans L.A.</Text>
+                </View>
+              )}
               <LinearGradient
                 colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
                 start={{ x: 0, y: 0 }}
@@ -400,6 +412,15 @@ export default function CreatePostScreen() {
             </LinearGradient>
           )}
         </ScrollView>
+
+        {/* Toast Notification */}
+        <Toast
+          visible={toastVisible}
+          message={toastMessage}
+          type={toastType}
+          onHide={() => setToastVisible(false)}
+          currentColors={currentColors}
+        />
       </SafeAreaView>
     </LinearGradient>
   );
@@ -513,12 +534,30 @@ const styles = StyleSheet.create({
   },
   imagePreviewContainer: {
     marginBottom: 24,
+    position: 'relative',
   },
   imagePreview: {
     width: '100%',
     height: 400,
     borderRadius: 0,
     resizeMode: 'cover',
+  },
+  locationBadge: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  locationBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
   },
   retakeButton: {
     flexDirection: 'row',
