@@ -24,6 +24,7 @@ import * as Location from 'expo-location';
 import { supabase } from '@/app/integrations/supabase/client';
 import { JAGABANS_LOCATION } from '@/constants/LocationConfig';
 import * as Haptics from 'expo-haptics';
+import * as FileSystem from 'expo-file-system';
 
 export default function CreatePostScreen() {
   const router = useRouter();
@@ -147,54 +148,39 @@ export default function CreatePostScreen() {
   };
 
   const uploadImage = async (uri: string): Promise<string | null> => {
-    try {
-      if (!user) {
-        console.error('No user found');
-        return null;
-      }
+  if (!user) return null;
 
-      console.log('Starting image upload for URI:', uri);
+  try {
+    const fileName = `post_${Date.now()}.jpg`;
+    const filePath = `${user.id}/${fileName}`;
 
-      // Fetch the image as a blob
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      
-      console.log('Image blob created, size:', blob.size, 'type:', blob.type);
+    const formData = new FormData();
+    formData.append('file', {
+      uri,
+      name: fileName,
+      type: 'image/jpeg',
+    } as any);
 
-      // Generate unique filename with proper extension
-      const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${user.id}/post_${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from('posts')
+      .upload(filePath, formData, {
+        contentType: 'image/jpeg',
+        upsert: false,
+      });
 
-      console.log('Uploading to posts bucket with filename:', fileName);
+    if (error) throw error;
 
-      // Upload to Supabase Storage in the 'posts' bucket
-      const { data, error } = await supabase.storage
-        .from('posts')
-        .upload(fileName, blob, {
-          contentType: blob.type || 'image/jpeg',
-          upsert: false,
-        });
+    const { data } = supabase.storage
+      .from('posts')
+      .getPublicUrl(filePath);
 
-      if (error) {
-        console.error('Upload error:', error);
-        throw error;
-      }
+    return data.publicUrl;
+  } catch (err) {
+    console.error('Upload failed:', err);
+    return null;
+  }
+};
 
-      console.log('Upload successful:', data);
-
-      // Get public URL (posts bucket is public)
-      const { data: urlData } = supabase.storage
-        .from('posts')
-        .getPublicUrl(fileName);
-
-      console.log('Public URL:', urlData.publicUrl);
-
-      return urlData.publicUrl;
-    } catch (error) {
-      console.error('Image upload error:', error);
-      return null;
-    }
-  };
 
   const handlePost = async () => {
     if (Platform.OS !== 'web') {

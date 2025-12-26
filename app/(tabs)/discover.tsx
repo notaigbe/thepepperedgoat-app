@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -131,94 +130,137 @@ export default function DiscoverScreen() {
   };
 
   const renderPost = ({ item }: { item: Post }) => (
-    <LinearGradient
-      colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={[styles.postCard, { borderColor: currentColors.border }]}
-    >
-      {/* User Info */}
-      <View style={styles.postHeader}>
-        <View style={styles.userInfo}>
-          {item.user?.profileImage ? (
-            <Image source={{ uri: item.user.profileImage }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, { backgroundColor: currentColors.secondary }]}>
+    <View style={styles.postCardWrapper}>
+      <LinearGradient
+        colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.postCard, { borderColor: currentColors.border }]}
+      >
+        {/* Decorative corner accents */}
+        <View style={[styles.cornerAccent, styles.cornerTopLeft, { borderColor: currentColors.secondary }]} />
+        <View style={[styles.cornerAccent, styles.cornerTopRight, { borderColor: currentColors.secondary }]} />
+        <View style={[styles.cornerAccent, styles.cornerBottomLeft, { borderColor: currentColors.secondary }]} />
+        <View style={[styles.cornerAccent, styles.cornerBottomRight, { borderColor: currentColors.secondary }]} />
+
+        {/* Post Image with overlay gradient and user info */}
+        <TouchableOpacity onPress={() => handleComment(item.id)} activeOpacity={0.95}>
+          <View style={styles.imageContainer}>
+            <Image source={{ uri: item.imageUrl }} style={styles.postImage} />
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.7)']}
+              style={styles.imageOverlay}
+            />
+            
+            {/* User Info Overlay */}
+            <View style={styles.userInfoOverlay}>
+              <View style={styles.userInfo}>
+                <View style={[styles.avatarContainer, { borderColor: currentColors.secondary }]}>
+                  {item.user?.profileImage ? (
+                    <Image source={{ uri: item.user.profileImage }} style={styles.avatar} />
+                  ) : (
+                    <LinearGradient
+                      colors={[currentColors.secondary, currentColors.highlight]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.avatar}
+                    >
+                      <IconSymbol
+                        name="person.fill"
+                        size={20}
+                        color={currentColors.background}
+                      />
+                    </LinearGradient>
+                  )}
+                </View>
+                <View style={styles.userDetails}>
+                  <Text style={[styles.userName, { color: '#FFFFFF' }]}>
+                    {item.user?.name || 'Unknown User'}
+                  </Text>
+                  {item.locationVerified && (
+                    <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                      <IconSymbol
+                        name="checkmark.seal.fill"
+                        size={13}
+                        color={currentColors.secondary}
+                      />
+                      <Text style={[styles.verifiedText, { color: '#FFFFFF' }]}>
+                        Taken at Jagabans L.A.
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* Post Actions with enhanced styling */}
+        <View style={[styles.postActions, { borderTopColor: `${currentColors.border}40` }]}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleLike(item.id, item.isLikedByCurrentUser || false)}
+            activeOpacity={0.7}
+          >
+            <View style={[
+              styles.actionIconWrapper,
+              item.isLikedByCurrentUser && { backgroundColor: '#FF3B3015' }
+            ]}>
               <IconSymbol
-                name="person.fill"
-                size={20}
-                color={currentColors.background}
+                name={item.isLikedByCurrentUser ? 'heart.fill' : 'heart'}
+                size={22}
+                color={item.isLikedByCurrentUser ? '#FF3B30' : currentColors.text}
               />
             </View>
-          )}
-          <View style={styles.userDetails}>
-            <Text style={[styles.userName, { color: currentColors.text }]}>
-              {item.user?.name || 'Unknown User'}
+            <Text style={[styles.actionText, { color: currentColors.text }]}>
+              {item.likesCount}
             </Text>
-            {item.locationVerified && (
-              <View style={styles.verifiedBadge}>
-                <IconSymbol
-                  name="checkmark.seal.fill"
-                  size={14}
-                  color={currentColors.primary}
-                />
-                <Text style={[styles.verifiedText, { color: currentColors.primary }]}>
-                  Taken at Jagabans L.A.
-                </Text>
-              </View>
-            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => handleComment(item.id)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.actionIconWrapper}>
+              <IconSymbol
+                name="message"
+                size={22}
+                color={currentColors.text}
+              />
+            </View>
+            <Text style={[styles.actionText, { color: currentColors.text }]}>
+              {item.commentsCount}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Caption with refined typography */}
+        {item.caption && (
+          <View style={styles.captionContainer}>
+            <Text style={[styles.caption, { color: currentColors.text }]}>
+              <Text style={[styles.captionUsername, { color: currentColors.text }]}>
+                {item.user?.name || 'User'}
+              </Text>
+              <Text style={[styles.captionText, { color: currentColors.textSecondary }]}>
+                {' '}{item.caption}
+              </Text>
+            </Text>
           </View>
-        </View>
-      </View>
+        )}
 
-      {/* Post Image */}
-      <TouchableOpacity onPress={() => handleComment(item.id)}>
-        <Image source={{ uri: item.imageUrl }} style={styles.postImage} />
-      </TouchableOpacity>
-
-      {/* Post Actions */}
-      <View style={styles.postActions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => handleLike(item.id, item.isLikedByCurrentUser || false)}
-        >
-          <IconSymbol
-            name={item.isLikedByCurrentUser ? 'heart.fill' : 'heart'}
-            size={24}
-            color={item.isLikedByCurrentUser ? '#FF3B30' : currentColors.text}
-          />
-          <Text style={[styles.actionText, { color: currentColors.text }]}>
-            {item.likesCount}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleComment(item.id)}>
-          <IconSymbol
-            name="bubble.left"
-            size={24}
-            color={currentColors.text}
-          />
-          <Text style={[styles.actionText, { color: currentColors.text }]}>
-            {item.commentsCount}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Caption */}
-      {item.caption && (
-        <View style={styles.captionContainer}>
-          <Text style={[styles.caption, { color: currentColors.text }]}>
-            <Text style={styles.captionUsername}>{item.user?.name || 'User'}</Text>{' '}
-            {item.caption}
+        {/* Timestamp with divider */}
+        <View style={[styles.timestampContainer, { borderTopColor: `${currentColors.border}20` }]}>
+          <Text style={[styles.timestamp, { color: currentColors.textSecondary }]}>
+            {new Date(item.createdAt).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric',
+              year: 'numeric'
+            })}
           </Text>
         </View>
-      )}
-
-      {/* Timestamp */}
-      <Text style={[styles.timestamp, { color: currentColors.textSecondary }]}>
-        {new Date(item.createdAt).toLocaleDateString()}
-      </Text>
-    </LinearGradient>
+      </LinearGradient>
+    </View>
   );
 
   if (loading) {
@@ -236,8 +278,11 @@ export default function DiscoverScreen() {
             end={{ x: 1, y: 0 }}
             style={[styles.header, { borderBottomColor: currentColors.border }]}
           >
-            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Discover</Text>
-            <TouchableOpacity onPress={handleCreatePost} style={styles.createButton}>
+            <View>
+              <Text style={[styles.headerTitle, { color: currentColors.text }]}>Discover</Text>
+              <View style={[styles.headerUnderline, { backgroundColor: currentColors.secondary }]} />
+            </View>
+            <TouchableOpacity onPress={handleCreatePost} style={[styles.createButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}>
               <IconSymbol
                 name="camera.fill"
                 size={24}
@@ -261,14 +306,17 @@ export default function DiscoverScreen() {
       style={styles.gradientContainer}
     >
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header with Gradient - matching Events screen */}
+        {/* Enhanced Header */}
         <LinearGradient
           colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.header, { borderBottomColor: currentColors.border }]}
         >
-          <Text style={[styles.headerTitle, { color: currentColors.text }]}>Discover</Text>
+          <View>
+            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Discover</Text>
+            <View style={[styles.headerUnderline, { backgroundColor: currentColors.secondary }]} />
+          </View>
           <TouchableOpacity onPress={handleCreatePost} style={[styles.createButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}>
             <IconSymbol
               name="camera.fill"
@@ -302,13 +350,18 @@ export default function DiscoverScreen() {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <IconSymbol
-                name="photo.on.rectangle"
-                size={80}
-                color={currentColors.textSecondary}
-              />
-              <Text style={[styles.emptyText, { color: currentColors.text }]}>
-                No posts yet. Be the first to share!
+              <View style={[styles.emptyIconWrapper, { borderColor: currentColors.border }]}>
+                <IconSymbol
+                  name="photo.on.rectangle"
+                  size={64}
+                  color={currentColors.textSecondary}
+                />
+              </View>
+              <Text style={[styles.emptyTitle, { color: currentColors.text }]}>
+                No posts yet
+              </Text>
+              <Text style={[styles.emptyText, { color: currentColors.textSecondary }]}>
+                Be the first to share your experience!
               </Text>
               <LinearGradient
                 colors={[currentColors.secondary, currentColors.highlight]}
@@ -319,8 +372,16 @@ export default function DiscoverScreen() {
                 <TouchableOpacity
                   style={styles.emptyButtonInner}
                   onPress={handleCreatePost}
+                  activeOpacity={0.8}
                 >
-                  <Text style={[styles.emptyButtonText, { color: currentColors.background }]}>Create Post</Text>
+                  <IconSymbol
+                    name="plus.circle.fill"
+                    size={20}
+                    color={currentColors.background}
+                  />
+                  <Text style={[styles.emptyButtonText, { color: currentColors.background }]}>
+                    Create Post
+                  </Text>
                 </TouchableOpacity>
               </LinearGradient>
             </View>
@@ -356,9 +417,15 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
+  headerUnderline: {
+    height: 3,
+    width: 60,
+    marginTop: 6,
+    opacity: 0.8,
+  },
   createButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
@@ -373,89 +440,165 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 20,
     paddingBottom: 120,
+  },
+  postCardWrapper: {
+    marginBottom: 24,
   },
   postCard: {
     borderRadius: 0,
-    marginBottom: 20,
     overflow: 'hidden',
     borderWidth: 2,
     boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
+    position: 'relative',
   },
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
+  cornerAccent: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderWidth: 2,
+    zIndex: 10,
+  },
+  cornerTopLeft: {
+    top: -1,
+    left: -1,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+  },
+  cornerTopRight: {
+    top: -1,
+    right: -1,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+  },
+  cornerBottomLeft: {
+    bottom: -1,
+    left: -1,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+  },
+  cornerBottomRight: {
+    bottom: -1,
+    right: -1,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+  },
+  userInfoOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
   },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  avatarContainer: {
+    borderWidth: 2,
+    borderRadius: 22,
+    padding: 2,
+  },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   userDetails: {
     flex: 1,
+    marginLeft: 12,
   },
   userName: {
     fontSize: 16,
     fontFamily: 'Inter_600SemiBold',
-    marginBottom: 2,
+    marginBottom: 4,
+    letterSpacing: 0.2,
   },
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
   },
   verifiedText: {
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
+    fontSize: 11,
+    fontFamily: 'Inter_500Medium',
     marginLeft: 4,
+    letterSpacing: 0.3,
+  },
+  imageContainer: {
+    position: 'relative',
   },
   postImage: {
     width: '100%',
     height: 400,
     resizeMode: 'cover',
   },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+  },
   postActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderTopWidth: 1,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 20,
+  },
+  actionIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    marginLeft: 4,
+    marginLeft: 8,
+    letterSpacing: 0.3,
   },
   captionContainer: {
-    paddingHorizontal: 12,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   caption: {
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 20,
+    lineHeight: 22,
   },
   captionUsername: {
     fontFamily: 'Inter_600SemiBold',
+    letterSpacing: 0.2,
+  },
+  captionText: {
+    letterSpacing: 0.1,
+  },
+  timestampContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
   },
   timestamp: {
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
-    paddingHorizontal: 12,
-    paddingBottom: 12,
+    fontSize: 11,
+    fontFamily: 'Inter_500Medium',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   footerLoader: {
     paddingVertical: 20,
@@ -465,13 +608,30 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: 80,
+    paddingHorizontal: 40,
+  },
+  emptyIconWrapper: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    marginTop: 16,
-    marginBottom: 24,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
   },
   emptyButton: {
     borderRadius: 0,
@@ -479,11 +639,15 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   emptyButtonInner: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   emptyButtonText: {
     fontSize: 16,
     fontFamily: 'Inter_600SemiBold',
+    letterSpacing: 0.5,
   },
 });
