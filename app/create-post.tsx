@@ -148,31 +148,46 @@ export default function CreatePostScreen() {
 
   const uploadImage = async (uri: string): Promise<string | null> => {
     try {
-      if (!user) return null;
+      if (!user) {
+        console.error('No user found');
+        return null;
+      }
 
-      // Convert image to blob
+      console.log('Starting image upload for URI:', uri);
+
+      // Fetch the image as a blob
       const response = await fetch(uri);
       const blob = await response.blob();
+      
+      console.log('Image blob created, size:', blob.size, 'type:', blob.type);
 
       // Generate unique filename
-      const fileExt = uri.split('.').pop();
-      const fileName = `post_${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
+      const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${user.id}/post_${Date.now()}.${fileExt}`;
 
-      // Upload to Supabase Storage
+      console.log('Uploading to posts bucket with filename:', fileName);
+
+      // Upload to Supabase Storage in the 'posts' bucket
       const { data, error } = await supabase.storage
-        .from('profile')
-        .upload(filePath, blob, {
-          contentType: 'image/jpeg',
+        .from('posts')
+        .upload(fileName, blob, {
+          contentType: blob.type || 'image/jpeg',
           upsert: false,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
 
-      // Get public URL
+      console.log('Upload successful:', data);
+
+      // Get public URL (posts bucket is public)
       const { data: urlData } = supabase.storage
-        .from('profile')
-        .getPublicUrl(filePath);
+        .from('posts')
+        .getPublicUrl(fileName);
+
+      console.log('Public URL:', urlData.publicUrl);
 
       return urlData.publicUrl;
     } catch (error) {
@@ -193,11 +208,15 @@ export default function CreatePostScreen() {
 
     setLoading(true);
     try {
+      console.log('Starting post creation...');
+      
       // Upload image
       const imageUrl = await uploadImage(imageUri);
       if (!imageUrl) {
         throw new Error('Failed to upload image');
       }
+
+      console.log('Image uploaded successfully:', imageUrl);
 
       // Create post with location tag
       const { data, error } = await socialService.createPost(
@@ -208,7 +227,12 @@ export default function CreatePostScreen() {
         isAtRestaurant
       );
 
-      if (error) throw error;
+      if (error) {
+        console.error('Create post error:', error);
+        throw error;
+      }
+
+      console.log('Post created successfully:', data);
 
       showToast('Post created successfully!', 'success');
       
@@ -218,7 +242,7 @@ export default function CreatePostScreen() {
       }, 1000);
     } catch (error) {
       console.error('Create post error:', error);
-      showToast('Failed to create post', 'error');
+      showToast('Failed to create post. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
