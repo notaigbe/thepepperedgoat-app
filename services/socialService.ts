@@ -1,5 +1,6 @@
 
 import { supabase, SUPABASE_URL } from '@/app/integrations/supabase/client';
+import { LocationInfo } from './locationService';
 
 export interface Post {
   id: string;
@@ -15,6 +16,10 @@ export interface Post {
   isHidden: boolean;
   createdAt: string;
   updatedAt: string;
+  ipAddress?: string;
+  locationCity?: string;
+  locationState?: string;
+  locationCountry?: string;
   user?: {
     id: string;
     name: string;
@@ -61,36 +66,48 @@ export const socialService = {
   // ============================================
 
   /**
-   * Create a new post with optional location tagging
+   * Create a new post with optional location tagging and IP info
    * @param imageUrl - URL of the uploaded image
    * @param latitude - Latitude where photo was taken
    * @param longitude - Longitude where photo was taken
    * @param caption - Optional caption for the post
    * @param locationVerified - Whether the photo was taken at the restaurant location
+   * @param ipLocationInfo - IP address and location information
    */
   async createPost(
     imageUrl: string,
     latitude: number,
     longitude: number,
     caption?: string,
-    locationVerified: boolean = false
+    locationVerified: boolean = false,
+    ipLocationInfo?: LocationInfo
   ) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
+      const postData: any = {
+        user_id: session.user.id,
+        image_url: imageUrl,
+        caption: caption || null,
+        latitude,
+        longitude,
+        location_verified: locationVerified,
+        is_hidden: false,
+        is_featured: false,
+      };
+
+      // Add IP and location info if available
+      if (ipLocationInfo) {
+        postData.ip_address = ipLocationInfo.ipAddress;
+        postData.location_city = ipLocationInfo.city || null;
+        postData.location_state = ipLocationInfo.state || null;
+        postData.location_country = ipLocationInfo.country || null;
+      }
+
       const { data, error } = await supabase
         .from('posts')
-        .insert({
-          user_id: session.user.id,
-          image_url: imageUrl,
-          caption: caption || null,
-          latitude,
-          longitude,
-          location_verified: locationVerified,
-          is_hidden: false,
-          is_featured: false,
-        })
+        .insert(postData)
         .select()
         .single();
 
@@ -161,6 +178,10 @@ export const socialService = {
         isHidden: postData.is_hidden,
         createdAt: postData.created_at,
         updatedAt: postData.updated_at,
+        ipAddress: postData.ip_address,
+        locationCity: postData.location_city,
+        locationState: postData.location_state,
+        locationCountry: postData.location_country,
         user: userData ? {
           id: userData.user_id,
           name: userData.name,
@@ -246,6 +267,10 @@ export const socialService = {
             isHidden: post.is_hidden,
             createdAt: post.created_at,
             updatedAt: post.updated_at,
+            ipAddress: post.ip_address,
+            locationCity: post.location_city,
+            locationState: post.location_state,
+            locationCountry: post.location_country,
             user: post.user ? {
               id: post.user.user_id,
               name: post.user.name,
@@ -272,6 +297,10 @@ export const socialService = {
           isHidden: post.is_hidden,
           createdAt: post.created_at,
           updatedAt: post.updated_at,
+          ipAddress: post.ip_address,
+          locationCity: post.location_city,
+          locationState: post.location_state,
+          locationCountry: post.location_country,
           user: post.user ? {
             id: post.user.user_id,
             name: post.user.name,

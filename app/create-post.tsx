@@ -24,7 +24,7 @@ import * as Location from 'expo-location';
 import { supabase } from '@/app/integrations/supabase/client';
 import { JAGABANS_LOCATION } from '@/constants/LocationConfig';
 import * as Haptics from 'expo-haptics';
-import * as FileSystem from 'expo-file-system';
+import { getIpAndLocation, LocationInfo } from '@/services/locationService';
 
 export default function CreatePostScreen() {
   const router = useRouter();
@@ -39,6 +39,7 @@ export default function CreatePostScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [ipLocationInfo, setIpLocationInfo] = useState<LocationInfo | null>(null);
 
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
@@ -53,6 +54,7 @@ export default function CreatePostScreen() {
 
   useEffect(() => {
     requestPermissions();
+    fetchIpLocation();
   }, []);
 
   const requestPermissions = async () => {
@@ -61,6 +63,16 @@ export default function CreatePostScreen() {
 
     if (cameraStatus !== 'granted' || locationStatus !== 'granted') {
       showToast('Camera and location permissions are required', 'error');
+    }
+  };
+
+  const fetchIpLocation = async () => {
+    try {
+      const info = await getIpAndLocation();
+      setIpLocationInfo(info);
+      console.log('IP and location info:', info);
+    } catch (error) {
+      console.error('Failed to get IP and location:', error);
     }
   };
 
@@ -148,39 +160,38 @@ export default function CreatePostScreen() {
   };
 
   const uploadImage = async (uri: string): Promise<string | null> => {
-  if (!user) return null;
+    if (!user) return null;
 
-  try {
-    const fileName = `post_${Date.now()}.jpg`;
-    const filePath = `${user.id}/${fileName}`;
+    try {
+      const fileName = `post_${Date.now()}.jpg`;
+      const filePath = `${user.id}/${fileName}`;
 
-    const formData = new FormData();
-    formData.append('file', {
-      uri,
-      name: fileName,
-      type: 'image/jpeg',
-    } as any);
+      const formData = new FormData();
+      formData.append('file', {
+        uri,
+        name: fileName,
+        type: 'image/jpeg',
+      } as any);
 
-    const { error } = await supabase.storage
-      .from('posts')
-      .upload(filePath, formData, {
-        contentType: 'image/jpeg',
-        upsert: false,
-      });
+      const { error } = await supabase.storage
+        .from('posts')
+        .upload(filePath, formData, {
+          contentType: 'image/jpeg',
+          upsert: false,
+        });
 
-    if (error) throw error;
+      if (error) throw error;
 
-    const { data } = supabase.storage
-      .from('posts')
-      .getPublicUrl(filePath);
+      const { data } = supabase.storage
+        .from('posts')
+        .getPublicUrl(filePath);
 
-    return data.publicUrl;
-  } catch (err) {
-    console.error('Upload failed:', err);
-    return null;
-  }
-};
-
+      return data.publicUrl;
+    } catch (err) {
+      console.error('Upload failed:', err);
+      return null;
+    }
+  };
 
   const handlePost = async () => {
     if (Platform.OS !== 'web') {
@@ -204,13 +215,14 @@ export default function CreatePostScreen() {
 
       console.log('Image uploaded successfully:', imageUrl);
 
-      // Create post with location tag
+      // Create post with location tag and IP info
       const { data, error } = await socialService.createPost(
         imageUrl,
         currentLocation?.latitude || 0,
         currentLocation?.longitude || 0,
         caption || undefined,
-        isAtRestaurant
+        isAtRestaurant,
+        ipLocationInfo || undefined
       );
 
       if (error) {
@@ -320,6 +332,25 @@ export default function CreatePostScreen() {
                   ? 'Your post will be tagged with the restaurant location'
                   : 'You can post from anywhere! Photos taken at the restaurant get a special badge.'}
               </Text>
+              
+              {/* IP and Location Info */}
+              {ipLocationInfo && (
+                <View style={styles.ipInfoContainer}>
+                  <Text style={[styles.ipInfoLabel, { color: currentColors.textSecondary }]}>
+                    Network Info:
+                  </Text>
+                  <Text style={[styles.ipInfoText, { color: currentColors.text }]}>
+                    IP: {ipLocationInfo.ipAddress}
+                  </Text>
+                  {ipLocationInfo.city && (
+                    <Text style={[styles.ipInfoText, { color: currentColors.text }]}>
+                      Location: {ipLocationInfo.city}
+                      {ipLocationInfo.state && `, ${ipLocationInfo.state}`}
+                      {ipLocationInfo.country && `, ${ipLocationInfo.country}`}
+                    </Text>
+                  )}
+                </View>
+              )}
             </LinearGradient>
           )}
 
@@ -516,6 +547,24 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     marginTop: 8,
     marginLeft: 36,
+  },
+  ipInfoContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  ipInfoLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  ipInfoText: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    marginTop: 2,
   },
   cameraButton: {
     padding: 48,

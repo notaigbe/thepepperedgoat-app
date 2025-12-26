@@ -7,7 +7,6 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
-  FlatList,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +20,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { socialService, Post, Comment } from '@/services/socialService';
 import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
+import { getTimeAgo } from '@/utils/timeUtils';
+import Share from 'react-native-share';
 
 export default function PostDetailScreen() {
   const router = useRouter();
@@ -99,6 +100,29 @@ export default function PostDetailScreen() {
     }
   };
 
+  const handleShare = async () => {
+    if (!post) return;
+
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    try {
+      const shareMessage = `Check out this post from ${post.user?.name || 'Jagabans L.A.'}!\n\n${post.caption || 'Amazing food experience!'}`;
+      
+      await Share.open({
+        title: 'Share Post',
+        message: shareMessage,
+        url: post.imageUrl,
+      });
+    } catch (error: any) {
+      if (error?.message !== 'User did not share') {
+        console.error('Share error:', error);
+        showToast('Failed to share post', 'error');
+      }
+    }
+  };
+
   const handleSubmitComment = async () => {
     if (!isAuthenticated) {
       showToast('Please sign in to comment', 'info');
@@ -160,7 +184,7 @@ export default function PostDetailScreen() {
           </Text>
           <View style={styles.commentActions}>
             <Text style={[styles.commentTime, { color: currentColors.textSecondary }]}>
-              {new Date(item.createdAt).toLocaleDateString()}
+              {getTimeAgo(item.createdAt)}
             </Text>
             <TouchableOpacity
               onPress={() => {
@@ -309,7 +333,16 @@ export default function PostDetailScreen() {
             />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: currentColors.text }]}>Post</Text>
-          <View style={styles.placeholder} />
+          <TouchableOpacity 
+            onPress={handleShare} 
+            style={[styles.shareButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
+          >
+            <IconSymbol
+              name="square.and.arrow.up"
+              size={24}
+              color={currentColors.secondary}
+            />
+          </TouchableOpacity>
         </LinearGradient>
 
         <KeyboardAvoidingView
@@ -431,14 +464,28 @@ export default function PostDetailScreen() {
                 </View>
               )}
 
+              {/* Location Info */}
+              {(post.ipAddress || post.locationCity) && (
+                <View style={[styles.locationInfoContainer, { borderTopColor: `${currentColors.border}20` }]}>
+                  {post.ipAddress && (
+                    <Text style={[styles.locationInfoText, { color: currentColors.textSecondary }]}>
+                      📍 IP: {post.ipAddress}
+                    </Text>
+                  )}
+                  {post.locationCity && (
+                    <Text style={[styles.locationInfoText, { color: currentColors.textSecondary }]}>
+                      🌍 {post.locationCity}
+                      {post.locationState && `, ${post.locationState}`}
+                      {post.locationCountry && `, ${post.locationCountry}`}
+                    </Text>
+                  )}
+                </View>
+              )}
+
               {/* Timestamp with divider */}
               <View style={[styles.timestampContainer, { borderTopColor: `${currentColors.border}20` }]}>
                 <Text style={[styles.timestamp, { color: currentColors.textSecondary }]}>
-                  {new Date(post.createdAt).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
+                  {getTimeAgo(post.createdAt)}
                 </Text>
               </View>
             </LinearGradient>
@@ -573,6 +620,16 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
+  },
+  shareButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    elevation: 4,
   },
   placeholder: {
     width: 40,
@@ -748,6 +805,16 @@ const styles = StyleSheet.create({
   captionText: {
     letterSpacing: 0.1,
   },
+  locationInfoContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+  },
+  locationInfoText: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+    marginBottom: 2,
+  },
   timestampContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -757,7 +824,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Inter_500Medium',
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
   },
   commentsSection: {
     marginBottom: 20,

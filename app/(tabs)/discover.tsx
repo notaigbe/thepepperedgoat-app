@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -18,6 +19,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { socialService, Post } from '@/services/socialService';
 import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
+import { getTimeAgo } from '@/utils/timeUtils';
+import Share from 'react-native-share';
 
 export default function DiscoverScreen() {
   const router = useRouter();
@@ -116,6 +119,27 @@ export default function DiscoverScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     router.push(`/post-detail?postId=${postId}`);
+  };
+
+  const handleShare = async (post: Post) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    try {
+      const shareMessage = `Check out this post from ${post.user?.name || 'Jagabans L.A.'}!\n\n${post.caption || 'Amazing food experience!'}`;
+      
+      await Share.open({
+        title: 'Share Post',
+        message: shareMessage,
+        url: post.imageUrl,
+      });
+    } catch (error: any) {
+      if (error?.message !== 'User did not share') {
+        console.error('Share error:', error);
+        showToast('Failed to share post', 'error');
+      }
+    }
   };
 
   const handleCreatePost = () => {
@@ -233,6 +257,20 @@ export default function DiscoverScreen() {
               {item.commentsCount}
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => handleShare(item)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.actionIconWrapper}>
+              <IconSymbol
+                name="square.and.arrow.up"
+                size={22}
+                color={currentColors.text}
+              />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Caption with refined typography */}
@@ -249,14 +287,28 @@ export default function DiscoverScreen() {
           </View>
         )}
 
+        {/* Location Info */}
+        {(item.ipAddress || item.locationCity) && (
+          <View style={[styles.locationInfoContainer, { borderTopColor: `${currentColors.border}20` }]}>
+            {item.ipAddress && (
+              <Text style={[styles.locationInfoText, { color: currentColors.textSecondary }]}>
+                📍 IP: {item.ipAddress}
+              </Text>
+            )}
+            {item.locationCity && (
+              <Text style={[styles.locationInfoText, { color: currentColors.textSecondary }]}>
+                🌍 {item.locationCity}
+                {item.locationState && `, ${item.locationState}`}
+                {item.locationCountry && `, ${item.locationCountry}`}
+              </Text>
+            )}
+          </View>
+        )}
+
         {/* Timestamp with divider */}
         <View style={[styles.timestampContainer, { borderTopColor: `${currentColors.border}20` }]}>
           <Text style={[styles.timestamp, { color: currentColors.textSecondary }]}>
-            {new Date(item.createdAt).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric',
-              year: 'numeric'
-            })}
+            {getTimeAgo(item.createdAt)}
           </Text>
         </View>
       </LinearGradient>
@@ -589,6 +641,16 @@ const styles = StyleSheet.create({
   captionText: {
     letterSpacing: 0.1,
   },
+  locationInfoContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+  },
+  locationInfoText: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+    marginBottom: 2,
+  },
   timestampContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -598,7 +660,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Inter_500Medium',
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
   },
   footerLoader: {
     paddingVertical: 20,
