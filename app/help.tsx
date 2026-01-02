@@ -16,6 +16,13 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useApp } from '@/contexts/AppContext';
 import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
+import Constants from 'expo-constants';
+
+const version = Constants.expoConfig?.version ?? '1.0.0';
+const appName = Constants.expoConfig?.name ?? 'App';
+const buildNumber = Constants.expoConfig?.ios?.buildNumber ?? undefined;
+
+const androidVersionCode = Constants.expoConfig?.android?.versionCode ?? undefined;
 
 interface HelpTopic {
   id: string;
@@ -534,12 +541,14 @@ export default function HelpScreen() {
             <Text
               style={[styles.appInfoText, { color: currentColors.textSecondary }]}
             >
-              Jagabans LA
+              {appName}
             </Text>
             <Text
               style={[styles.appInfoText, { color: currentColors.textSecondary }]}
             >
-              Version 1.2.1
+              {`Version ${version}`}
+              {buildNumber ? ` (Build ${buildNumber})` : androidVersionCode ? ` (Build ${androidVersionCode})` : ''}  
+              {androidVersionCode ? ` (Version Code ${androidVersionCode})` : ''}
             </Text>
           </View>
         </ScrollView>
