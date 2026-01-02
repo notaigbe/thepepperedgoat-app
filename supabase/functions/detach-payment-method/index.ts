@@ -26,7 +26,7 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseServiceClient = createClient(supabaseUrl, supabaseServiceKey);
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -34,11 +34,16 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    // Verify user with service client
+    const { data: { user }, error: userError } = await supabaseServiceClient.auth.getUser(token);
     
     if (userError || !user) {
+      console.error('User verification error:', userError);
       throw new Error('Unauthorized');
     }
+
+    console.log('User verified:', user.id);
 
     const { paymentMethodId } = await req.json();
 
@@ -46,45 +51,57 @@ serve(async (req) => {
       throw new Error('Payment method ID is required');
     }
 
+    console.log('Detaching payment method:', paymentMethodId, 'for user:', user.id);
+
     // Verify payment method belongs to user
-    const { data: paymentMethodRecord } = await supabase
+    const { data: paymentMethodRecord, error: fetchError } = await supabaseServiceClient
       .from('payment_methods')
       .select('*')
       .eq('stripe_payment_method_id', paymentMethodId)
       .eq('user_id', user.id)
       .single();
 
-    if (!paymentMethodRecord) {
+    if (fetchError || !paymentMethodRecord) {
+      console.error('Payment method fetch error:', fetchError);
       throw new Error('Payment method not found or unauthorized');
     }
 
+    console.log('Payment method found:', paymentMethodRecord.id);
+
     // Detach from Stripe
-    await stripe.paymentMethods.detach(paymentMethodId);
+    try {
+      await stripe.paymentMethods.detach(paymentMethodId);
+      console.log('Payment method detached from Stripe:', paymentMethodId);
+    } catch (stripeError: any) {
+      console.error('Stripe detach error:', stripeError);
+      throw new Error(`Failed to detach from Stripe: ${stripeError.message}`);
+    }
 
-    console.log('Payment method detached:', paymentMethodId);
-
-    // Delete from database
-    const { error: deleteError } = await supabase
+    // Delete from database using service client
+    const { error: deleteError } = await supabaseServiceClient
       .from('payment_methods')
       .delete()
       .eq('stripe_payment_method_id', paymentMethodId)
       .eq('user_id', user.id);
 
     if (deleteError) {
-      console.error('Error deleting payment method:', deleteError);
-      throw new Error('Failed to delete payment method');
+      console.error('Error deleting payment method from database:', deleteError);
+      throw new Error(`Failed to delete payment method from database: ${deleteError.message}`);
     }
+
+    console.log('Payment method deleted from database successfully');
 
     return new Response(
       JSON.stringify({
         success: true,
+        message: 'Payment method removed successfully',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error detaching payment method:', error);
     return new Response(
       JSON.stringify({
