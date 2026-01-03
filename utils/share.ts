@@ -1,115 +1,48 @@
 
+import * as FileSystem from 'expo-file-system/legacy';
 import Share from 'react-native-share';
 import { Platform } from 'react-native';
-import { File, Directory, Paths } from 'expo-file-system';
 
-const APP_STORE_ID = 'YOUR_APP_STORE_ID';
-const PLAY_STORE_ID = 'YOUR_PLAY_STORE_ID';
-const APP_SCHEME = 'jagabansla';
-
-const generatePostDeepLink = (postId: string) => `${APP_SCHEME}://post-detail?postId=${postId}`;
-
-const generateUniversalPostLink = () => {
-  if (Platform.OS === 'ios') {
-    return `https://apps.apple.com/app/id${APP_STORE_ID}`;
-  }
-  return `https://play.google.com/store/apps/details?id=${PLAY_STORE_ID}`;
-};
-
-/**
- * Downloads an image from a URL to local cache and returns the local file URI
- */
-const downloadImageToLocal = async (imageUrl: string): Promise<string | null> => {
+export const formatPostShareOptions = async (post: any) => {
   try {
-    // Create a cache directory for shared images
-    const cacheDir = new Directory(Paths.cache, 'shared-images');
+    const cacheDir = `${FileSystem.cacheDirectory}shared-images/`;
     
-    // Create directory if it doesn't exist
-    if (!cacheDir.exists) {
-      cacheDir.create({ intermediates: true });
+    // Ensure cache directory exists
+    const dirInfo = await FileSystem.getInfoAsync(cacheDir);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
     }
-
-    // Generate unique filename with timestamp to avoid conflicts
-    const filename = `post_${Date.now()}.jpg`;
-    const filePath = `${cacheDir.uri}/${filename}`;
     
-    // Create file object and download
-    const file = new File(filePath);
+    // Use a unique filename with timestamp and random number to avoid collisions
+    const uniqueId = `${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const fileUri = `${cacheDir}post_${uniqueId}.jpg`;
     
-    // Delete if already exists
-    if (file.exists) {
-      await file.delete();
+    // Check if file exists and delete it before downloading
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      if (fileInfo.exists) {
+        console.log('File exists, deleting:', fileUri);
+        await FileSystem.deleteAsync(fileUri, { idempotent: true });
+        console.log('File deleted successfully');
+      }
+    } catch (deleteError) {
+      console.log('Error checking/deleting file:', deleteError);
+      // Continue anyway - we'll try to download
     }
     
     // Download the image
-    await file.downloadFileAsync(imageUrl);
+    console.log('Downloading image to:', fileUri);
+    const downloadResult = await FileSystem.downloadAsync(post.imageUrl, fileUri);
+    console.log('Image downloaded successfully to:', downloadResult.uri);
     
-    console.log('Image downloaded to:', file.uri);
-    return file.uri;
+    const shareMessage = `${post.content}\n\n- ${post.userName}\n\nView in app: jagabansla://post/${post.id}\nDownload: https://jagabansla.com/download`;
+    
+    return {
+      url: Platform.OS === 'ios' ? downloadResult.uri : `file://${downloadResult.uri}`,
+      message: shareMessage,
+    };
   } catch (error) {
-    console.error('Error downloading image:', error);
-    return null;
-  }
-};
-
-export const formatPostShareOptions = async (
-  userName: string,
-  caption: string,
-  postId: string,
-  imageUrl?: string
-) => {
-  const deepLink = generatePostDeepLink(postId);
-  const downloadLink = generateUniversalPostLink();
-  
-  // Format the share message with post content and links
-  // Using proper formatting to make links clickable
-  const message = `Check out this post from ${userName}!\n\n${caption}\n\n🔗 Open in app:\n${deepLink}\n\n📱 Download the app:\n${downloadLink}`;
-  
-  // Download image to local file if provided
-  let localImageUri: string | null = null;
-  if (imageUrl) {
-    localImageUri = await downloadImageToLocal(imageUrl);
-  }
-
-  // Build share options
-  // Using 'url' for the primary link (makes it clickable)
-  // Using 'urls' array to include the image file
-  const shareOptions: any = {
-    title: `Post from ${userName}`,
-    message: message,
-    url: deepLink, // This makes the link clickable on most platforms
-  };
-
-  // Add the local image file to the share
-  if (localImageUri) {
-    // On iOS, we can use urls array to share multiple items
-    // On Android, we use url for the image
-    if (Platform.OS === 'ios') {
-      shareOptions.urls = [localImageUri];
-    } else {
-      // For Android, we need to use the 'url' field for the image
-      // and include the message separately
-      shareOptions.url = localImageUri;
-      shareOptions.message = message;
-    }
-  }
-
-  return shareOptions;
-};
-
-export const sharePost = async (
-  userName: string,
-  caption: string,
-  postId: string,
-  imageUrl?: string
-) => {
-  try {
-    const shareOptions = await formatPostShareOptions(userName, caption, postId, imageUrl);
-    await Share.open(shareOptions);
-  } catch (error: any) {
-    if (error.message !== 'User did not share' && error.message !== 'User did cancel') {
-      console.error('Share error:', error);
-      throw error;
-    }
+    console.error('Error preparing share:', error);
+    throw error;
   }
 };
