@@ -29,14 +29,23 @@ const downloadImageToLocal = async (imageUrl: string): Promise<string | null> =>
       cacheDir.create({ intermediates: true });
     }
 
-    // Extract filename from URL or generate one
-    const filename = `post-${Date.now()}.jpg`;
+    // Generate unique filename with timestamp to avoid conflicts
+    const filename = `post_${Date.now()}.jpg`;
+    const filePath = `${cacheDir.uri}/${filename}`;
+    
+    // Create file object and download
+    const file = new File(filePath);
+    
+    // Delete if already exists
+    if (file.exists) {
+      await file.delete();
+    }
     
     // Download the image
-    const downloadedFile = await File.downloadFileAsync(imageUrl, cacheDir);
+    await file.downloadFileAsync(imageUrl);
     
-    console.log('Image downloaded to:', downloadedFile.uri);
-    return downloadedFile.uri;
+    console.log('Image downloaded to:', file.uri);
+    return file.uri;
   } catch (error) {
     console.error('Error downloading image:', error);
     return null;
