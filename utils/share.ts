@@ -8,7 +8,7 @@ export const formatPostShareOptions = (userName: string, caption: string, postId
   const appScheme = 'jagabansla://';
   const deepLink = `${appScheme}post/${postId}`;
   const webUrl = `https://jagabansla.com/post/${postId}`;
-  const appStoreUrl = 'https://apps.apple.com/app/jagabansla';
+  const appStoreUrl = 'https://apps.apple.com/us/app/jagabans-l-a/id6756637652';
   const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.ooosumfoods.jagabansla';
   
   const message = `Check out this post by ${userName}!\n\n${caption}\n\nOpen in app: ${webUrl}\n\nDownload Apple: ${appStoreUrl}\n\nDownload Android: ${playStoreUrl}`;
