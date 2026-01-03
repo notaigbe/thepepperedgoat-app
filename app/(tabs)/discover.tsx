@@ -274,8 +274,7 @@ export default function DiscoverScreen() {
           >
             <View style={styles.actionIconWrapper}>
               <IconSymbol
-                ios_icon_name="square.and.arrow.up"
-                android_material_icon_name="share"
+                name="square.and.arrow.up"
                 size={22}
                 color={currentColors.text}
               />
@@ -346,8 +345,7 @@ export default function DiscoverScreen() {
             </View>
             <TouchableOpacity onPress={handleCreatePost} style={[styles.createButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}>
               <IconSymbol
-                ios_icon_name="camera.fill"
-                android_material_icon_name="camera"
+                name="camera.fill"
                 size={24}
                 color={currentColors.secondary}
               />
@@ -382,8 +380,7 @@ export default function DiscoverScreen() {
           </View>
           <TouchableOpacity onPress={handleCreatePost} style={[styles.createButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}>
             <IconSymbol
-              ios_icon_name="camera.fill"
-              android_material_icon_name="camera"
+              name="camera.fill"
               size={24}
               color={currentColors.secondary}
             />
@@ -416,8 +413,7 @@ export default function DiscoverScreen() {
             <View style={styles.emptyContainer}>
               <View style={[styles.emptyIconWrapper, { borderColor: currentColors.border }]}>
                 <IconSymbol
-                  ios_icon_name="photo.on.rectangle"
-                  android_material_icon_name="photo"
+                  name="photo.on.rectangle"
                   size={64}
                   color={currentColors.textSecondary}
                 />
@@ -440,8 +436,7 @@ export default function DiscoverScreen() {
                   activeOpacity={0.8}
                 >
                   <IconSymbol
-                    ios_icon_name="plus.circle.fill"
-                    android_material_icon_name="add-circle"
+                    name="plus.circle.fill"
                     size={20}
                     color={currentColors.background}
                   />
