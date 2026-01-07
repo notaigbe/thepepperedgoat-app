@@ -2,18 +2,16 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import Share from 'react-native-share';
 import { Post } from '@/services/socialService';
-import { Platform } from 'react-native';
 
 export const formatPostShareOptions = (userName: string, caption: string, postId: string, imageUrl?: string) => {
   const appScheme = 'jagabansla://';
   const deepLink = `${appScheme}post/${postId}`;
-  const webUrl = `https://jagabansla.com/post/${postId}`;
-  const appStoreUrl = 'https://apps.apple.com/us/app/jagabans-l-a/id6756637652';
+  const appStoreUrl = 'https://apps.apple.com/app/jagabansla';
   const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.ooosumfoods.jagabansla';
   
-  const message = `Check out this post by ${userName}!\n\n${caption}\n\nOpen in app: ${webUrl}\n\nDownload Apple: ${appStoreUrl}\n\nDownload Android: ${playStoreUrl}`;
+  const message = `Check out this post by ${userName}!\n\n${caption}\n\nOpen in app: ${deepLink}\n\nDownload: ${appStoreUrl}`;
   
-  return { message, deepLink, webUrl, imageUrl };
+  return { message, url: deepLink };
 };
 
 export const sharePost = async (post: Post) => {
@@ -21,10 +19,12 @@ export const sharePost = async (post: Post) => {
     console.log('Starting share process for post:', post.id);
     console.log('Post imageUrl:', post.imageUrl);
 
+    // Validate imageUrl exists and is a valid string
     if (!post.imageUrl || typeof post.imageUrl !== 'string' || post.imageUrl.trim() === '') {
       throw new Error('Post image URL is missing or invalid');
     }
 
+    // Ensure cache directory exists
     const cacheDir = FileSystem.cacheDirectory + 'shared-images/';
     console.log('Cache directory:', cacheDir);
     
@@ -34,10 +34,12 @@ export const sharePost = async (post: Post) => {
       await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
     }
 
+    // Download image with unique filename
     const localUri = cacheDir + `post_${Date.now()}.jpg`;
     console.log('Downloading image to:', localUri);
     console.log('From URL:', post.imageUrl);
     
+    // Use downloadAsync with proper parameters
     const downloadResult = await FileSystem.downloadAsync(
       post.imageUrl,
       localUri
@@ -49,31 +51,15 @@ export const sharePost = async (post: Post) => {
       throw new Error('Failed to download image');
     }
 
-    let fileUri = downloadResult.uri;
-    if (!fileUri.startsWith('file://')) {
-      fileUri = 'file://' + fileUri;
-    }
-
-    const userName = post.user?.name || 'Jagabans L.A.';
-    const shareOptions = formatPostShareOptions(userName, post.caption || '', post.id, post.imageUrl);
+    const shareOptions = formatPostShareOptions(post.userName, post.caption, post.id, post.imageUrl);
     
     console.log('Sharing with options:', shareOptions);
     
-    const options: any = {
-      title: `Post by ${userName}`,
-      message: shareOptions.message,
-      subject: `Post by ${userName}`,
+    await Share.open({
+      ...shareOptions,
+      url: downloadResult.uri,
       type: 'image/jpeg',
-      link: shareOptions.webUrl, // Use web URL for WhatsApp/messaging apps
-    };
-
-    if (Platform.OS === 'android') {
-      options.urls = [fileUri];
-    } else {
-      options.url = fileUri;
-    }
-
-    await Share.open(options);
+    });
 
     console.log('Share completed successfully');
 

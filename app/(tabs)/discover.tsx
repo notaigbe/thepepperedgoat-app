@@ -20,7 +20,8 @@ import { socialService, Post } from '@/services/socialService';
 import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import { getTimeAgo } from '@/utils/timeUtils';
-import { sharePost } from '@/utils/share';
+import Share from 'react-native-share';
+import { formatPostShareOptions } from '@/utils/share';
 
 export default function DiscoverScreen() {
   const router = useRouter();
@@ -65,7 +66,7 @@ export default function DiscoverScreen() {
 
   useEffect(() => {
     loadPosts(true);
-  }, [loadPosts]);
+  }, []);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -127,11 +128,23 @@ export default function DiscoverScreen() {
     }
 
     try {
+      // Show loading toast while preparing share
       showToast('Preparing to share...', 'info');
-      await sharePost(post);
+      
+      // Use the new share utility to format the share message with deep links
+      // This now downloads the image locally first
+      const shareOptions = await formatPostShareOptions(
+        post.user?.name || 'Jagabans L.A.',
+        post.caption,
+        post.id,
+        post.imageUrl
+      );
+      
+      await Share.open(shareOptions);
+      
       console.log('Post shared successfully with image and clickable links');
     } catch (error: any) {
-      if (error?.message !== 'User did share' && error?.message !== 'User did cancel' && error?.message !== 'User did not share') {
+      if (error?.message !== 'User did not share') {
         console.error('Share error:', error);
         showToast('Failed to share post', 'error');
       }
@@ -186,7 +199,8 @@ export default function DiscoverScreen() {
                       style={styles.avatar}
                     >
                       <IconSymbol
-                        name="person.fill"
+                        ios_icon_name="person.fill"
+                        android_material_icon_name="person"
                         size={20}
                         color={currentColors.background}
                       />
@@ -200,7 +214,8 @@ export default function DiscoverScreen() {
                   {item.locationVerified && (
                     <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
                       <IconSymbol
-                        name="checkmark.seal.fill"
+                        ios_icon_name="checkmark.seal.fill"
+                        android_material_icon_name="check-circle"
                         size={13}
                         color={currentColors.secondary}
                       />
@@ -227,7 +242,9 @@ export default function DiscoverScreen() {
               item.isLikedByCurrentUser && { backgroundColor: '#FF3B3015' }
             ]}>
               <IconSymbol
-                name={item.isLikedByCurrentUser ? 'heart.fill' : 'heart'}
+                ios_icon_name={item.isLikedByCurrentUser ? 'heart.fill' : 'heart'}
+                android_material_icon_name={item.isLikedByCurrentUser ? 'favorite' : 'favorite-border'}
+                size={22}
                 color={item.isLikedByCurrentUser ? '#FF3B30' : currentColors.text}
               />
             </View>
@@ -243,7 +260,8 @@ export default function DiscoverScreen() {
           >
             <View style={styles.actionIconWrapper}>
               <IconSymbol
-                name="message"
+                ios_icon_name="message"
+                android_material_icon_name="chat"
                 size={22}
                 color={currentColors.text}
               />
@@ -260,7 +278,8 @@ export default function DiscoverScreen() {
           >
             <View style={styles.actionIconWrapper}>
               <IconSymbol
-                name="square.and.arrow.up"
+                ios_icon_name="square.and.arrow.up"
+                android_material_icon_name="share"
                 size={22}
                 color={currentColors.text}
               />
@@ -331,7 +350,8 @@ export default function DiscoverScreen() {
             </View>
             <TouchableOpacity onPress={handleCreatePost} style={[styles.createButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}>
               <IconSymbol
-                name="camera.fill"
+                ios_icon_name="camera.fill"
+                android_material_icon_name="camera"
                 size={24}
                 color={currentColors.secondary}
               />
@@ -366,7 +386,8 @@ export default function DiscoverScreen() {
           </View>
           <TouchableOpacity onPress={handleCreatePost} style={[styles.createButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}>
             <IconSymbol
-              name="camera.fill"
+              ios_icon_name="camera.fill"
+              android_material_icon_name="camera"
               size={24}
               color={currentColors.secondary}
             />
@@ -399,7 +420,8 @@ export default function DiscoverScreen() {
             <View style={styles.emptyContainer}>
               <View style={[styles.emptyIconWrapper, { borderColor: currentColors.border }]}>
                 <IconSymbol
-                  name="photo.on.rectangle"
+                  ios_icon_name="photo.on.rectangle"
+                  android_material_icon_name="photo"
                   size={64}
                   color={currentColors.textSecondary}
                 />
@@ -422,7 +444,8 @@ export default function DiscoverScreen() {
                   activeOpacity={0.8}
                 >
                   <IconSymbol
-                    name="plus.circle.fill"
+                    ios_icon_name="plus.circle.fill"
+                    android_material_icon_name="add-circle"
                     size={20}
                     color={currentColors.background}
                   />

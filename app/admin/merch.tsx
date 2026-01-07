@@ -1,4 +1,3 @@
-
 import React, { useCallback } from 'react';
 import {
   View,
@@ -55,7 +54,7 @@ export default function AdminMerchManagement() {
   const [dialogConfig, setDialogConfig] = React.useState({
     title: '',
     message: '',
-    buttons: [] as { text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }[]
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
   });
 
   // Toast state
@@ -63,7 +62,7 @@ export default function AdminMerchManagement() {
   const [toastMessage, setToastMessage] = React.useState('');
   const [toastType, setToastType] = React.useState<'success' | 'error' | 'info'>('success');
 
-  const showDialog = useCallback((title: string, message: string, buttons: { text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }[]) => {
+  const showDialog = useCallback((title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
     setDialogConfig({ title, message, buttons });
     setDialogVisible(true);
   }, []);

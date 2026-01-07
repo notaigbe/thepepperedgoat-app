@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -37,21 +36,21 @@ export default function EventsScreen() {
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
     message: string;
-    buttons: {
+    buttons: Array<{
       text: string;
       onPress: () => void;
       style?: 'default' | 'destructive' | 'cancel';
-    }[];
+    }>;
   }>({
     title: '',
     message: '',
     buttons: [],
   });
 
-  const showDialog = useCallback((config: typeof dialogConfig) => {
+  const showDialog = (config: typeof dialogConfig) => {
     setDialogConfig(config);
     setDialogVisible(true);
-  }, []);
+  };
 
   const hideDialog = () => {
     setDialogVisible(false);
@@ -179,7 +178,7 @@ export default function EventsScreen() {
         buttons: [{ text: 'OK', onPress: () => {}, style: 'cancel' }],
       });
     }
-  }, [showToast, showDialog]);
+  }, [showToast]);
 
   // Load events and RSVPs on mount and when authentication changes
   useEffect(() => {

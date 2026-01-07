@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -48,10 +47,17 @@ export default function EditProfileScreen() {
   const [dialogConfig, setDialogConfig] = useState({
     title: '',
     message: '',
-    buttons: [] as { text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }[]
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
   });
 
-  const handleGetImageUrl = React.useCallback(async (path: string) => {
+  // Load signed URL on mount if profile image exists
+  useEffect(() => {
+    if (userProfile?.profileImage) {
+      handleGetImageUrl(userProfile.profileImage);
+    }
+  }, []);
+
+  const handleGetImageUrl = async (path: string) => {
     const { data: urlData } = await supabase.storage
       .from("profile")
       .createSignedUrl(path, 60 * 60);
@@ -59,14 +65,7 @@ export default function EditProfileScreen() {
     setProfileImageUrl(urlData?.signedUrl || null);
     
     return urlData?.signedUrl || null;
-  }, []);
-
-  // Load signed URL on mount if profile image exists
-  useEffect(() => {
-    if (userProfile?.profileImage) {
-      handleGetImageUrl(userProfile.profileImage);
-    }
-  }, [userProfile?.profileImage, handleGetImageUrl]);
+  };
 
   const showToast = (type: 'success' | 'error' | 'info', message: string) => {
     setToastType(type);
@@ -74,7 +73,7 @@ export default function EditProfileScreen() {
     setToastVisible(true);
   };
 
-  const showDialog = (title: string, message: string, buttons: { text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }[]) => {
+  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
     setDialogConfig({ title, message, buttons });
     setDialogVisible(true);
   };

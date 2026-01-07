@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -37,7 +36,7 @@ export default function AdminReservations() {
   const [dialogConfig, setDialogConfig] = useState({
     title: '',
     message: '',
-    buttons: [] as { text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }[]
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
   });
 
   // Toast state
@@ -45,7 +44,7 @@ export default function AdminReservations() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
-  const showDialog = (title: string, message: string, buttons: { text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }[]) => {
+  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
     setDialogConfig({ title, message, buttons });
     setDialogVisible(true);
   };
@@ -56,7 +55,11 @@ export default function AdminReservations() {
     setToastVisible(true);
   };
 
-  const fetchReservations = React.useCallback(async () => {
+  useEffect(() => {
+    fetchReservations();
+  }, []);
+
+  const fetchReservations = async () => {
     try {
       setLoading(true);
       const { data, error } = await reservationService.getAllReservations();
@@ -95,11 +98,7 @@ export default function AdminReservations() {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchReservations();
-  }, [fetchReservations]);
+  };
 
   const handleStatusUpdate = async (reservationId: string, newStatus: Reservation['status']) => {
     try {
