@@ -17,7 +17,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
 import { SUPABASE_URL, supabase } from '@/app/integrations/supabase/client';
-import { StripeProvider, useStripe, PaymentSheet } from '@stripe/stripe-react-native';
+import { StripeProvider, useStripe, PaymentSheet, CardField } from '@stripe/stripe-react-native';
 import Dialog from '@/components/Dialog';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -73,6 +73,16 @@ interface StripePayment {
   updated_at?: string;
 }
 
+interface StoredCard {
+  id: string;
+  stripePaymentMethodId: string;
+  cardBrand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  isDefault: boolean;
+}
+
 // ============================================================================
 // STRIPE PUBLISHABLE KEY
 // ============================================================================
@@ -102,7 +112,7 @@ function CheckoutContent() {
     loadUserProfile
   } = useApp();
 
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const { initPaymentSheet, presentPaymentSheet, confirmPayment } = useStripe();
 
   // ============================================================================
   // STATE
@@ -131,6 +141,13 @@ function CheckoutContent() {
 
   // Order state for realtime updates
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+
+  // Saved payment methods state
+  const [storedCards, setStoredCards] = useState<StoredCard[]>([]);
+  const [loadingCards, setLoadingCards] = useState(false);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null);
+  const [paymentMode, setPaymentMode] = useState<'saved' | 'new'>('saved');
+  const [cardComplete, setCardComplete] = useState(false);
 
   // ============================================================================
   // COMPUTED VALUES (CORRECTED POINTS SYSTEM)
@@ -198,6 +215,68 @@ function CheckoutContent() {
     return 'Address verification failed.';
   }, [isValidatingAddress, addressValidation]);
 
+  const getCardBrandIcon = (brand: string) => {
+    const brandLower = brand.toLowerCase();
+    if (brandLower.includes('visa')) return 'credit-card';
+    if (brandLower.includes('mastercard')) return 'credit-card';
+    if (brandLower.includes('amex') || brandLower.includes('american')) return 'credit-card';
+    if (brandLower.includes('discover')) return 'credit-card';
+    return 'credit-card';
+  };
+
+  // ============================================================================
+  // LOAD SAVED PAYMENT METHODS
+  // ============================================================================
+
+  const loadStoredCards = useCallback(async () => {
+    if (!userProfile) return;
+    
+    setLoadingCards(true);
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('user_id', userProfile.id)
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const cards: StoredCard[] = data.map((card: any) => ({
+          id: card.id,
+          stripePaymentMethodId: card.stripe_payment_method_id || '',
+          cardBrand: card.brand || 'card',
+          last4: card.last4 || '0000',
+          expMonth: card.exp_month || 0,
+          expYear: card.exp_year || 0,
+          isDefault: card.is_default || false,
+        }));
+        
+        setStoredCards(cards);
+        
+        // Auto-select the default card
+        const defaultCard = cards.find(c => c.isDefault);
+        if (defaultCard) {
+          setSelectedPaymentMethodId(defaultCard.stripePaymentMethodId);
+          setPaymentMode('saved');
+        } else if (cards.length > 0) {
+          setSelectedPaymentMethodId(cards[0].stripePaymentMethodId);
+          setPaymentMode('saved');
+        }
+      } else {
+        setStoredCards([]);
+        setPaymentMode('new');
+      }
+    } catch (error) {
+      console.error('Error loading stored cards:', error);
+      showToast('error', 'Failed to load saved cards');
+      setPaymentMode('new');
+    } finally {
+      setLoadingCards(false);
+    }
+  }, [userProfile, showToast]);
+
   // ============================================================================
   // ADDRESS VALIDATION
   // ============================================================================
@@ -258,178 +337,201 @@ function CheckoutContent() {
   // ============================================================================
 
   const createOrder = useCallback(async () => {
-  if (!userProfile) throw new Error('User profile not found');
+    if (!userProfile) throw new Error('User profile not found');
 
-  console.log('Creating order in Supabase...');
-  console.log('Points to earn:', pointsToEarn);
+    console.log('Creating order in Supabase...');
+    console.log('Points to earn:', pointsToEarn);
 
-  // Create order
-  const { data: order, error: orderError } = await supabase
-    .from('orders')
-    .insert({
-      user_id: userProfile.id,
-      total: total,
-      points_earned: pointsToEarn,
-      status: 'pending',
-      payment_status: 'pending',
-      delivery_address: orderType === 'delivery' ? (validatedAddress || deliveryAddress) : null,
-      pickup_notes: orderType === 'pickup' ? pickupNotes : null,
-    })
-    .select()
-    .single();
+    // Create order
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        user_id: userProfile.id,
+        total: total,
+        points_earned: pointsToEarn,
+        status: 'pending',
+        payment_status: 'pending',
+        delivery_address: orderType === 'delivery' ? (validatedAddress || deliveryAddress) : null,
+        pickup_notes: orderType === 'pickup' ? pickupNotes : null,
+      })
+      .select()
+      .single();
 
-  if (orderError || !order) {
-    console.error('Error creating order:', orderError);
-    throw new Error('Failed to create order');
-  }
-
-  console.log('Order created:', order.id);
-
-  // Create order items
-  const orderItems = cart.map(item => ({
-    order_id: order.id,
-    menu_item_id: item.id,
-    name: item.name,
-    price: item.price,
-    quantity: item.quantity,
-  }));
-
-  const { error: itemsError } = await supabase
-    .from('order_items')
-    .insert(orderItems);
-
-  if (itemsError) {
-    console.error('Error creating order items:', itemsError);
-    throw new Error('Failed to create order items');
-  }
-
-  // Deduct points if used
-  if (usePoints && pointsDiscount > 0) {
-    // CORRECTED: Convert dollars back to points (divide by 0.01)
-    const pointsToDeduct = Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE);
-    const { error: pointsError } = await supabase
-      .from('user_profiles')
-      .update({ points: availablePoints - pointsToDeduct })
-      .eq('id', userProfile.id);
-
-    if (pointsError) {
-      console.error('Error deducting points:', pointsError);
-    } else {
-      console.log(`✓ Deducted ${pointsToDeduct} points (worth $${pointsDiscount.toFixed(2)})`);
+    if (orderError || !order) {
+      console.error('Error creating order:', orderError);
+      throw new Error('Failed to create order');
     }
-  }
 
-  return order.id;
-}, [userProfile, total, pointsToEarn, orderType, validatedAddress, deliveryAddress, pickupNotes, cart, usePoints, pointsDiscount, availablePoints]);
+    console.log('Order created:', order.id);
+
+    // Create order items
+    const orderItems = cart.map(item => ({
+      order_id: order.id,
+      menu_item_id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) {
+      console.error('Error creating order items:', itemsError);
+      throw new Error('Failed to create order items');
+    }
+
+    // Deduct points if used
+    if (usePoints && pointsDiscount > 0) {
+      // CORRECTED: Convert dollars back to points (divide by 0.01)
+      const pointsToDeduct = Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE);
+      const { error: pointsError } = await supabase
+        .from('user_profiles')
+        .update({ points: availablePoints - pointsToDeduct })
+        .eq('id', userProfile.id);
+
+      if (pointsError) {
+        console.error('Error deducting points:', pointsError);
+      } else {
+        console.log(`✓ Deducted ${pointsToDeduct} points (worth $${pointsDiscount.toFixed(2)})`);
+      }
+    }
+
+    return order.id;
+  }, [userProfile, total, pointsToEarn, orderType, validatedAddress, deliveryAddress, pickupNotes, cart, usePoints, pointsDiscount, availablePoints]);
 
   // ============================================================================
   // STRIPE PAYMENT INITIALIZATION (STEPS 2 & 3)
   // ============================================================================
 
   const initializePaymentSheet = useCallback(async (orderId: string) => {
-  try {
-    console.log('Initializing Stripe Payment Sheet for order:', orderId);
+    try {
+      console.log('Initializing Stripe Payment Sheet for order:', orderId);
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Not authenticated');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
 
-    // Call create-payment-intent edge function
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        orderId,
-        amount: Math.round(total * 100), // Convert to cents
-        currency: 'usd',
-        metadata: {
-          orderType,
-          itemCount: cart.length,
+      // Call create-payment-intent edge function
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
-      }),
-    });
+        body: JSON.stringify({
+          orderId,
+          amount: Math.round(total * 100), // Convert to cents
+          currency: 'usd',
+          paymentMethodId: paymentMode === 'saved' ? selectedPaymentMethodId : undefined,
+          metadata: {
+            orderType,
+            itemCount: cart.length,
+          },
+        }),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error creating payment intent:', errorText);
-      throw new Error('Failed to create payment intent');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error creating payment intent:', errorText);
+        throw new Error('Failed to create payment intent');
+      }
+
+      const { clientSecret, paymentIntentId, paymentId } = await response.json();
+      console.log('Payment intent created:', paymentIntentId, 'Payment ID:', paymentId);
+
+      // Update the order with the payment_id
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ payment_id: paymentId })
+        .eq('id', orderId);
+
+      if (updateError) {
+        console.error('Error updating order with payment_id:', updateError);
+        throw new Error('Failed to link payment to order');
+      }
+
+      console.log('Order updated with payment_id:', paymentId);
+
+      // If using saved payment method, confirm payment directly
+      if (paymentMode === 'saved' && selectedPaymentMethodId) {
+        console.log('Using saved payment method, confirming payment...');
+        const { error: confirmError } = await confirmPayment(clientSecret, {
+          paymentMethodType: 'Card',
+        });
+
+        if (confirmError) {
+          console.error('Error confirming payment:', confirmError);
+          throw new Error(confirmError.message);
+        }
+
+        console.log('Payment confirmed with saved method');
+        return true;
+      }
+
+      // Otherwise, initialize payment sheet for new card
+      const { error } = await initPaymentSheet({
+        merchantDisplayName: 'Jagabans LA',
+        paymentIntentClientSecret: clientSecret,
+        defaultBillingDetails: {
+          name: userProfile?.name,
+          email: userProfile?.email,
+        },
+        allowsDelayedPaymentMethods: false,
+        returnURL: 'jagabansla://checkout',
+        billingDetailsCollectionConfiguration: {
+          name: PaymentSheet.CollectionMode.ALWAYS,
+          email: PaymentSheet.CollectionMode.ALWAYS,
+          phone: PaymentSheet.CollectionMode.NEVER,
+        },
+      });
+
+      if (error) {
+        console.error('Error initializing payment sheet:', error);
+        throw new Error(error.message);
+      }
+
+      console.log('Payment sheet initialized successfully');
+      return true;
+    } catch (error) {
+      console.error('Error in initializePaymentSheet:', error);
+      throw error;
     }
-
-    const { clientSecret, paymentIntentId, paymentId } = await response.json();
-    console.log('Payment intent created:', paymentIntentId, 'Payment ID:', paymentId);
-
-    // Update the order with the payment_id
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({ payment_id: paymentId })
-      .eq('id', orderId);
-
-    if (updateError) {
-      console.error('Error updating order with payment_id:', updateError);
-      throw new Error('Failed to link payment to order');
-    }
-
-    console.log('Order updated with payment_id:', paymentId);
-
-    // Initialize payment sheet
-    const { error } = await initPaymentSheet({
-      merchantDisplayName: 'Jagabans LA',
-      paymentIntentClientSecret: clientSecret,
-      defaultBillingDetails: {
-        name: userProfile?.name,
-        email: userProfile?.email,
-      },
-      allowsDelayedPaymentMethods: false,
-      returnURL: 'jagabansla://checkout',
-      billingDetailsCollectionConfiguration: {
-        name: PaymentSheet.CollectionMode.ALWAYS,
-        email: PaymentSheet.CollectionMode.ALWAYS,
-        phone: PaymentSheet.CollectionMode.NEVER,
-      },
-    });
-
-    if (error) {
-      console.error('Error initializing payment sheet:', error);
-      throw new Error(error.message);
-    }
-
-    console.log('Payment sheet initialized successfully');
-    return true;
-  } catch (error) {
-    console.error('Error in initializePaymentSheet:', error);
-    throw error;
-  }
-}, [total, orderType, cart, initPaymentSheet, userProfile]);
+  }, [total, orderType, cart, initPaymentSheet, confirmPayment, userProfile, paymentMode, selectedPaymentMethodId]);
 
   // ============================================================================
   // PAYMENT PROCESSING (STEP 4)
   // ============================================================================
 
   const handlePayment = useCallback(async () => {
-  try {
-    console.log('Presenting payment sheet...');
-    
-    const { error } = await presentPaymentSheet();
-
-    if (error) {
-      if (error.code === 'Canceled') {
-        console.log('Payment cancelled by user');
-        showToast('info', 'Payment cancelled');
-        return false;
+    try {
+      // If using saved payment method, payment is already confirmed
+      if (paymentMode === 'saved' && selectedPaymentMethodId) {
+        console.log('Payment already confirmed with saved method');
+        return true;
       }
-      console.error('Payment sheet error:', error);
-      throw new Error(error.message);
-    }
 
-    console.log('Payment completed successfully');
-    return true;
-  } catch (error) {
-    console.error('Error in handlePayment:', error);
-    throw error;
-  }
-}, [presentPaymentSheet, showToast]);
+      console.log('Presenting payment sheet...');
+      
+      const { error } = await presentPaymentSheet();
+
+      if (error) {
+        if (error.code === 'Canceled') {
+          console.log('Payment cancelled by user');
+          showToast('info', 'Payment cancelled');
+          return false;
+        }
+        console.error('Payment sheet error:', error);
+        throw new Error(error.message);
+      }
+
+      console.log('Payment completed successfully');
+      return true;
+    } catch (error) {
+      console.error('Error in handlePayment:', error);
+      throw error;
+    }
+  }, [presentPaymentSheet, showToast, paymentMode, selectedPaymentMethodId]);
 
   // ============================================================================
   // REALTIME ORDER UPDATES (STEPS 5 & 6)
@@ -541,38 +643,38 @@ function CheckoutContent() {
   // ============================================================================
 
   const proceedWithOrder = useCallback(async () => {
-  setProcessing(true);
+    setProcessing(true);
 
-  try {
-    // Step 1: Create order in Supabase
-    const orderId = await createOrder();
-    setCurrentOrderId(orderId);
+    try {
+      // Step 1: Create order in Supabase
+      const orderId = await createOrder();
+      setCurrentOrderId(orderId);
 
-    // Step 2: Initialize Stripe Payment Sheet (creates payment intent and updates order)
-    await initializePaymentSheet(orderId);
+      // Step 2: Initialize Stripe Payment Sheet (creates payment intent and updates order)
+      await initializePaymentSheet(orderId);
 
-    // Step 3: Present payment sheet
-    const paymentSuccess = await handlePayment();
+      // Step 3: Present payment sheet (or confirm with saved method)
+      const paymentSuccess = await handlePayment();
 
-    if (!paymentSuccess) {
+      if (!paymentSuccess) {
+        setProcessing(false);
+        return;
+      }
+
+      // Step 4: Wait for webhook to update order status
+      // The realtime subscription will handle the success notification
+      showToast('info', 'Processing payment...');
+      
+    } catch (error) {
+      console.error('Order placement error:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to place order. Please try again.';
+      showToast('error', errorMessage);
       setProcessing(false);
-      return;
+      setCurrentOrderId(null);
     }
-
-    // Step 4: Wait for webhook to update order status
-    // The realtime subscription will handle the success notification
-    showToast('info', 'Processing payment...');
-    
-  } catch (error) {
-    console.error('Order placement error:', error);
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : 'Failed to place order. Please try again.';
-    showToast('error', errorMessage);
-    setProcessing(false);
-    setCurrentOrderId(null);
-  }
-}, [createOrder, initializePaymentSheet, handlePayment, showToast]);
+  }, [createOrder, initializePaymentSheet, handlePayment, showToast]);
 
   const handlePlaceOrder = useCallback(async () => {
     console.log('=== Starting Checkout Flow ===');
@@ -611,8 +713,19 @@ function CheckoutContent() {
       }
     }
 
+    // Validate payment method selection
+    if (paymentMode === 'saved' && !selectedPaymentMethodId) {
+      showToast('error', 'Please select a payment method.');
+      return;
+    }
+
+    if (paymentMode === 'new' && !cardComplete) {
+      showToast('error', 'Please enter complete card details.');
+      return;
+    }
+
     await proceedWithOrder();
-  }, [orderType, deliveryAddress, addressTouched, addressValidation, showToast, proceedWithOrder]);
+  }, [orderType, deliveryAddress, addressTouched, addressValidation, showToast, proceedWithOrder, paymentMode, selectedPaymentMethodId, cardComplete]);
 
   // ============================================================================
   // EFFECTS
@@ -630,6 +743,10 @@ function CheckoutContent() {
     const timeoutId = setTimeout(() => validateAddress(deliveryAddress), 1000);
     return () => clearTimeout(timeoutId);
   }, [deliveryAddress, addressTouched, orderType, validateAddress]);
+
+  useEffect(() => {
+    loadStoredCards();
+  }, [loadStoredCards]);
 
   // ============================================================================
   // STYLES
@@ -923,6 +1040,110 @@ function CheckoutContent() {
       fontFamily: 'Inter_700Bold',
       color: currentColors.background,
     },
+    paymentMethodsContainer: {
+      gap: 12,
+    },
+    paymentMethodCard: {
+      borderRadius: 0,
+      padding: 16,
+      borderWidth: 2,
+      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+      elevation: 4,
+    },
+    paymentMethodCardSelected: {
+      borderColor: currentColors.secondary,
+      borderWidth: 3,
+    },
+    paymentMethodInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    paymentMethodIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 0,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: currentColors.border,
+    },
+    paymentMethodDetails: {
+      flex: 1,
+    },
+    paymentMethodBrand: {
+      fontSize: 16,
+      fontFamily: 'Inter_600SemiBold',
+      color: currentColors.text,
+    },
+    paymentMethodLast4: {
+      fontSize: 14,
+      fontFamily: 'Inter_400Regular',
+      color: currentColors.textSecondary,
+      marginTop: 2,
+    },
+    defaultBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 0,
+      marginLeft: 8,
+    },
+    defaultBadgeText: {
+      fontSize: 11,
+      fontFamily: 'Inter_600SemiBold',
+      color: currentColors.background,
+    },
+    radioButton: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: currentColors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    radioButtonSelected: {
+      borderColor: currentColors.secondary,
+    },
+    radioButtonInner: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: currentColors.secondary,
+    },
+    addNewCardButton: {
+      borderRadius: 0,
+      padding: 16,
+      borderWidth: 2,
+      borderStyle: 'dashed',
+      borderColor: currentColors.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    addNewCardText: {
+      fontSize: 16,
+      fontFamily: 'Inter_600SemiBold',
+      color: currentColors.secondary,
+    },
+    cardFieldContainer: {
+      marginTop: 12,
+    },
+    cardField: {
+      height: 50,
+      marginVertical: 8,
+    },
+    loadingPaymentMethods: {
+      padding: 20,
+      alignItems: 'center',
+    },
+    loadingPaymentMethodsText: {
+      marginTop: 8,
+      fontSize: 14,
+      fontFamily: 'Inter_400Regular',
+      color: currentColors.textSecondary,
+    },
   });
 
   // ============================================================================
@@ -1166,41 +1387,121 @@ function CheckoutContent() {
               />
             </View>
 
-            {/* <View style={styles.section}>
-              <LinearGradient
-                colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.pointsToggle}
-              >
-                <Pressable
-                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}
-                  onPress={() => {
-                    if (!processing) {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setUsePoints(!usePoints);
-                    }
-                  }}
-                  disabled={processing}
-                >
-                  <View style={styles.pointsToggleLeft}>
-                    <IconSymbol name="star.fill" size={24} color={currentColors.highlight} />
-                    <View style={styles.pointsToggleInfo}>
-                      <Text style={styles.pointsToggleTitle}>Use Reward Points</Text>
-                      <Text style={styles.pointsToggleSubtitle}>
-                        You have {availablePoints} points available (${pointsValueInDollars.toFixed(2)} value)
-                      </Text>
+            {/* Payment Methods Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Payment Method</Text>
+              
+              {loadingCards ? (
+                <View style={styles.loadingPaymentMethods}>
+                  <ActivityIndicator size="large" color={currentColors.secondary} />
+                  <Text style={styles.loadingPaymentMethodsText}>Loading payment methods...</Text>
+                </View>
+              ) : (
+                <View style={styles.paymentMethodsContainer}>
+                  {storedCards.map((card) => (
+                    <LinearGradient
+                      key={card.id}
+                      colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[
+                        styles.paymentMethodCard,
+                        paymentMode === 'saved' && selectedPaymentMethodId === card.stripePaymentMethodId && styles.paymentMethodCardSelected,
+                        { borderColor: paymentMode === 'saved' && selectedPaymentMethodId === card.stripePaymentMethodId ? currentColors.secondary : currentColors.border }
+                      ]}
+                    >
+                      <Pressable
+                        onPress={() => {
+                          if (!processing) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setSelectedPaymentMethodId(card.stripePaymentMethodId);
+                            setPaymentMode('saved');
+                          }
+                        }}
+                        disabled={processing}
+                      >
+                        <View style={styles.paymentMethodInfo}>
+                          <View style={[styles.paymentMethodIcon, { backgroundColor: currentColors.background }]}>
+                            <IconSymbol 
+                              name={getCardBrandIcon(card.cardBrand)} 
+                              size={24} 
+                              color={currentColors.secondary} 
+                            />
+                          </View>
+                          <View style={styles.paymentMethodDetails}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                              <Text style={styles.paymentMethodBrand}>
+                                {card.cardBrand.toUpperCase()}
+                              </Text>
+                              {card.isDefault && (
+                                <LinearGradient
+                                  colors={[currentColors.secondary, currentColors.highlight]}
+                                  start={{ x: 0, y: 0 }}
+                                  end={{ x: 1, y: 0 }}
+                                  style={styles.defaultBadge}
+                                >
+                                  <Text style={styles.defaultBadgeText}>Default</Text>
+                                </LinearGradient>
+                              )}
+                            </View>
+                            <Text style={styles.paymentMethodLast4}>
+                              •••• {card.last4} • Exp {String(card.expMonth).padStart(2, '0')}/{card.expYear}
+                            </Text>
+                          </View>
+                          <View style={[
+                            styles.radioButton,
+                            paymentMode === 'saved' && selectedPaymentMethodId === card.stripePaymentMethodId && styles.radioButtonSelected
+                          ]}>
+                            {paymentMode === 'saved' && selectedPaymentMethodId === card.stripePaymentMethodId && (
+                              <View style={styles.radioButtonInner} />
+                            )}
+                          </View>
+                        </View>
+                      </Pressable>
+                    </LinearGradient>
+                  ))}
+
+                  {/* Add New Card Option */}
+                  <Pressable
+                    onPress={() => {
+                      if (!processing) {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setPaymentMode('new');
+                        setSelectedPaymentMethodId(null);
+                      }
+                    }}
+                    disabled={processing}
+                    style={[
+                      styles.addNewCardButton,
+                      { borderColor: paymentMode === 'new' ? currentColors.secondary : currentColors.border }
+                    ]}
+                  >
+                    <IconSymbol name="add" size={24} color={currentColors.secondary} />
+                    <Text style={styles.addNewCardText}>Add New Card</Text>
+                  </Pressable>
+
+                  {/* Card Field for New Card */}
+                  {paymentMode === 'new' && (
+                    <View style={styles.cardFieldContainer}>
+                      <CardField
+                        postalCodeEnabled={false}
+                        placeholders={{
+                          number: '4242 4242 4242 4242',
+                        }}
+                        cardStyle={{
+                          backgroundColor: currentColors.background,
+                          textColor: currentColors.text,
+                        }}
+                        style={styles.cardField}
+                        onCardChange={(cardDetails) => {
+                          setCardComplete(cardDetails.complete);
+                        }}
+                      />
                     </View>
-                  </View>
-                  <View style={[
-                    styles.checkbox, 
-                    usePoints && { backgroundColor: currentColors.secondary, borderColor: currentColors.secondary }
-                  ]}>
-                    {usePoints && <IconSymbol name="check-circle" size={16} color={currentColors.background} />}
-                  </View>
-                </Pressable>
-              </LinearGradient>
-            </View> */}
+                  )}
+                </View>
+              )}
+            </View>
 
             <LinearGradient
               colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
