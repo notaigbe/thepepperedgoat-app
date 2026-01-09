@@ -13,7 +13,8 @@ import {
   AppNotification,
   ThemeSettings,
   Reservation,
-  UserRole
+  UserRole,
+  AdminNotificationEmail
 } from '@/types';
 
 // The imported `supabase` from client.ts is already typed as SupabaseClient<Database>
@@ -1646,6 +1647,116 @@ export const themeService = {
     } catch (error) {
       console.error('Update theme settings error:', error);
       return { data: null, error };
+    }
+  },
+};
+
+// ============================================
+// ADMIN NOTIFICATION EMAIL SERVICES
+// ============================================
+
+export const adminNotificationEmailService = {
+  /**
+   * Get all admin notification emails (Super-Admin only)
+   */
+  async getAdminNotificationEmails() {
+    try {
+      const { data, error } = await supabase
+        .from('admin_notification_emails')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Get admin notification emails error:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Get active admin notification emails
+   */
+  async getActiveAdminNotificationEmails() {
+    try {
+      const { data, error } = await supabase
+        .from('admin_notification_emails')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Get active admin notification emails error:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Add a new admin notification email (Super-Admin only)
+   */
+  async addAdminNotificationEmail(email: string) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const { data, error } = await (supabase
+        .from('admin_notification_emails')
+        .insert({
+          email: email.trim().toLowerCase(),
+          is_active: true,
+          created_by: session.user.id,
+        } as any)
+        .select()
+        .single() as any);
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Add admin notification email error:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Toggle admin notification email active status (Super-Admin only)
+   */
+  async toggleAdminNotificationEmail(emailId: string, isActive: boolean) {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('admin_notification_emails')
+        .update({
+          is_active: isActive,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', emailId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Toggle admin notification email error:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Delete an admin notification email (Super-Admin only)
+   */
+  async deleteAdminNotificationEmail(emailId: string) {
+    try {
+      const { error } = await supabase
+        .from('admin_notification_emails')
+        .delete()
+        .eq('id', emailId);
+
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      console.error('Delete admin notification email error:', error);
+      return { error };
     }
   },
 };

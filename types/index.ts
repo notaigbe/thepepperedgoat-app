@@ -164,6 +164,15 @@ export interface Reservation {
   createdAt: string;
 }
 
+export interface AdminNotificationEmail {
+  id: string;
+  email: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+}
+
 export type ThemeMode = 'light' | 'dark' | 'auto';
 export type ColorScheme = 'default' | 'warm' | 'cool' | 'vibrant' | 'minimal';
 export type UserRole = 'user' | 'admin' | 'super_admin';

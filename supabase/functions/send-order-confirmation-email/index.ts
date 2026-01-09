@@ -88,17 +88,36 @@ serve(async (req) => {
     const orderData: OrderEmailData = await req.json();
     console.log('Order data received:', orderData.orderId);
 
-    // Get admin email recipients from environment variable
-    const adminEmailsEnv = Deno.env.get('ADMIN_EMAIL_RECIPIENTS');
-    if (!adminEmailsEnv) {
-      console.error('ADMIN_EMAIL_RECIPIENTS not configured');
+    // Get active admin email recipients from database
+    const { data: emailRecords, error: emailError } = await supabase
+      .from('admin_notification_emails')
+      .select('email')
+      .eq('is_active', true);
+
+    if (emailError) {
+      console.error('Error fetching admin notification emails:', emailError);
       return new Response(
-        JSON.stringify({ error: 'Admin email recipients not configured' }),
+        JSON.stringify({ error: 'Failed to fetch admin email recipients' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const adminEmails = adminEmailsEnv.split(',').map(email => email.trim());
+    if (!emailRecords || emailRecords.length === 0) {
+      console.warn('No active admin notification emails configured');
+      // Fallback to environment variable if database is empty
+      const adminEmailsEnv = Deno.env.get('ADMIN_EMAIL_RECIPIENTS');
+      if (!adminEmailsEnv) {
+        console.error('No admin email recipients configured in database or environment');
+        return new Response(
+          JSON.stringify({ error: 'Admin email recipients not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      const adminEmails = adminEmailsEnv.split(',').map(email => email.trim());
+      console.log('Using fallback emails from environment:', adminEmails);
+    }
+
+    const adminEmails = emailRecords.map(record => record.email);
     console.log('Sending emails to:', adminEmails);
 
     // Get SMTP configuration from environment

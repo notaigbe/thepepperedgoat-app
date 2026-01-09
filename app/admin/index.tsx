@@ -294,6 +294,15 @@ export default function AdminDashboard() {
     color: "#FF9F43",
     superAdminOnly: false,
   },
+  {
+    id: "notification-emails",
+    title: "Notification Emails",
+    description: "Manage admin email recipients",
+    icon: "envelope.badge" as const, // SF Symbol for iOS
+    route: "/admin/notification-emails",
+    color: "#6366F1",
+    superAdminOnly: true,
+  },
 ];
 
   // Filter sections based on effective role
