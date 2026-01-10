@@ -20,6 +20,7 @@ import { SUPABASE_URL, supabase } from '@/app/integrations/supabase/client';
 import { StripeProvider, useStripe } from '@stripe/stripe-react-native';
 import Dialog from '@/components/Dialog';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Linking from 'expo-linking';
 
 // ============================================================================
 // TYPES
@@ -267,81 +268,14 @@ function CheckoutContent() {
   }, [addressValidation]);
 
   // ============================================================================
-  // ORDER CREATION (STEP 1)
+  // STRIPE PAYMENT SHEET INITIALIZATION
   // ============================================================================
 
-  const createOrder = useCallback(async () => {
-    if (!userProfile) throw new Error('User profile not found');
-
-    console.log('Creating order in Supabase...');
-    console.log('Points to earn:', pointsToEarn);
-
-    // Create order
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        user_id: userProfile.id,
-        total: total,
-        points_earned: pointsToEarn,
-        status: 'pending',
-        payment_status: 'pending',
-        delivery_address: orderType === 'delivery' ? (validatedAddress || deliveryAddress) : null,
-        pickup_notes: orderType === 'pickup' ? pickupNotes : null,
-      })
-      .select()
-      .single();
-
-    if (orderError || !order) {
-      console.error('Error creating order:', orderError);
-      throw new Error('Failed to create order');
-    }
-
-    console.log('Order created:', order.id);
-
-    // Create order items
-    const orderItems = cart.map(item => ({
-      order_id: order.id,
-      menu_item_id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-    }));
-
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems);
-
-    if (itemsError) {
-      console.error('Error creating order items:', itemsError);
-      throw new Error('Failed to create order items');
-    }
-
-    // Deduct points if used
-    if (usePoints && pointsDiscount > 0) {
-      // CORRECTED: Convert dollars back to points (divide by 0.01)
-      const pointsToDeduct = Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE);
-      const { error: pointsError } = await supabase
-        .from('user_profiles')
-        .update({ points: availablePoints - pointsToDeduct })
-        .eq('id', userProfile.id);
-
-      if (pointsError) {
-        console.error('Error deducting points:', pointsError);
-      } else {
-        console.log(`✓ Deducted ${pointsToDeduct} points (worth $${pointsDiscount.toFixed(2)})`);
-      }
-    }
-
-    return order.id;
-  }, [userProfile, total, pointsToEarn, orderType, validatedAddress, deliveryAddress, pickupNotes, cart, usePoints, pointsDiscount, availablePoints]);
-
-  // ============================================================================
-  // STRIPE PAYMENT SHEET INITIALIZATION (STEPS 2 & 3)
-  // ============================================================================
-
-  const initializePaymentSheet = useCallback(async (orderId: string) => {
+  const initializePaymentSheet = useCallback(async () => {
     try {
-      console.log('Initializing Stripe Payment Sheet for order:', orderId);
+      if (!userProfile) throw new Error('User profile not found');
+
+      console.log('Initializing Stripe Payment Sheet...');
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
@@ -394,6 +328,8 @@ function CheckoutContent() {
 
       // Create payment intent with setup for future usage
       console.log('Creating payment intent with customer:', customerId);
+      console.log('Amount:', Math.round(total * 100), 'cents');
+      
       const response = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
         method: 'POST',
         headers: {
@@ -401,7 +337,6 @@ function CheckoutContent() {
           'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          orderId,
           amount: Math.round(total * 100), // Convert to cents
           currency: 'usd',
           customerId,
@@ -409,6 +344,7 @@ function CheckoutContent() {
           metadata: {
             orderType,
             itemCount: cart.length,
+            userId: user.id,
           },
         }),
       });
@@ -424,244 +360,106 @@ function CheckoutContent() {
       console.log('Ephemeral key received:', ephemeralKey ? 'Yes' : 'No');
       console.log('Customer ID from response:', returnedCustomerId);
 
-      // Update the order with the payment_id
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({ payment_id: paymentIntentId })
-        .eq('id', orderId);
-
-      if (updateError) {
-        console.error('Error updating order with payment_id:', updateError);
-        throw new Error('Failed to link payment to order');
-      }
-
-      console.log('Order updated with payment_id:', paymentIntentId);
-
-      // Initialize Payment Sheet with customer and ephemeral key for saved payment methods
-      const initConfig: any = {
-        merchantDisplayName: 'Jagabans LA',
-        paymentIntentClientSecret: clientSecret,
-        allowsDelayedPaymentMethods: false,
-        returnURL: 'jagabansla://checkout',
-        defaultBillingDetails: {
-          name: userProfile?.name,
-          email: userProfile?.email || user.email,
-        },
-        // Enable Apple Pay and Google Pay
-        applePay: {
-          merchantCountryCode: 'US',
-        },
-        googlePay: {
-          merchantCountryCode: 'US',
-          testEnv: false, // Set to true for testing
-          currencyCode: 'usd',
-        },
-      };
-
-      // CRITICAL FIX: Only add customer and ephemeral key if both are present
-      if (customerId && ephemeralKey) {
-        console.log('✓ Adding customer and ephemeral key to Payment Sheet config');
-        initConfig.customerId = customerId;
-        initConfig.customerEphemeralKeySecret = ephemeralKey;
-      } else {
-        console.warn('⚠️ Customer ID or ephemeral key missing - saved cards will not be available');
-        console.warn('Customer ID:', customerId);
-        console.warn('Ephemeral key:', ephemeralKey ? 'present' : 'missing');
-      }
-
-      const { error } = await initPaymentSheet(initConfig);
-
-      if (error) {
-        console.error('Error initializing payment sheet:', error);
-        throw new Error(error.message);
-      }
-
-      console.log('✓ Payment Sheet initialized successfully with saved payment methods support');
-      setPaymentSheetReady(true);
-      return true;
+      // Store payment intent ID for later order creation
+      return { clientSecret, ephemeralKey, paymentIntentId, customerId: returnedCustomerId };
     } catch (error) {
       console.error('Error in initializePaymentSheet:', error);
       throw error;
     }
-  }, [total, orderType, cart, initPaymentSheet, userProfile]);
+  }, [total, orderType, cart, userProfile]);
 
   // ============================================================================
-  // PAYMENT PROCESSING (STEP 4)
+  // ORDER CREATION (AFTER SUCCESSFUL PAYMENT)
   // ============================================================================
 
-  const handlePayment = useCallback(async () => {
-    try {
-      console.log('Presenting Payment Sheet...');
-      
-      const { error } = await presentPaymentSheet();
+  const createOrderAfterPayment = useCallback(async (paymentIntentId: string) => {
+    if (!userProfile) throw new Error('User profile not found');
 
-      if (error) {
-        if (error.code === 'Canceled') {
-          console.log('Payment cancelled by user');
-          showToast('info', 'Payment cancelled');
-          return false;
-        }
-        console.error('Payment sheet error:', error);
-        throw new Error(error.message);
-      }
+    console.log('Creating order after successful payment...');
+    console.log('Payment Intent ID:', paymentIntentId);
+    console.log('Points to earn:', pointsToEarn);
 
-      console.log('Payment completed successfully');
-      return true;
-    } catch (error) {
-      console.error('Error in handlePayment:', error);
-      throw error;
+    // Create order
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        user_id: userProfile.id,
+        total: total,
+        points_earned: pointsToEarn,
+        status: 'confirmed',
+        payment_status: 'succeeded',
+        payment_id: paymentIntentId,
+        delivery_address: orderType === 'delivery' ? (validatedAddress || deliveryAddress) : null,
+        pickup_notes: orderType === 'pickup' ? pickupNotes : null,
+      })
+      .select()
+      .single();
+
+    if (orderError || !order) {
+      console.error('Error creating order:', orderError);
+      throw new Error('Failed to create order');
     }
-  }, [presentPaymentSheet, showToast]);
 
-  // ============================================================================
-  // REALTIME ORDER UPDATES (STEPS 5 & 6)
-  // ============================================================================
+    console.log('Order created:', order.id);
 
-  useEffect(() => {
-    if (!currentOrderId) return;
+    // Create order items
+    const orderItems = cart.map(item => ({
+      order_id: order.id,
+      menu_item_id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    }));
 
-    console.log('Setting up realtime subscriptions for order:', currentOrderId);
-    let isSubscribed = true;
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
 
-    const ordersChannel = supabase
-      .channel(`order-${currentOrderId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `id=eq.${currentOrderId}`,
-        },
-        (payload) => {
-          if (!isSubscribed) return;
-          
-          console.log('Orders table updated:', payload);
-          const updatedOrder = payload.new as Order;
+    if (itemsError) {
+      console.error('Error creating order items:', itemsError);
+      throw new Error('Failed to create order items');
+    }
 
-          if (updatedOrder.payment_status === 'succeeded') {
-            console.log('✓ Payment succeeded! Order confirmed.');
-            console.log('Step 6: Navigating to order confirmation...');
-            
-            isSubscribed = false;
-            supabase.removeChannel(ordersChannel);
-            supabase.removeChannel(paymentsChannel);
-            
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Deduct points if used
+    if (usePoints && pointsDiscount > 0) {
+      // CORRECTED: Convert dollars back to points (divide by 0.01)
+      const pointsToDeduct = Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE);
+      const { error: pointsError } = await supabase
+        .from('user_profiles')
+        .update({ points: availablePoints - pointsToDeduct })
+        .eq('id', userProfile.id);
 
-            clearCart();
-            loadUserProfile();
+      if (pointsError) {
+        console.error('Error deducting points:', pointsError);
+      } else {
+        console.log(`✓ Deducted ${pointsToDeduct} points (worth $${pointsDiscount.toFixed(2)})`);
+      }
+    }
 
-            setTimeout(() => {
-              setProcessing(false);
-              setCurrentOrderId(null);
-              
-              router.push({
-                pathname: '/order-confirmation',
-                params: { orderId: currentOrderId },
-              });
-            }, 100);
-            
-          } else if (updatedOrder.payment_status === 'failed') {
-            console.log('✗ Payment failed from orders table');
-            isSubscribed = false;
-            supabase.removeChannel(ordersChannel);
-            supabase.removeChannel(paymentsChannel);
-            
-            showToast('error', 'Payment failed. Please try again.');
-            setProcessing(false);
-            setCurrentOrderId(null);
-          }
-        }
-      )
-      .subscribe();
+    // Award points for this order
+    const newPointsTotal = availablePoints - (usePoints ? Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE) : 0) + pointsToEarn;
+    const { error: awardPointsError } = await supabase
+      .from('user_profiles')
+      .update({ points: newPointsTotal })
+      .eq('id', userProfile.id);
 
-    const paymentsChannel = supabase
-      .channel(`stripe-payment-${currentOrderId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'stripe_payments',
-          filter: `order_id=eq.${currentOrderId}`,
-        },
-        (payload) => {
-          if (!isSubscribed) return;
-          
-          console.log('Stripe payments table updated:', payload);
-          const updatedPayment = payload.new as StripePayment;
+    if (awardPointsError) {
+      console.error('Error awarding points:', awardPointsError);
+    } else {
+      console.log(`✓ Awarded ${pointsToEarn} points`);
+    }
 
-          if (updatedPayment?.status === 'succeeded') {
-            console.log('✓ Payment succeeded from stripe_payments!');
-            showToast('success', 'Payment succeeded!');
-          } else if (updatedPayment?.status === 'failed') {
-            console.log('✗ Payment failed from stripe_payments');
-            isSubscribed = false;
-            supabase.removeChannel(ordersChannel);
-            supabase.removeChannel(paymentsChannel);
-            
-            const errorMsg = updatedPayment.error_message || 'Payment failed. Please try again.';
-            showToast('error', errorMsg);
-            setProcessing(false);
-            setCurrentOrderId(null);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('Cleaning up realtime subscriptions');
-      isSubscribed = false;
-      supabase.removeChannel(ordersChannel);
-      supabase.removeChannel(paymentsChannel);
-    };
-  }, [currentOrderId, clearCart, loadUserProfile, router, showToast]);
+    return order.id;
+  }, [userProfile, total, pointsToEarn, orderType, validatedAddress, deliveryAddress, pickupNotes, cart, usePoints, pointsDiscount, availablePoints]);
 
   // ============================================================================
   // ORDER PLACEMENT
   // ============================================================================
 
-  const proceedWithOrder = useCallback(async () => {
-    setProcessing(true);
-    setPaymentSheetReady(false);
-
-    try {
-      // Step 1: Create order in Supabase
-      const orderId = await createOrder();
-      setCurrentOrderId(orderId);
-
-      // Step 2: Initialize Stripe Payment Sheet (creates payment intent and updates order)
-      await initializePaymentSheet(orderId);
-
-      // Step 3: Present payment sheet
-      const paymentSuccess = await handlePayment();
-
-      if (!paymentSuccess) {
-        setProcessing(false);
-        setPaymentSheetReady(false);
-        return;
-      }
-
-      // Step 4: Wait for webhook to update order status
-      // The realtime subscription will handle the success notification
-      showToast('info', 'Processing payment...');
-      
-    } catch (error) {
-      console.error('Order placement error:', error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Failed to place order. Please try again.';
-      showToast('error', errorMessage);
-      setProcessing(false);
-      setCurrentOrderId(null);
-      setPaymentSheetReady(false);
-    }
-  }, [createOrder, initializePaymentSheet, handlePayment, showToast]);
-
   const handlePlaceOrder = useCallback(async () => {
     console.log('=== Starting Checkout Flow ===');
 
+    // Validate address if delivery
     if (orderType === 'delivery') {
       if (!deliveryAddress.trim()) {
         showToast('error', 'Please enter a delivery address.');
@@ -686,7 +484,9 @@ function CheckoutContent() {
               { text: 'Review Address', style: 'cancel' },
               { 
                 text: 'Continue Anyway', 
-                onPress: () => proceedWithOrder(),
+                onPress: async () => {
+                  await proceedWithPayment();
+                },
                 style: 'destructive'
               }
             ]
@@ -696,8 +496,113 @@ function CheckoutContent() {
       }
     }
 
-    await proceedWithOrder();
-  }, [orderType, deliveryAddress, addressTouched, addressValidation, showToast, proceedWithOrder]);
+    await proceedWithPayment();
+  }, [orderType, deliveryAddress, addressTouched, addressValidation, showToast]);
+
+  const proceedWithPayment = useCallback(async () => {
+    setProcessing(true);
+
+    try {
+      // Step 1: Initialize Payment Sheet and get payment intent
+      const paymentData = await initializePaymentSheet();
+      
+      if (!paymentData) {
+        throw new Error('Failed to initialize payment');
+      }
+
+      const { clientSecret, ephemeralKey, paymentIntentId, customerId } = paymentData;
+
+      // Step 2: Configure Payment Sheet
+      const returnURL = Linking.createURL('/checkout');
+      console.log('Return URL:', returnURL);
+
+      const initConfig: any = {
+        merchantDisplayName: 'Jagabans LA',
+        paymentIntentClientSecret: clientSecret,
+        allowsDelayedPaymentMethods: false,
+        returnURL: returnURL,
+        defaultBillingDetails: {
+          name: userProfile?.name,
+          email: userProfile?.email,
+        },
+        // Enable Apple Pay and Google Pay
+        applePay: {
+          merchantCountryCode: 'US',
+        },
+        googlePay: {
+          merchantCountryCode: 'US',
+          testEnv: false,
+          currencyCode: 'usd',
+        },
+      };
+
+      // CRITICAL FIX: Only add customer and ephemeral key if both are present
+      if (customerId && ephemeralKey) {
+        console.log('✓ Adding customer and ephemeral key to Payment Sheet config');
+        initConfig.customerId = customerId;
+        initConfig.customerEphemeralKeySecret = ephemeralKey;
+      } else {
+        console.warn('⚠️ Customer ID or ephemeral key missing - saved cards will not be available');
+        console.warn('Customer ID:', customerId);
+        console.warn('Ephemeral key:', ephemeralKey ? 'present' : 'missing');
+      }
+
+      const { error: initError } = await initPaymentSheet(initConfig);
+
+      if (initError) {
+        console.error('Error initializing payment sheet:', initError);
+        throw new Error(initError.message);
+      }
+
+      console.log('✓ Payment Sheet initialized successfully');
+
+      // Step 3: Present Payment Sheet
+      console.log('Presenting Payment Sheet...');
+      const { error: presentError } = await presentPaymentSheet();
+
+      if (presentError) {
+        if (presentError.code === 'Canceled') {
+          console.log('Payment cancelled by user');
+          showToast('info', 'Payment cancelled');
+          setProcessing(false);
+          return;
+        }
+        console.error('Payment sheet error:', presentError);
+        throw new Error(presentError.message);
+      }
+
+      console.log('✓ Payment completed successfully');
+      showToast('success', 'Payment successful!');
+
+      // Step 4: Create order AFTER successful payment
+      const orderId = await createOrderAfterPayment(paymentIntentId);
+      
+      console.log('✓ Order created successfully:', orderId);
+
+      // Step 5: Clear cart and reload profile
+      clearCart();
+      await loadUserProfile();
+
+      // Step 6: Navigate to confirmation
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      setTimeout(() => {
+        setProcessing(false);
+        router.push({
+          pathname: '/order-confirmation',
+          params: { orderId },
+        });
+      }, 100);
+
+    } catch (error) {
+      console.error('Order placement error:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to place order. Please try again.';
+      showToast('error', errorMessage);
+      setProcessing(false);
+    }
+  }, [initializePaymentSheet, initPaymentSheet, presentPaymentSheet, createOrderAfterPayment, clearCart, loadUserProfile, router, showToast, userProfile]);
 
   // ============================================================================
   // EFFECTS
