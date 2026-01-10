@@ -222,7 +222,7 @@ export default function OrderDetailScreen() {
       >
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <View style={styles.errorContainer}>
-            <IconSymbol name="error" size={80} color={currentColors.textSecondary} />
+            <IconSymbol ios_icon_name="exclamationmark.triangle" android_material_icon_name="error" size={80} color={currentColors.textSecondary} />
             <Text style={[styles.errorText, { color: currentColors.text }]}>Order not found</Text>
             <Pressable
               onPress={() => router.back()}
@@ -261,7 +261,7 @@ export default function OrderDetailScreen() {
               }}
               style={[styles.backButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
             >
-              <IconSymbol name="arrow-back" size={24} color={currentColors.secondary} />
+              <IconSymbol ios_icon_name="arrow.left" android_material_icon_name="arrow-back" size={24} color={currentColors.secondary} />
             </Pressable>
             <Text style={[styles.headerTitle, { color: currentColors.text }]}>Order Details</Text>
             <View style={{ width: 40 }} />
@@ -306,7 +306,7 @@ export default function OrderDetailScreen() {
                 end={{ x: 1, y: 0 }}
                 style={[styles.timerCard, { borderColor: '#F59E0B' }]}
               >
-                <IconSymbol name="schedule" size={24} color="#92400E" />
+                <IconSymbol ios_icon_name="clock" android_material_icon_name="schedule" size={24} color="#92400E" />
                 <View style={styles.timerContent}>
                   <Text style={styles.timerTitle}>Time to modify or cancel</Text>
                   <Text style={styles.timerValue}>{formatTimeRemaining(timeRemaining)}</Text>
@@ -347,7 +347,7 @@ export default function OrderDetailScreen() {
               </View>
 
               <View style={styles.pointsRow}>
-                <IconSymbol name="star" size={20} color={currentColors.highlight} />
+                <IconSymbol ios_icon_name="star.fill" android_material_icon_name="star" size={20} color={currentColors.highlight} />
                 <Text style={[styles.pointsText, { color: currentColors.text }]}>
                   +{order.pointsEarned} points earned
                 </Text>
@@ -364,7 +364,7 @@ export default function OrderDetailScreen() {
               >
                 <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Delivery Address</Text>
                 <View style={styles.addressRow}>
-                  <IconSymbol name="location-on" size={20} color={currentColors.secondary} />
+                  <IconSymbol ios_icon_name="location.fill" android_material_icon_name="location-on" size={20} color={currentColors.secondary} />
                   <Text style={[styles.addressText, { color: currentColors.text }]}>{order.deliveryAddress}</Text>
                 </View>
               </LinearGradient>
@@ -408,7 +408,7 @@ export default function OrderDetailScreen() {
                   style={styles.cancelButtonInner}
                   onPress={handleCancelOrder}
                 >
-                  <IconSymbol name="cancel" size={20} color="#991B1B" />
+                  <IconSymbol ios_icon_name="xmark.circle" android_material_icon_name="cancel" size={20} color="#991B1B" />
                   <Text style={styles.cancelButtonText}>Cancel Order</Text>
                 </Pressable>
               </LinearGradient>
@@ -416,7 +416,7 @@ export default function OrderDetailScreen() {
           </ScrollView>
         </View>
 
-        {/* Dialog */}
+        {/* Dialog - No children prop, only the accepted props */}
         <Dialog
           visible={dialogConfig.visible}
           title={dialogConfig.title}
