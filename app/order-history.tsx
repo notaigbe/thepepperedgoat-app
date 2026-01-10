@@ -38,6 +38,16 @@ export default function OrderHistoryScreen() {
     });
   };
 
+  const handleViewDetails = (orderId: string) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    router.push({
+      pathname: '/order-detail',
+      params: { orderId },
+    });
+  };
+
   const handleOrderAgain = async (orderId: string) => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -117,6 +127,8 @@ export default function OrderHistoryScreen() {
         return currentColors.accent;
       case 'completed':
         return currentColors.primary;
+      case 'cancelled':
+        return '#EF4444';
       default:
         return currentColors.textSecondary;
     }
@@ -147,7 +159,7 @@ export default function OrderHistoryScreen() {
               }}
               style={[styles.backButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
             >
-              <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
+              <IconSymbol name="arrow-back" size={24} color={currentColors.secondary} />
             </Pressable>
             <Text style={[styles.headerTitle, { color: currentColors.text }]}>Order History</Text>
             <View style={{ width: 40 }} />
@@ -160,7 +172,7 @@ export default function OrderHistoryScreen() {
           >
             {!userProfile || userProfile.orders.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <IconSymbol name="bag" size={80} color={currentColors.textSecondary} />
+                <IconSymbol name="shopping-bag" size={80} color={currentColors.textSecondary} />
                 <Text style={[styles.emptyText, { color: currentColors.text }]}>No Orders Yet</Text>
                 <Text style={[styles.emptySubtext, { color: currentColors.textSecondary }]}>
                   Start ordering delicious food to see your order history here
@@ -223,7 +235,7 @@ export default function OrderHistoryScreen() {
                               <Text style={[styles.statusText, { color: currentColors.background }]}>{order.status}</Text>
                             </View>
                             <IconSymbol 
-                              name={isExpanded ? "chevron.up" : "chevron.down"} 
+                              name={isExpanded ? "expand-less" : "expand-more"} 
                               size={20} 
                               color={currentColors.textSecondary}
                               style={styles.expandIcon}
@@ -256,35 +268,60 @@ export default function OrderHistoryScreen() {
                                 <Text style={[styles.orderTotal, { color: currentColors.secondary }]}>${order.total.toFixed(2)}</Text>
                               </View>
                               <View style={styles.orderPoints}>
-                                <IconSymbol name="star.fill" size={16} color={currentColors.highlight} />
+                                <IconSymbol name="star" size={16} color={currentColors.highlight} />
                                 <Text style={[styles.orderPointsText, { color: currentColors.text }]}>
                                   +{order.pointsEarned} points earned
                                 </Text>
                               </View>
                             </View>
 
-                            {/* Order Again Button */}
-                            <LinearGradient
-                              colors={[currentColors.primary, currentColors.secondary]}
-                              start={{ x: 0, y: 0 }}
-                              end={{ x: 1, y: 0 }}
-                              style={[styles.orderAgainButton, { opacity: isReordering ? 0.6 : 1 }]}
-                            >
-                              <Pressable
-                                style={styles.orderAgainButtonInner}
-                                onPress={() => handleOrderAgain(order.id)}
-                                disabled={isReordering}
+                            {/* Action Buttons */}
+                            <View style={styles.actionButtons}>
+                              {/* View Details Button */}
+                              <LinearGradient
+                                colors={[currentColors.primary, currentColors.secondary]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.actionButton}
                               >
-                                <IconSymbol 
-                                  name="arrow.clockwise" 
-                                  size={20} 
-                                  color={currentColors.background} 
-                                />
-                                <Text style={[styles.orderAgainButtonText, { color: currentColors.background }]}>
-                                  {isReordering ? 'Adding to Cart...' : 'Order Again'}
-                                </Text>
-                              </Pressable>
-                            </LinearGradient>
+                                <Pressable
+                                  style={styles.actionButtonInner}
+                                  onPress={() => handleViewDetails(order.id)}
+                                >
+                                  <IconSymbol 
+                                    name="visibility" 
+                                    size={20} 
+                                    color={currentColors.background} 
+                                  />
+                                  <Text style={[styles.actionButtonText, { color: currentColors.background }]}>
+                                    View Details
+                                  </Text>
+                                </Pressable>
+                              </LinearGradient>
+
+                              {/* Order Again Button */}
+                              <LinearGradient
+                                colors={[currentColors.secondary, currentColors.highlight]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={[styles.actionButton, { opacity: isReordering ? 0.6 : 1 }]}
+                              >
+                                <Pressable
+                                  style={styles.actionButtonInner}
+                                  onPress={() => handleOrderAgain(order.id)}
+                                  disabled={isReordering}
+                                >
+                                  <IconSymbol 
+                                    name="refresh" 
+                                    size={20} 
+                                    color={currentColors.background} 
+                                  />
+                                  <Text style={[styles.actionButtonText, { color: currentColors.background }]}>
+                                    {isReordering ? 'Adding to Cart...' : 'Order Again'}
+                                  </Text>
+                                </Pressable>
+                              </LinearGradient>
+                            </View>
 
                             {(order.uberDeliveryId || order.doordashDeliveryId) && (
                               <View style={styles.deliveryTrackingContainer}>
@@ -500,21 +537,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Cormorant_600SemiBold',
   },
-  orderAgainButton: {
-    borderRadius: 0,
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
     marginTop: 16,
+  },
+  actionButton: {
+    flex: 1,
+    borderRadius: 0,
     boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
     elevation: 8,
   },
-  orderAgainButtonInner: {
+  actionButtonInner: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
     gap: 8,
   },
-  orderAgainButtonText: {
-    fontSize: 16,
+  actionButtonText: {
+    fontSize: 14,
     fontFamily: 'Cormorant_700Bold',
   },
   deliveryTrackingContainer: {
