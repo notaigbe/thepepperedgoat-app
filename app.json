@@ -37,7 +37,7 @@
         {
           "ios": {
             "entitlements": {
-              "com.apple.developer.in-app-payments": "com.ooosumfoods.jagabansla"
+              "com.apple.developer.in-app-payments": "merchant.com.ooosumfoods.jagabansla"
             }
           }
         }

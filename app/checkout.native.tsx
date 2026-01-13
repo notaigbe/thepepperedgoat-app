@@ -530,7 +530,7 @@ function CheckoutContent() {
         // Enable Apple Pay and Google Pay
         applePay: {
           merchantCountryCode: 'US',
-          merchantIdentifier: 'com.ooosumfoods.jagabansla',
+          merchantIdentifier: 'merchant.com.ooosumfoods.jagabansla',
         },
         googlePay: {
           merchantCountryCode: 'US',
