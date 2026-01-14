@@ -93,7 +93,7 @@ export default function CartScreen() {
                 style={[styles.browseButton, { backgroundColor: currentColors.primary }]}
                 onPress={() => router.push('/')}
               >
-                <Text style={[styles.browseButtonText, { color: currentColors.background }]}>
+                <Text style={[styles.browseButtonText, { color: currentColors.text }]}>
                   Browse Menu
                 </Text>
               </Pressable>
@@ -115,7 +115,7 @@ export default function CartScreen() {
                   >
                     <View style={styles.imageContainer}>
                       <Image
-                        source={{ uri: item.image }}
+                        source={{ uri: item.image_url }}
                         style={styles.itemImage}
                       />
                     </View>
@@ -235,8 +235,8 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingVertical: 24,
-    borderBottomWidth: 2,
-    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    borderBottomWidth: 0.2,
+    // boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
     elevation: 8,
   },
   headerTitle: {
@@ -244,9 +244,9 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 4,
     letterSpacing: 0.5,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    // textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    // textShadowOffset: { width: 0, height: 2 },
+    // textShadowRadius: 4,
   },
   itemCount: {
     fontSize: 14,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   },
   browseButton: {
     borderRadius: 0,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
     elevation: 8,
   },
   browseButtonInner: {
@@ -296,15 +296,15 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     padding: 12,
     marginBottom: 16,
-    borderWidth: 2,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    borderWidth: 0.2,
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   imageContainer: {
     borderRadius: 0,
     overflow: 'hidden',
-    borderWidth: 2,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
+    borderWidth: 0.2,
+    // boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
     elevation: 4,
   },
   itemImage: {
@@ -338,8 +338,8 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    borderWidth: 0.2,
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   quantity: {
@@ -355,8 +355,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 120,
-    borderTopWidth: 2,
-    boxShadow: '0px -6px 20px rgba(74, 215, 194, 0.3)',
+    borderTopWidth: 0.2,
+    // boxShadow: '0px -6px 20px rgba(74, 215, 194, 0.3)',
     elevation: 10,
   },
   summaryRow: {
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   totalRow: {
     marginTop: 8,
     paddingTop: 12,
-    borderTopWidth: 2,
+    borderTopWidth: 0.2,
   },
   totalLabel: {
     fontSize: 18,
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
   checkoutButton: {
     borderRadius: 0,
     marginTop: 20,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.5)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.5)',
     elevation: 10,
   },
   checkoutButtonInner: {

@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react';
-import { MenuItem, CartItem, Order, UserProfile, GiftCard, PaymentMethod, AppNotification, ThemeSettings, ThemeMode, ColorScheme, MerchRedemption, UserRole } from '@/types';
+import { MenuItem, MenuCategory, CartItem, Order, UserProfile, GiftCard, PaymentMethod, AppNotification, ThemeSettings, ThemeMode, ColorScheme, MerchRedemption, UserRole } from '@/types';
 import { useColorScheme } from 'react-native';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/app/integrations/supabase/client';
@@ -54,6 +54,8 @@ interface AppContextType {
   menuItems: MenuItem[];
   setMenuItems: (items: MenuItem[]) => void;
   loadMenuItems: () => Promise<void>;
+  menuCategories: MenuCategory[];
+  loadMenuCategories: () => Promise<void>;
   getUnreadNotificationCount: () => number;
 }
 
@@ -76,6 +78,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     colorScheme: 'default',
   });
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [menuCategories, setMenuCategories] = useState<MenuCategory[]>([]);
 
   const loadMenuItems = useCallback(async () => {
     try {
@@ -93,16 +96,44 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           name: item.name,
           description: item.description,
           price: parseFloat(item.price),
-          category: item.category,
-          image: item.image,
-          popular: item.popular,
-          serial: item.serial,
+          category_id: item.category_id,
+          image_url: item.image_url,
+          spicy_level: item.spicy_level,
+          sort_order: item.sort_order,
+          tag: item.tag,
         }));
         setMenuItems(items);
         console.log('Loaded', items.length, 'menu items in context');
       }
     } catch (error) {
       console.error('Exception loading menu items:', error);
+    }
+  }, []);
+
+  const loadMenuCategories = useCallback(async () => {
+    try {
+      console.log('Loading menu categories from Supabase (AppContext)');
+      const { data, error } = await menuService.getMenuCategories();
+      
+      if (error) {
+        console.error('Error loading menu categories:', error);
+        return;
+      }
+
+      if (data) {
+        const categories: MenuCategory[] = data.map((category: any) => ({
+          id: category.id,
+          key: category.key,
+          title: category.title,
+          description: category.description,
+          sort_order: category.sort_order,
+        }));
+        // Add 'All' category at the beginning
+        setMenuCategories([{ id: 'all', key: 'all', title: 'All', sort_order: -1 }, ...categories]);
+        console.log('Loaded', categories.length, 'menu categories in context');
+      }
+    } catch (error) {
+      console.error('Exception loading menu categories:', error);
     }
   }, []);
 
@@ -248,7 +279,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Load menu items when the app starts (in useEffect):
   useEffect(() => {
     loadMenuItems();
-  }, [loadMenuItems]);
+    loadMenuCategories();
+  }, [loadMenuItems, loadMenuCategories]);
   
   // Load user profile when authenticated
   useEffect(() => {
@@ -817,6 +849,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         menuItems,
         setMenuItems,
         loadMenuItems,
+        menuCategories,
+        loadMenuCategories,
         getUnreadNotificationCount,
       }}
     >

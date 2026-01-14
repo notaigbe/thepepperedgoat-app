@@ -1,14 +1,23 @@
 
 export interface MenuItem {
   id: string;
+  category_id: string | null;
   name: string;
-  description: string;
   price: number;
-  category: string;
-  image: string;
-  popular?: boolean;
-  serial?: string;
-  available?: boolean;
+  description: string | null;
+  tag: string | null;
+  spicy_level?: number | null;
+  image_url: string | null;
+  is_available?: boolean | null;
+  sort_order?: number | null;
+}
+
+export interface MenuCategory {
+  id: string;
+  key: string;
+  title: string;
+  description?: string | null;
+  sort_order?: number | null;
 }
 
 export interface CartItem extends MenuItem {

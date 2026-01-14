@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 2,
+    borderBottomWidth: 0.2,
   },
   backButton: {
     width: 40,
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 0.2,
   },
   headerTitle: {
     fontSize: 24,
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     marginBottom: 16,
     gap: 12,
-    borderWidth: 2,
+    borderWidth: 0.2,
   },
   timerContent: {
     flex: 1,
@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 0,
     marginBottom: 16,
-    borderWidth: 2,
+    borderWidth: 0.2,
   },
   orderRow: {
     marginBottom: 16,
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 0,
     gap: 12,
-    borderWidth: 2,
+    borderWidth: 0.2,
     marginBottom: 20,
   },
   infoText: {
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   input: {
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderRadius: 8,
     padding: 12,
     marginTop: 12,

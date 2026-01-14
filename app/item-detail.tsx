@@ -107,7 +107,7 @@ export default function ItemDetailScreen() {
             <IconSymbol
               name="chevron.left"
               size={24}
-              color={currentColors.text}
+              color={currentColors.primary}
             />
             <Text
               style={[styles.backButtonText, { color: currentColors.text }]}
@@ -144,10 +144,10 @@ export default function ItemDetailScreen() {
             <IconSymbol
               name="chevron.left"
               size={24}
-              color={currentColors.text}
+              color={currentColors.primary}
             />
             <Text
-              style={[styles.backButtonText, { color: currentColors.text }]}
+              style={[styles.backButtonText, { color: currentColors.primary }]}
             >
               Back
             </Text>
@@ -210,7 +210,7 @@ export default function ItemDetailScreen() {
           <IconSymbol
             name="chevron.left"
             size={24}
-            color={currentColors.secondary}
+            color={currentColors.primary}
           />
           <Text style={[styles.backButtonText, { color: currentColors.text }]}>
             Back
@@ -268,7 +268,7 @@ export default function ItemDetailScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={[styles.imageWrapper, { borderColor: currentColors.border }]}>
           <Image
-            source={{ uri: item.image }}
+            source={{ uri: item.image_url }}
             style={styles.image}
           />
           <View style={styles.imageOverlay} />
@@ -300,7 +300,7 @@ export default function ItemDetailScreen() {
                 </View>
               )}
             </View>
-            <Text style={[styles.price, { color: currentColors.secondary }]}>
+            <Text style={[styles.price, { color: currentColors.text }]}>
               ${item.price.toFixed(2)}
             </Text>
           </View>
@@ -314,7 +314,7 @@ export default function ItemDetailScreen() {
             <Text
               style={[styles.category, { color: currentColors.textSecondary }]}
             >
-              {item.category}
+              {item.category_id}
             </Text>
           </View>
 
@@ -355,7 +355,7 @@ export default function ItemDetailScreen() {
                 <IconSymbol
                   name="minus"
                   size={20}
-                  color={currentColors.secondary}
+                  color={currentColors.primary}
                 />
               </Pressable>
               <Text
@@ -373,7 +373,7 @@ export default function ItemDetailScreen() {
                 <IconSymbol
                   name="plus"
                   size={20}
-                  color={currentColors.secondary}
+                  color={currentColors.primary}
                 />
               </Pressable>
             </View>
@@ -401,11 +401,11 @@ export default function ItemDetailScreen() {
           </Text>
         </View>
         <Pressable
-          style={[styles.addButton, { backgroundColor: currentColors.secondary }]}
+          style={[styles.addButton, { backgroundColor: currentColors.primary }]}
           onPress={handleAddToCart}
         >
-          <IconSymbol name="cart.fill" size={20} color={currentColors.background} />
-          <Text style={[styles.addButtonText, { color: currentColors.background }]}>
+          <IconSymbol name="cart.fill" size={20} color={currentColors.text} />
+          <Text style={[styles.addButtonText, { color: currentColors.text}]}>
             Add to Cart
           </Text>
         </Pressable>
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.2,
   },
   backButton: {
     flexDirection: "row",
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   imageWrapper: {
     width: "100%",
     height: 320,
-    borderBottomWidth: 2,
+    borderBottomWidth: 0.2,
     position: 'relative',
   },
   image: {
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     gap: 12,
     marginBottom: 24,
-    borderWidth: 1,
+    borderWidth: 0.2,
     boxShadow: "0px 2px 8px rgba(212, 175, 55, 0.15)",
     elevation: 2,
   },
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
   quantitySection: {
     padding: 20,
     borderRadius: 0,
-    borderWidth: 1,
+    borderWidth: 0.2,
     boxShadow: "0px 2px 8px rgba(212, 175, 55, 0.15)",
     elevation: 2,
   },
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
+    borderWidth: 0.5,
   },
   quantityValue: {
     fontSize: 24,
@@ -610,7 +610,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: 20,
-    borderTopWidth: 1,
+    borderTopWidth: 0.2,
     gap: 12,
   },
   totalContainer: {
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 0,
     gap: 8,
-    boxShadow: "0px 4px 12px rgba(212, 175, 55, 0.3)",
+    // boxShadow: "0px 4px 12px rgba(212, 175, 55, 0.3)",
     elevation: 4,
   },
   addButtonText: {

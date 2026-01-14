@@ -26,15 +26,6 @@ import { BlurView } from "expo-blur";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const menuCategories = [
-  "All",
-  "Online Appetizers",
-  "Online Jollof Combos",
-  "Online Beverages",
-  "Online Sides",
-  "Online Soups x Dips",
-];
-
 // Responsive font size calculation
 const getResponsiveFontSize = (baseSize: number) => {
   const scale = SCREEN_WIDTH / 375;
@@ -51,8 +42,8 @@ const getResponsivePadding = (basePadding: number) => {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { currentColors, menuItems, loadMenuItems, addToCart, getUnreadNotificationCount } = useApp();
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const { currentColors, menuItems, menuCategories, loadMenuItems, loadMenuCategories, addToCart, getUnreadNotificationCount } = useApp();
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [loading, setLoading] = useState(false);
   const [headerImage, setHeaderImage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -81,7 +72,7 @@ export default function HomeScreen() {
       try {
         const imageUrl = imageService.getPublicUrl(
           "assets",
-          "/loogo/peppered-goat-logo.jpg"
+          "/logos/peppered-goat-logo.jpg"
         );
         setHeaderImage(imageUrl);
       } catch (error) {
@@ -93,12 +84,15 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    // Only load if menuItems is empty
+    // Only load if menuItems or menuCategories are empty
     if (menuItems.length === 0) {
       setLoading(true);
       loadMenuItems().finally(() => setLoading(false));
     }
-  }, [menuItems.length, loadMenuItems]);
+    if (menuCategories.length === 0) {
+      loadMenuCategories();
+    }
+  }, [menuItems.length, menuCategories.length, loadMenuItems, loadMenuCategories]);
 
   const filteredItems = menuItems.filter((item) => {
     // Filter by search query
@@ -106,8 +100,12 @@ export default function HomeScreen() {
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase());
     
+    // Find the category by key to get its ID
+    const selectedCategoryObj = menuCategories.find(cat => cat.key === selectedCategory);
+    const selectedCategoryId = selectedCategoryObj?.id;
+    
     // Filter by category
-    const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || item.category_id === selectedCategoryId;
     
     return matchesSearch && matchesCategory;
   });
@@ -171,23 +169,22 @@ export default function HomeScreen() {
         <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
           <View style={styles.header}>
             <View style={styles.headerContent}>
-              {headerImage ? (
-                <Image 
-                  source={{ uri: headerImage }} 
-                  style={styles.logo}
-                  tintColor="#000000"
-                />
-              ) : (
-                <View style={styles.logoPlaceholder}>
-                  <Text style={styles.logoText}>
-                    The Peppered Goat
-                  </Text>
-                  <Text style={styles.logoSubtext}>
-                    STUBBORNLY SPICY
-                  </Text>
-                </View>
-              )}
-            </View>
+  {headerImage && (
+    <Image 
+      source={{ uri: headerImage }} 
+      style={styles.logo}
+      // tintColor="#000000"
+    />
+  )}
+  <View style={styles.logoPlaceholder}>
+    <Text style={styles.logoText}>
+      The Peppered Goat
+    </Text>
+    <Text style={styles.logoSubtext}>
+      STUBBORNLY SPICY
+    </Text>
+  </View>
+</View>
             <Pressable 
               onPress={() => router.push("/notifications")}
               style={styles.notificationButton}
@@ -195,7 +192,7 @@ export default function HomeScreen() {
               <IconSymbol
                 name={Platform.OS === 'ios' ? "bell.fill" : "notifications"}
                 size={28}
-                color="#000000"
+                color="#ffffff"
               />
               {unreadCount > 0 && (
                 <View style={styles.notificationBadge}>
@@ -277,22 +274,22 @@ export default function HomeScreen() {
             <ScrollView style={styles.dropdownScroll}>
               {menuCategories.map((category) => (
                 <Pressable
-                  key={category}
+                  key={category.id}
                   style={[
                     styles.dropdownItem,
-                    selectedCategory === category && styles.dropdownItemSelected
+                    selectedCategory === category.key && styles.dropdownItemSelected
                   ]}
-                  onPress={() => handleCategoryPress(category)}
+                  onPress={() => handleCategoryPress(category.key)}
                 >
                   <Text
                     style={[
                       styles.dropdownItemText,
-                      selectedCategory === category && styles.dropdownItemTextSelected
+                      selectedCategory === category.key && styles.dropdownItemTextSelected
                     ]}
                   >
-                    {category}
+                    {category.title}
                   </Text>
-                  {selectedCategory === category && (
+                  {selectedCategory === category.key && (
                     <IconSymbol
                       name={Platform.OS === 'ios' ? "checkmark.circle.fill" : "check-circle"}
                       size={20}
@@ -325,23 +322,23 @@ export default function HomeScreen() {
             >
             {menuCategories.map((category) => (
               <Pressable
-                key={category}
+                key={category.id}
                 style={[
                   styles.categoryButton,
                   {
-                    backgroundColor: selectedCategory === category ? '#000000' : '#2A2A2A',
-                    borderColor: selectedCategory === category ? '#E26F5B' : '#3A3A3A',
+                    backgroundColor: selectedCategory === category.key ? '#000000' : '#2A2A2A',
+                    borderColor: selectedCategory === category.key ? '#E26F5B' : '#3A3A3A',
                     paddingHorizontal: getResponsivePadding(16),
                     paddingVertical: getResponsivePadding(10),
                   },
                 ]}
-                onPress={() => handleCategoryPress(category)}
+                onPress={() => handleCategoryPress(category.key)}
               >
                 <Text
                   style={[
                     styles.categoryText,
                     {
-                      color: selectedCategory === category ? '#FFFFFF' : '#AAAAAA',
+                      color: selectedCategory === category.key ? '#FFFFFF' : '#AAAAAA',
                       fontSize: getResponsiveFontSize(13),
                     },
                   ]}
@@ -349,7 +346,7 @@ export default function HomeScreen() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.8}
                 >
-                  {category}
+                  {category.title}
                 </Text>
               </Pressable>
             ))}
@@ -404,7 +401,7 @@ export default function HomeScreen() {
                 >
                   <View style={styles.imageContainer}>
                     <Image
-                      source={{ uri: item.image }}
+                      source={{ uri: item.image_url }}
                       style={styles.menuItemImage}
                     />
                   </View>
@@ -492,19 +489,22 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     flex: 1,
+    flexDirection: "row",
     alignItems: "center",
+    gap: 12,
   },
   logo: {
-    width: 200,
+    width: 70,
     height: 70,
     resizeMode: "contain",
   },
   logoPlaceholder: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   },
   logoText: {
-    fontSize: 32,
-    fontFamily: 'PlayfairDisplay_900Black',
+    fontSize: 14,
+    fontFamily: 'MrDeHaviland_400Regular',
     letterSpacing: 3,
     fontStyle: 'italic',
     color: '#FFFFFF',
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
     fontFamily: 'LibertinusSans_400Regular',
     letterSpacing: 5,
     marginTop: -2,
-    color: '#FFFFFF',
+    color: '#E26F5B',
   },
   notificationButton: {
     position: 'relative',
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     minWidth: 80,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    borderWidth: 0.5,
     boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
     elevation: 2,
     borderColor: '#00BC7D',
@@ -770,8 +770,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
-    backgroundColor: '#f8cbb1',
-    borderWidth: 1,
+    backgroundColor: '#ffffff5d',
+    borderWidth: 0.5,
     borderColor: '#E26F5B',
   },
   categoriesWrapper: {

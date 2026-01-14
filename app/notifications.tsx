@@ -129,8 +129,8 @@ export default function NotificationsScreen() {
     header: {
       paddingHorizontal: 20,
       paddingVertical: 24,
-      borderBottomWidth: 2,
-      boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+      borderBottomWidth: 0.2,
+      // boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
       elevation: 8,
     },
     headerContent: {
@@ -145,18 +145,18 @@ export default function NotificationsScreen() {
       backgroundColor: currentColors.card,
       justifyContent: 'center',
       alignItems: 'center',
-      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.3)',
+      // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.3)',
       elevation: 4,
-      borderWidth: 2,
+      borderWidth: 0.5,
       borderColor: currentColors.border,
     },
     headerTitle: {
       fontSize: 32,
       fontFamily: 'PlayfairDisplay_700Bold',
       letterSpacing: 0.5,
-      textShadowColor: 'rgba(0, 0, 0, 0.3)',
-      textShadowOffset: { width: 0, height: 2 },
-      textShadowRadius: 4,
+      // textShadowColor: 'rgba(0, 0, 0, 0.3)',
+      // textShadowOffset: { width: 0, height: 2 },
+      // textShadowRadius: 4,
     },
     notificationCount: {
       fontSize: 14,
@@ -294,7 +294,7 @@ export default function NotificationsScreen() {
                 }}
                 style={styles.backButton}
               >
-                <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
+                <IconSymbol name="chevron.left" size={24} color={currentColors.primary} />
               </Pressable>
               <View style={{ flex: 1, alignItems: 'center' }}>
                 <Text style={[styles.headerTitle, { color: currentColors.text }]}>

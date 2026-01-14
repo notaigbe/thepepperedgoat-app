@@ -52,6 +52,8 @@ import {
   Cormorant_700Bold,
 } from '@expo-google-fonts/cormorant';
 
+import { MrDeHaviland_400Regular } from '@expo-google-fonts/mr-de-haviland';
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -88,6 +90,7 @@ export default function RootLayout() {
     Roboto_500Medium,
     Roboto_700Bold,
     Roboto_900Black,
+    MrDeHaviland_400Regular,
   });
 
   useEffect(() => {

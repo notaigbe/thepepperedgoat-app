@@ -51,42 +51,77 @@ export interface Database {
           stripe_customer_id?: string | null
         }
       }
-      menu_items: {
+      menu_categories: {
         Row: {
           id: string
-          name: string
-          description: string
-          price: number
-          category: string
-          image: string
-          popular: boolean
-          available: boolean
-          created_at: string
-          updated_at: string
+          key: string
+          title: string
+          description: string | null
+          sort_order: number | null
+          created_at: string | null
+          updated_at: string | null
         }
         Insert: {
           id?: string
-          name: string
-          description: string
-          price: number
-          category: string
-          image: string
-          popular?: boolean
-          available?: boolean
-          created_at?: string
-          updated_at?: string
+          key: string
+          title: string
+          description?: string | null
+          sort_order?: number | null
+          created_at?: string | null
+          updated_at?: string | null
         }
         Update: {
           id?: string
+          key?: string
+          title?: string
+          description?: string | null
+          sort_order?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+      menu_items: {
+        Row: {
+          id: string
+          category_id: string | null
+          name: string
+          price: number
+          description: string | null
+          tag: string | null
+          spicy_level: number | null
+          image_url: string | null
+          is_available: boolean | null
+          sort_order: number | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          category_id?: string | null
+          name: string
+          price: number
+          description?: string | null
+          tag?: string | null
+          spicy_level?: number | null
+          image_url?: string | null
+          is_available?: boolean | null
+          sort_order?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          category_id?: string | null
           name?: string
-          description?: string
           price?: number
-          category?: string
-          image?: string
-          popular?: boolean
-          available?: boolean
-          created_at?: string
-          updated_at?: string
+          description?: string | null
+          tag?: string | null
+          spicy_level?: number | null
+          image_url?: string | null
+          is_available?: boolean | null
+          sort_order?: number | null
+          created_at?: string | null
+          updated_at?: string | null
         }
       }
       orders: {

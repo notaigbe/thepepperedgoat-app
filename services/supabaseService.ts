@@ -323,8 +323,8 @@ export const menuService = {
       const { data, error } = await supabase
         .from('menu_items')
         .select('*')
-        .eq('available', true)
-        .order('category', { ascending: true });
+        .eq('is_available', true)
+        .order('category_id', { ascending: true });
 
       if (error) {
         console.error('Get menu items error:', error);
@@ -341,18 +341,40 @@ export const menuService = {
   /**
    * Get menu items by category
    */
-  async getMenuItemsByCategory(category: string) {
+  async getMenuItemsByCategory(category_id: string) {
     try {
       const { data, error } = await supabase
         .from('menu_items')
         .select('*')
-        .eq('category', category)
-        .eq('available', true);
+        .eq('category_id', category_id)
+        .eq('is_available', true);
 
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
       console.error('Get menu items by category error:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Get all menu categories
+   */
+  async getMenuCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('menu_categories')
+        .select('*')
+        .order('sort_order', { ascending: true });
+
+      if (error) {
+        console.error('Get menu categories error:', error);
+        throw error;
+      }
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Get menu categories error:', error);
       return { data: null, error };
     }
   },
@@ -368,10 +390,12 @@ export const menuService = {
           name: item.name,
           description: item.description,
           price: item.price,
-          category: item.category,
-          image: item.image,
-          popular: item.popular || false,
-          available: true,
+          category_id: item.category_id,
+          image_url: item.image_url,
+          spicy_level: item.spicy_level,
+          sort_order: item.sort_order,
+          tag: item.tag,
+          is_available: true,
         } as any)
         .select()
         .single() as any);
@@ -395,9 +419,11 @@ export const menuService = {
           name: updates.name,
           description: updates.description,
           price: updates.price,
-          category: updates.category,
-          image: updates.image,
-          popular: updates.popular,
+          category_id: updates.category_id,
+          image_url: updates.image_url,
+          spicy_level: updates.spicy_level,
+          sort_order: updates.sort_order,
+          tag: updates.tag,
           updated_at: new Date().toISOString(),
         })
         .eq('id', itemId)

@@ -1027,9 +1027,9 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     marginTop: 16,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    // textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    // textShadowOffset: { width: 0, height: 2 },
+    // textShadowRadius: 4,
   },
   authSubtitle: {
     fontSize: 16,
@@ -1046,8 +1046,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 16,
-    borderWidth: 1,
-    boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
+    borderWidth: 0.2,
+    // boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
     elevation: 6,
   },
   input: {
@@ -1065,7 +1065,7 @@ const styles = StyleSheet.create({
   authButton: {
     borderRadius: 0,
     marginTop: 8,
-    boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
+    // boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
     elevation: 8,
   },
   authButtonInner: {
@@ -1115,7 +1115,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 24,
     marginBottom: 16,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   profileImageContainer: {
@@ -1126,7 +1126,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    boxShadow: '0px 6px 20px rgba(0, 0, 0, 0.3)',
+    // boxShadow: '0px 6px 20px rgba(0, 0, 0, 0.3)',
     elevation: 6,
   },
   profileImagePlaceholder: {
@@ -1135,7 +1135,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
-    boxShadow: '0px 6px 20px rgba(0, 0, 0, 0.3)',
+    // boxShadow: '0px 6px 20px rgba(0, 0, 0, 0.3)',
     elevation: 6,
   },
   editImageButton: {
@@ -1145,7 +1145,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.4)',
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.4)',
     elevation: 6,
   },
   editImageButtonInner: {
@@ -1184,7 +1184,7 @@ const styles = StyleSheet.create({
   },
   menuItem: {
     borderRadius: 0,
-    boxShadow: "0px 6px 20px rgba(212, 175, 55, 0.25)",
+    // boxShadow: "0px 6px 20px rgba(212, 175, 55, 0.25)",
     elevation: 6,
   },
   menuItemInner: {
@@ -1199,7 +1199,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
-    boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.15)',
+    // boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.15)',
   },
   menuContent: {
     flex: 1,

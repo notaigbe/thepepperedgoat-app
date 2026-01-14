@@ -235,7 +235,7 @@ export default function OrderConfirmationScreen() {
       marginBottom: 20,
       boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
       elevation: 8,
-      borderWidth: 2,
+      borderWidth: 0.2,
       borderColor: currentColors.border,
     },
     successTitle: {
@@ -262,7 +262,7 @@ export default function OrderConfirmationScreen() {
       marginBottom: 20,
       boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
       elevation: 8,
-      borderWidth: 2,
+      borderWidth: 0.2,
       borderColor: currentColors.border,
     },
     statusRow: {
@@ -293,7 +293,7 @@ export default function OrderConfirmationScreen() {
       gap: 16,
       boxShadow: '0px 8px 24px rgba(229, 193, 88, 0.4)',
       elevation: 8,
-      borderWidth: 2,
+      borderWidth: 0.2,
       borderColor: currentColors.border,
     },
     pointsIconContainer: {
@@ -302,7 +302,7 @@ export default function OrderConfirmationScreen() {
       borderRadius: 0,
       justifyContent: 'center',
       alignItems: 'center',
-      borderWidth: 2,
+      borderWidth: 0.2,
       borderColor: currentColors.border,
     },
     pointsInfo: {
@@ -332,7 +332,7 @@ export default function OrderConfirmationScreen() {
       marginBottom: 20,
       boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
       elevation: 8,
-      borderWidth: 2,
+      borderWidth: 0.2,
       borderColor: currentColors.border,
     },
     orderItem: {
@@ -340,7 +340,7 @@ export default function OrderConfirmationScreen() {
       alignItems: 'center',
       marginBottom: 12,
       paddingBottom: 12,
-      borderBottomWidth: 2,
+      borderBottomWidth: 0.2,
       borderBottomColor: currentColors.border,
     },
     orderItemLast: {
@@ -390,7 +390,7 @@ export default function OrderConfirmationScreen() {
       marginBottom: 20,
       boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
       elevation: 8,
-      borderWidth: 2,
+      borderWidth: 0.2,
       borderColor: currentColors.border,
     },
     deliveryTitle: {
@@ -410,7 +410,7 @@ export default function OrderConfirmationScreen() {
       padding: 16,
       marginBottom: 20,
       backgroundColor: currentColors.background,
-      borderWidth: 2,
+      borderWidth: 0.2,
       borderColor: currentColors.border,
       boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
       elevation: 4,
@@ -451,7 +451,7 @@ export default function OrderConfirmationScreen() {
       borderRadius: 0,
       paddingVertical: 16,
       alignItems: 'center',
-      borderWidth: 2,
+      borderWidth: 0.2,
       borderColor: currentColors.border,
       boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
       elevation: 4,

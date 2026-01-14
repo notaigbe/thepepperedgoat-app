@@ -475,8 +475,8 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    borderWidth: 0.5,
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   headerTitle: {
@@ -512,8 +512,8 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
-    borderWidth: 2,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    borderWidth: 0.2,
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   imageSection: {
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
   },
   imageButton: {
     borderRadius: 0,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
     elevation: 8,
   },
   imageButtonInner: {
@@ -563,8 +563,8 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     gap: 12,
     marginTop: 8,
-    borderWidth: 2,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    borderWidth: 0.2,
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   infoText: {
