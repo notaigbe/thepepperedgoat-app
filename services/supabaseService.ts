@@ -827,273 +827,273 @@ export const reservationService = {
 // GIFT CARD SERVICES
 // ============================================
 
-export const giftCardService = {
-  /**
-   * Send a gift card
-   */
-  async sendGiftCard(
-    senderId: string,
-    recipientId: string,
-    recipientName: string,
-    points: number,
-    message?: string
-  ) {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+// export const giftCardService = {
+//   /**
+//    * Send a gift card
+//    */
+//   async sendGiftCard(
+//     senderId: string,
+//     recipientId: string,
+//     recipientName: string,
+//     points: number,
+//     message?: string
+//   ) {
+//     try {
+//       const { data: { session } } = await supabase.auth.getSession();
+//       if (!session) throw new Error('Not authenticated');
 
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/send-gift-card`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            recipientId,
-            recipientName,
-            points,
-            message,
-          }),
-        }
-      );
+//       const response = await fetch(
+//         `${SUPABASE_URL}/functions/v1/send-gift-card`,
+//         {
+//           method: 'POST',
+//           headers: {
+//             'Content-Type': 'application/json',
+//             'Authorization': `Bearer ${session.access_token}`,
+//           },
+//           body: JSON.stringify({
+//             recipientId,
+//             recipientName,
+//             points,
+//             message,
+//           }),
+//         }
+//       );
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error);
+//       const result = await response.json();
+//       if (!response.ok) throw new Error(result.error);
 
-      return { data: result, error: null };
-    } catch (error) {
-      console.error('Send gift card error:', error);
-      return { data: null, error };
-    }
-  },
+//       return { data: result, error: null };
+//     } catch (error) {
+//       console.error('Send gift card error:', error);
+//       return { data: null, error };
+//     }
+//   },
 
-  /**
-   * Get gift cards received by a user
-   */
-  async getReceivedGiftCards(userId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('gift_cards')
-        .select(`
-          *,
-          sender:user_profiles!gift_cards_sender_id_fkey (name, email)
-        `)
-        .eq('recipient_id', userId)
-        .order('created_at', { ascending: false });
+//   /**
+//    * Get gift cards received by a user
+//    */
+//   async getReceivedGiftCards(userId: string) {
+//     try {
+//       const { data, error } = await supabase
+//         .from('gift_cards')
+//         .select(`
+//           *,
+//           sender:user_profiles!gift_cards_sender_id_fkey (name, email)
+//         `)
+//         .eq('recipient_id', userId)
+//         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Get received gift cards error:', error);
-      return { data: null, error };
-    }
-  },
+//       if (error) throw error;
+//       return { data, error: null };
+//     } catch (error) {
+//       console.error('Get received gift cards error:', error);
+//       return { data: null, error };
+//     }
+//   },
 
-  /**
-   * Get gift cards sent by a user
-   */
-  async getSentGiftCards(userId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('gift_cards')
-        .select(`
-          *,
-          recipient:user_profiles!gift_cards_recipient_id_fkey (name, email)
-        `)
-        .eq('sender_id', userId)
-        .order('created_at', { ascending: false });
+//   /**
+//    * Get gift cards sent by a user
+//    */
+//   async getSentGiftCards(userId: string) {
+//     try {
+//       const { data, error } = await supabase
+//         .from('gift_cards')
+//         .select(`
+//           *,
+//           recipient:user_profiles!gift_cards_recipient_id_fkey (name, email)
+//         `)
+//         .eq('sender_id', userId)
+//         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Get sent gift cards error:', error);
-      return { data: null, error };
-    }
-  },
+//       if (error) throw error;
+//       return { data, error: null };
+//     } catch (error) {
+//       console.error('Get sent gift cards error:', error);
+//       return { data: null, error };
+//     }
+//   },
 
-  /**
-   * Redeem a gift card
-   */
-  async redeemGiftCard(giftCardId: string, userId: string) {
-    try {
-      const { data, error } = await (supabase as any)
-        .from('gift_cards')
-        .update({ 
-          status: 'redeemed',
-          redeemed_at: new Date().toISOString(),
-        })
-        .eq('id', giftCardId)
-        .eq('recipient_id', userId)
-        .select()
-        .single();
+//   /**
+//    * Redeem a gift card
+//    */
+//   async redeemGiftCard(giftCardId: string, userId: string) {
+//     try {
+//       const { data, error } = await (supabase as any)
+//         .from('gift_cards')
+//         .update({ 
+//           status: 'redeemed',
+//           redeemed_at: new Date().toISOString(),
+//         })
+//         .eq('id', giftCardId)
+//         .eq('recipient_id', userId)
+//         .select()
+//         .single();
 
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Redeem gift card error:', error);
-      return { data: null, error };
-    }
-  },
-};
+//       if (error) throw error;
+//       return { data, error: null };
+//     } catch (error) {
+//       console.error('Redeem gift card error:', error);
+//       return { data: null, error };
+//     }
+//   },
+// };
 
 // ============================================
 // MERCH SERVICES
 // ============================================
 
-export const merchService = {
-  /**
-   * Get all merch items
-   */
-  async getMerchItems() {
-    try {
-      const { data, error } = await supabase
-        .from('merch_items')
-        .select('*')
-        .eq('in_stock', true)
-        .order('points_cost', { ascending: true });
+// export const merchService = {
+//   /**
+//    * Get all merch items
+//    */
+//   async getMerchItems() {
+//     try {
+//       const { data, error } = await supabase
+//         .from('merch_items')
+//         .select('*')
+//         .eq('in_stock', true)
+//         .order('points_cost', { ascending: true });
 
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Get merch items error:', error);
-      return { data: null, error };
-    }
-  },
+//       if (error) throw error;
+//       return { data, error: null };
+//     } catch (error) {
+//       console.error('Get merch items error:', error);
+//       return { data: null, error };
+//     }
+//   },
 
-  /**
-   * Redeem merch
-   */
-  async redeemMerch(
-    userId: string,
-    merchId: string,
-    merchName: string,
-    pointsCost: number,
-    deliveryAddress: string,
-    pickupNotes?: string
-  ) {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+//   /**
+//    * Redeem merch
+//    */
+//   async redeemMerch(
+//     userId: string,
+//     merchId: string,
+//     merchName: string,
+//     pointsCost: number,
+//     deliveryAddress: string,
+//     pickupNotes?: string
+//   ) {
+//     try {
+//       const { data: { session } } = await supabase.auth.getSession();
+//       if (!session) throw new Error('Not authenticated');
 
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/redeem-merch`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            merchId,
-            merchName,
-            pointsCost,
-            deliveryAddress,
-            pickupNotes,
-          }),
-        }
-      );
+//       const response = await fetch(
+//         `${SUPABASE_URL}/functions/v1/redeem-merch`,
+//         {
+//           method: 'POST',
+//           headers: {
+//             'Content-Type': 'application/json',
+//             'Authorization': `Bearer ${session.access_token}`,
+//           },
+//           body: JSON.stringify({
+//             merchId,
+//             merchName,
+//             pointsCost,
+//             deliveryAddress,
+//             pickupNotes,
+//           }),
+//         }
+//       );
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error);
+//       const result = await response.json();
+//       if (!response.ok) throw new Error(result.error);
 
-      return { data: result, error: null };
-    } catch (error) {
-      console.error('Redeem merch error:', error);
-      return { data: null, error };
-    }
-  },
+//       return { data: result, error: null };
+//     } catch (error) {
+//       console.error('Redeem merch error:', error);
+//       return { data: null, error };
+//     }
+//   },
 
   /**
    * Get merch redemptions for a user
    */
-  async getMerchRedemptions(userId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('merch_redemptions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+  // async getMerchRedemptions(userId: string) {
+  //   try {
+  //     const { data, error } = await supabase
+  //       .from('merch_redemptions')
+  //       .select('*')
+  //       .eq('user_id', userId)
+  //       .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Get merch redemptions error:', error);
-      return { data: null, error };
-    }
-  },
+  //     if (error) throw error;
+  //     return { data, error: null };
+  //   } catch (error) {
+  //     console.error('Get merch redemptions error:', error);
+  //     return { data: null, error };
+  //   }
+  // },
 
   /**
    * Add a new merch item (Admin)
    */
-  async addMerchItem(item: Omit<MerchItem, 'id'>) {
-    try {
-      const { data, error } = await (supabase
-        .from('merch_items')
-        .insert({
-          name: item.name,
-          description: item.description,
-          points_cost: item.pointsCost,
-          image: item.image,
-          in_stock: item.inStock,
-        } as any)
-        .select()
-        .single() as any);
+//   async addMerchItem(item: Omit<MerchItem, 'id'>) {
+//     try {
+//       const { data, error } = await (supabase
+//         .from('merch_items')
+//         .insert({
+//           name: item.name,
+//           description: item.description,
+//           points_cost: item.pointsCost,
+//           image: item.image,
+//           in_stock: item.inStock,
+//         } as any)
+//         .select()
+//         .single() as any);
 
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Add merch item error:', error);
-      return { data: null, error };
-    }
-  },
+//       if (error) throw error;
+//       return { data, error: null };
+//     } catch (error) {
+//       console.error('Add merch item error:', error);
+//       return { data: null, error };
+//     }
+//   },
 
-  /**
-   * Update a merch item (Admin)
-   */
-  async updateMerchItem(itemId: string, updates: Partial<MerchItem>) {
-    try {
-      const { data, error } = await (supabase as any)
-        .from('merch_items')
-        .update({
-          name: updates.name,
-          description: updates.description,
-          points_cost: updates.pointsCost,
-          image: updates.image,
-          in_stock: updates.inStock,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', itemId)
-        .select()
-        .single();
+//   /**
+//    * Update a merch item (Admin)
+//    */
+//   async updateMerchItem(itemId: string, updates: Partial<MerchItem>) {
+//     try {
+//       const { data, error } = await (supabase as any)
+//         .from('merch_items')
+//         .update({
+//           name: updates.name,
+//           description: updates.description,
+//           points_cost: updates.pointsCost,
+//           image: updates.image,
+//           in_stock: updates.inStock,
+//           updated_at: new Date().toISOString(),
+//         })
+//         .eq('id', itemId)
+//         .select()
+//         .single();
 
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Update merch item error:', error);
-      return { data: null, error };
-    }
-  },
+//       if (error) throw error;
+//       return { data, error: null };
+//     } catch (error) {
+//       console.error('Update merch item error:', error);
+//       return { data: null, error };
+//     }
+//   },
 
-  /**
-   * Delete a merch item (Admin)
-   */
-  async deleteMerchItem(itemId: string) {
-    try {
-      const { error } = await supabase
-        .from('merch_items')
-        .delete()
-        .eq('id', itemId);
+//   /**
+//    * Delete a merch item (Admin)
+//    */
+//   async deleteMerchItem(itemId: string) {
+//     try {
+//       const { error } = await supabase
+//         .from('merch_items')
+//         .delete()
+//         .eq('id', itemId);
 
-      if (error) throw error;
-      return { error: null };
-    } catch (error) {
-      console.error('Delete merch item error:', error);
-      return { error };
-    }
-  },
-};
+//       if (error) throw error;
+//       return { error: null };
+//     } catch (error) {
+//       console.error('Delete merch item error:', error);
+//       return { error };
+//     }
+//   },
+// };
 
 // ============================================
 // EVENT SERVICES
@@ -1632,50 +1632,50 @@ export const notificationService = {
 // THEME SETTINGS SERVICES
 // ============================================
 
-export const themeService = {
-  /**
-   * Get theme settings for a user
-   */
-  async getThemeSettings(userId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('theme_settings')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+// export const themeService = {
+//   /**
+//    * Get theme settings for a user
+//    */
+//   async getThemeSettings(userId: string) {
+//     try {
+//       const { data, error } = await supabase
+//         .from('theme_settings')
+//         .select('*')
+//         .eq('user_id', userId)
+//         .maybeSingle();
 
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Get theme settings error:', error);
-      return { data: null, error };
-    }
-  },
+//       if (error) throw error;
+//       return { data, error: null };
+//     } catch (error) {
+//       console.error('Get theme settings error:', error);
+//       return { data: null, error };
+//     }
+//   },
 
-  /**
-   * Update theme settings
-   */
-  async updateThemeSettings(userId: string, settings: ThemeSettings) {
-    try {
-      const { data, error } = await (supabase as any)
-        .from('theme_settings')
-        .upsert({
-          user_id: userId,
-          mode: settings.mode,
-          color_scheme: settings.colorScheme,
-          updated_at: new Date().toISOString(),
-        }, {onConflict: ['user_id']})
-        .select()
-        .single();
+//   /**
+//    * Update theme settings
+//    */
+//   async updateThemeSettings(userId: string, settings: ThemeSettings) {
+//     try {
+//       const { data, error } = await (supabase as any)
+//         .from('theme_settings')
+//         .upsert({
+//           user_id: userId,
+//           mode: settings.mode,
+//           color_scheme: settings.colorScheme,
+//           updated_at: new Date().toISOString(),
+//         }, {onConflict: ['user_id']})
+//         .select()
+//         .single();
 
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Update theme settings error:', error);
-      return { data: null, error };
-    }
-  },
-};
+//       if (error) throw error;
+//       return { data, error: null };
+//     } catch (error) {
+//       console.error('Update theme settings error:', error);
+//       return { data: null, error };
+//     }
+//   },
+// };
 
 // ============================================
 // ADMIN NOTIFICATION EMAIL SERVICES

@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 24,
     borderBottomWidth: 0.2,
-    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    // boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
     elevation: 8,
   },
   backButton: {
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 0.5,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   headerTitle: {
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 16,
     borderWidth: 0.2,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   cardInfo: {
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 0.2,
     padding: 8,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
+    // boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
     elevation: 0,
   },
   cardDetails: {
@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 0,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   defaultBadgeText: {
@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
   addNewButton: {
     borderRadius: 0,
     marginBottom: 20,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
     elevation: 8,
   },
   addNewButtonInner: {
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
     borderWidth: 0.2,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   addCardTitle: {
@@ -753,7 +753,7 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     alignItems: 'center',
     borderWidth: 0.2,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   cancelButtonText: {
@@ -763,7 +763,7 @@ const styles = StyleSheet.create({
   saveButton: {
     flex: 1,
     borderRadius: 0,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
     elevation: 8,
   },
   saveButtonInner: {
@@ -781,7 +781,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 20,
     borderWidth: 0.2,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   infoText: {

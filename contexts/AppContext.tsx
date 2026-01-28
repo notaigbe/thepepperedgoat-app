@@ -9,10 +9,7 @@ import {
   userService, 
   menuService, 
   orderService, 
-  merchService, 
-  giftCardService,
   notificationService,
-  themeService,
   paymentMethodService
 } from '@/services/supabaseService';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -32,16 +29,16 @@ interface AppContextType {
   userProfile: UserProfile | null;
   loadUserProfile: () => Promise<void>;
   placeOrder: (deliveryAddress?: string, pickupNotes?: string) => Promise<void>;
-  purchaseGiftCard: (giftCard: GiftCard) => void;
-  sendPointsGiftCard: (recipientId: string, recipientName: string, points: number, message?: string) => Promise<void>;
-  redeemMerch: (merchId: string, merchName: string, pointsCost: number, deliveryAddress: string, pickupNotes?: string) => Promise<void>;
+  // purchaseGiftCard: (giftCard: GiftCard) => void;
+  // sendPointsGiftCard: (recipientId: string, recipientName: string, points: number, message?: string) => Promise<void>;
+  // redeemMerch: (merchId: string, merchName: string, pointsCost: number, deliveryAddress: string, pickupNotes?: string) => Promise<void>;
   addPaymentMethod: (paymentMethod: PaymentMethod) => Promise<void>;
   removePaymentMethod: (paymentMethodId: string) => Promise<void>;
   setDefaultPaymentMethod: (paymentMethodId: string) => Promise<void>;
   updateProfileImage: (imageUri: string) => void;
   markNotificationAsRead: (notificationId: string) => Promise<void>;
   addNotification: (notification: AppNotification) => void;
-  themeSettings: ThemeSettings;
+  // themeSettings: ThemeSettings;
   updateThemeMode: (mode: ThemeMode) => Promise<void>;
   updateColorScheme: (scheme: ColorScheme) => Promise<void>;
   currentColors: any;
@@ -170,8 +167,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const { data: orders } = await orderService.getOrderHistory(user.id);
       
       // Load gift cards
-      const { data: receivedGiftCards } = await giftCardService.getReceivedGiftCards(user.id);
-      const { data: sentGiftCards } = await giftCardService.getSentGiftCards(user.id);
+      // const { data: receivedGiftCards } = await giftCardService.getReceivedGiftCards(user.id);
+      // const { data: sentGiftCards } = await giftCardService.getSentGiftCards(user.id);
       
       // Load payment methods
       const { data: paymentMethods } = await paymentMethodService.getPaymentMethods(user.id);
@@ -180,19 +177,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const { data: notifications } = await notificationService.getNotifications(user.id);
       
       // Load theme settings
-      const { data: theme, error: themeError } = await themeService.getThemeSettings(user.id);
+      // const { data: theme, error: themeError } = await themeService.getThemeSettings(user.id);
       
       // If no theme settings exist, create default ones
-      if (!theme && !themeError) {
-        console.log('No theme settings found, creating default');
-        await themeService.updateThemeSettings(user.id, {
-          mode: 'auto',
-          colorScheme: 'default',
-        });
-      }
+      // if (!theme && !themeError) {
+      //   console.log('No theme settings found, creating default');
+      //   await themeService.updateThemeSettings(user.id, {
+      //     mode: 'auto',
+      //     colorScheme: 'default',
+      //   });
+      // }
       
       // Load merch redemptions
-      const { data: merchRedemptions } = await merchService.getMerchRedemptions(user.id);
+      // const { data: merchRedemptions } = await merchService.getMerchRedemptions(user.id);
 
       const fullProfile: UserProfile = {
         id: profile.id,
@@ -221,17 +218,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           deliveryAddress: o.delivery_address,
           pickupNotes: o.pickup_notes,
         })) || [],
-        giftCards: [...(receivedGiftCards || []), ...(sentGiftCards || [])].map((gc: any) => ({
-          id: gc.id,
-          points: gc.points,
-          recipientId: gc.recipient_id,
-          recipientName: gc.recipient_name,
-          recipientEmail: gc.recipient_email,
-          message: gc.message,
-          purchaseDate: gc.created_at,
-          senderId: gc.sender_id,
-          type: 'points',
-        })),
+        // giftCards: [...(receivedGiftCards || []), ...(sentGiftCards || [])].map((gc: any) => ({
+        //   id: gc.id,
+        //   points: gc.points,
+        //   recipientId: gc.recipient_id,
+        //   recipientName: gc.recipient_name,
+        //   recipientEmail: gc.recipient_email,
+        //   message: gc.message,
+        //   purchaseDate: gc.created_at,
+        //   senderId: gc.sender_id,
+        //   type: 'points',
+        // })),
         paymentMethods: paymentMethods?.map((pm: any) => ({
           id: pm.id,
           type: pm.type,
@@ -249,27 +246,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           read: n.read,
           actionUrl: n.action_url,
         })) || [],
-        rsvpEvents: [],
-        themeSettings: theme ? {
-          mode: (theme as any).mode as ThemeMode,
-          colorScheme: (((theme as any).color_scheme ?? (theme as any).colorScheme) as ColorScheme),
-        } : { mode: 'auto', colorScheme: 'default' },
-        merchRedemptions: merchRedemptions?.map((mr: any) => ({
-          id: mr.id,
-          merchId: mr.merch_item_id,
-          merchName: mr.merch_name,
-          pointsCost: mr.points_cost,
-          deliveryAddress: mr.delivery_address,
-          pickupNotes: mr.pickup_notes,
-          date: mr.created_at,
-          status: mr.status,
-        })) || [],
+        // rsvpEvents: [],
+        // themeSettings: theme ? {
+        //   mode: (theme as any).mode as ThemeMode,
+        //   colorScheme: (((theme as any).color_scheme ?? (theme as any).colorScheme) as ColorScheme),
+        // } : { mode: 'auto', colorScheme: 'default' },
+        // merchRedemptions: merchRedemptions?.map((mr: any) => ({
+        //   id: mr.id,
+        //   merchId: mr.merch_item_id,
+        //   merchName: mr.merch_name,
+        //   pointsCost: mr.points_cost,
+        //   deliveryAddress: mr.delivery_address,
+        //   pickupNotes: mr.pickup_notes,
+        //   date: mr.created_at,
+        //   status: mr.status,
+        // })) || [],
       };
 
       setUserProfile(fullProfile);
-      if (fullProfile.themeSettings) {
-        setThemeSettings(fullProfile.themeSettings);
-      }
+      // if (fullProfile.themeSettings) {
+      //   setThemeSettings(fullProfile.themeSettings);
+      // }
       console.log('User profile loaded successfully');
     } catch (error) {
       console.error('Error loading user profile:', error);
@@ -291,72 +288,89 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isAuthenticated, user, loadUserProfile]);
 
-  // Setup real-time order updates
-  useEffect(() => {
-    if (!isAuthenticated || !user) {
-      // Clean up existing subscription
-      if (orderChannelRef.current) {
-        supabase.removeChannel(orderChannelRef.current);
-        orderChannelRef.current = null;
-      }
-      return;
+useEffect(() => {
+  if (!isAuthenticated || !user) {
+    if (orderChannelRef.current) {
+      supabase.removeChannel(orderChannelRef.current);
+      orderChannelRef.current = null;
     }
+    return;
+  }
 
-    // Check if already subscribed
-    if ((orderChannelRef.current?.state as any) === 'subscribed') {
-      console.log('Already subscribed to order updates');
-      return;
-    }
+  if ((orderChannelRef.current?.state as any) === 'subscribed') {
+    console.log('Already subscribed to order updates');
+    return;
+  }
 
-    const setupRealtimeSubscription = async () => {
-      console.log('Setting up real-time order subscription for user:', user.id);
-      
-      const channel = supabase.channel(`order:${user.id}`, {
-        config: { private: true }
-      });
-      
-      orderChannelRef.current = channel;
+  const setupRealtimeSubscription = async () => {
+    console.log('Setting up real-time order subscription for user:', user.id);
+    
+    // Use a simpler channel name for postgres_changes
+    const channel = supabase.channel(`orders-${user.id}`);
+    
+    orderChannelRef.current = channel;
 
-      // Set auth before subscribing
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await supabase.realtime.setAuth(session.access_token);
-      }
-
-      channel
-        .on('broadcast', { event: 'INSERT' }, (payload) => {
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}` // Only listen to this user's orders
+        },
+        (payload) => {
           console.log('New order created:', payload);
           showToast('New order placed!', 'success');
-          loadUserProfile(); // Reload profile to get updated orders
-        })
-        .on('broadcast', { event: 'UPDATE' }, (payload) => {
+          loadUserProfile();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
           console.log('Order updated:', payload);
           const order = payload.new as any;
           showToast(`Order status updated to: ${order.status}`, 'info');
-          loadUserProfile(); // Reload profile to get updated orders
-        })
-        .on('broadcast', { event: 'DELETE' }, (payload) => {
+          loadUserProfile();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
           console.log('Order deleted:', payload);
-          loadUserProfile(); // Reload profile to get updated orders
-        })
-        .subscribe((status, err) => {
-          console.log('Order subscription status:', status);
-          if (err) {
-            console.error('Order subscription error:', err);
-          }
-        });
-    };
+          loadUserProfile();
+        }
+      )
+      .subscribe((status, err) => {
+        console.log('Order subscription status:', status);
+        if (err) {
+          console.error('Order subscription error:', err);
+        }
+      });
+  };
 
-    setupRealtimeSubscription();
+  setupRealtimeSubscription();
 
-    return () => {
-      if (orderChannelRef.current) {
-        console.log('Cleaning up order subscription');
-        supabase.removeChannel(orderChannelRef.current);
-        orderChannelRef.current = null;
-      }
-    };
-  }, [isAuthenticated, user, loadUserProfile]);
+  return () => {
+    if (orderChannelRef.current) {
+      console.log('Cleaning up order subscription');
+      supabase.removeChannel(orderChannelRef.current);
+      orderChannelRef.current = null;
+    }
+  };
+}, [isAuthenticated, user, loadUserProfile]);
 
   // Get current colors based on theme settings
   const getCurrentColors = () => {
@@ -581,86 +595,86 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const purchaseGiftCard = (giftCard: GiftCard) => {
-    console.log('Purchasing gift card:', giftCard);
-    // This is for money-based gift cards (not implemented in backend yet)
-    showToast('Gift card feature coming soon!', 'info');
-  };
+  // const purchaseGiftCard = (giftCard: GiftCard) => {
+  //   console.log('Purchasing gift card:', giftCard);
+  //   // This is for money-based gift cards (not implemented in backend yet)
+  //   showToast('Gift card feature coming soon!', 'info');
+  // };
 
-  const sendPointsGiftCard = async (recipientId: string, recipientName: string, points: number, message?: string) => {
-    if (!user || !userProfile) {
-      showToast('Please sign in to send gift cards', 'error');
-      return;
-    }
+  // const sendPointsGiftCard = async (recipientId: string, recipientName: string, points: number, message?: string) => {
+  //   if (!user || !userProfile) {
+  //     showToast('Please sign in to send gift cards', 'error');
+  //     return;
+  //   }
 
-    if (userProfile.points < points) {
-      showToast('Insufficient points', 'error');
-      return;
-    }
+  //   if (userProfile.points < points) {
+  //     showToast('Insufficient points', 'error');
+  //     return;
+  //   }
 
-    try {
-      console.log('Sending points gift card:', recipientId, points);
-      const { error } = await giftCardService.sendGiftCard(
-        user.id,
-        recipientId,
-        recipientName,
-        points,
-        message
-      );
+  //   try {
+  //     console.log('Sending points gift card:', recipientId, points);
+  //     const { error } = await giftCardService.sendGiftCard(
+  //       user.id,
+  //       recipientId,
+  //       recipientName,
+  //       points,
+  //       message
+  //     );
 
-      if (error) {
-        showToast('Failed to send gift card', 'error');
-        return;
-      }
+  //     if (error) {
+  //       showToast('Failed to send gift card', 'error');
+  //       return;
+  //     }
 
-      showToast(`Sent ${points} points to ${recipientName}!`, 'success');
-      await loadUserProfile();
-    } catch (error) {
-      console.error('Error sending gift card:', error);
-      showToast('Failed to send gift card', 'error');
-    }
-  };
+  //     showToast(`Sent ${points} points to ${recipientName}!`, 'success');
+  //     await loadUserProfile();
+  //   } catch (error) {
+  //     console.error('Error sending gift card:', error);
+  //     showToast('Failed to send gift card', 'error');
+  //   }
+  // };
 
-  const receivePointsGiftCard = (senderId: string, senderName: string, points: number, message?: string) => {
-    console.log('Receiving points gift card:', senderId, points);
-    showToast(`Received ${points} points from ${senderName}!`, 'success');
-    loadUserProfile();
-  };
+  // const receivePointsGiftCard = (senderId: string, senderName: string, points: number, message?: string) => {
+  //   console.log('Receiving points gift card:', senderId, points);
+  //   showToast(`Received ${points} points from ${senderName}!`, 'success');
+  //   loadUserProfile();
+  // };
 
-  const redeemMerch = async (merchId: string, merchName: string, pointsCost: number, deliveryAddress: string, pickupNotes?: string) => {
-    if (!user || !userProfile) {
-      showToast('Please sign in to redeem merch', 'error');
-      return;
-    }
+  // const redeemMerch = async (merchId: string, merchName: string, pointsCost: number, deliveryAddress: string, pickupNotes?: string) => {
+  //   if (!user || !userProfile) {
+  //     showToast('Please sign in to redeem merch', 'error');
+  //     return;
+  //   }
 
-    if (userProfile.points < pointsCost) {
-      showToast('Insufficient points', 'error');
-      return;
-    }
+  //   if (userProfile.points < pointsCost) {
+  //     showToast('Insufficient points', 'error');
+  //     return;
+  //   }
 
-    try {
-      console.log('Redeeming merch:', merchId, pointsCost);
-      const { error } = await merchService.redeemMerch(
-        user.id,
-        merchId,
-        merchName,
-        pointsCost,
-        deliveryAddress,
-        pickupNotes
-      );
+  //   try {
+  //     console.log('Redeeming merch:', merchId, pointsCost);
+  //     const { error } = await merchService.redeemMerch(
+  //       user.id,
+  //       merchId,
+  //       merchName,
+  //       pointsCost,
+  //       deliveryAddress,
+  //       pickupNotes
+  //     );
 
-      if (error) {
-        showToast('Failed to redeem merch', 'error');
-        return;
-      }
+  //     if (error) {
+  //       showToast('Failed to redeem merch', 'error');
+  //       return;
+  //     }
 
-      showToast(`Redeemed ${merchName} for ${pointsCost} points!`, 'success');
-      await loadUserProfile();
-    } catch (error) {
-      console.error('Error redeeming merch:', error);
-      showToast('Failed to redeem merch', 'error');
-    }
-  };
+  //     showToast(`Redeemed ${merchName} for ${pointsCost} points!`, 'success');
+  //     await loadUserProfile();
+  //   } catch (error) {
+  //     console.error('Error redeeming merch:', error);
+  //     showToast('Failed to redeem merch', 'error');
+  //   }
+  // };
 
   const addPaymentMethod = async (paymentMethod: PaymentMethod) => {
     if (!user) {
@@ -759,55 +773,55 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateThemeMode = async (mode: ThemeMode) => {
-    console.log('Updating theme mode:', mode);
+  // const updateThemeMode = async (mode: ThemeMode) => {
+  //   console.log('Updating theme mode:', mode);
     
-    // Update local state first for immediate UI response
-    setThemeSettings((prev) => ({ ...prev, mode }));
+  //   // Update local state first for immediate UI response
+  //   setThemeSettings((prev) => ({ ...prev, mode }));
     
-    // Save to Supabase if user is authenticated
-    if (!user?.id) return; // Early return if no user
+  //   // Save to Supabase if user is authenticated
+  //   if (!user?.id) return; // Early return if no user
     
-    try {
-      const { error } = await themeService.updateThemeSettings(user.id, {
-        mode,
-        colorScheme: themeSettings.colorScheme, // Use current colorScheme
-      });
+  //   try {
+  //     const { error } = await themeService.updateThemeSettings(user.id, {
+  //       mode,
+  //       colorScheme: themeSettings.colorScheme, // Use current colorScheme
+  //     });
 
-      if (error) {
-        console.error('Error updating theme mode:', error);
-        showToast('Failed to save theme settings', 'error');
-      }
-    } catch (error) {
-      console.error('Error updating theme mode:', error);
-      showToast('Failed to save theme settings', 'error');
-    }
-  };
+  //     if (error) {
+  //       console.error('Error updating theme mode:', error);
+  //       showToast('Failed to save theme settings', 'error');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error updating theme mode:', error);
+  //     showToast('Failed to save theme settings', 'error');
+  //   }
+  // };
 
-  const updateColorScheme = async (scheme: ColorScheme) => {
-    console.log('Updating color scheme:', scheme);
+  // const updateColorScheme = async (scheme: ColorScheme) => {
+  //   console.log('Updating color scheme:', scheme);
     
-    // Update local state first for immediate UI response
-    setThemeSettings((prev) => ({ ...prev, colorScheme: scheme }));
+  //   // Update local state first for immediate UI response
+  //   setThemeSettings((prev) => ({ ...prev, colorScheme: scheme }));
     
-    // Save to Supabase if user is authenticated
-    if (!user?.id) return; // Early return if no user
+  //   // Save to Supabase if user is authenticated
+  //   if (!user?.id) return; // Early return if no user
     
-    try {
-      const { error } = await themeService.updateThemeSettings(user.id, {
-        mode: themeSettings.mode, // Use current mode
-        colorScheme: scheme,
-      });
+  //   try {
+  //     const { error } = await themeService.updateThemeSettings(user.id, {
+  //       mode: themeSettings.mode, // Use current mode
+  //       colorScheme: scheme,
+  //     });
 
-      if (error) {
-        console.error('Error updating color scheme:', error);
-        showToast('Failed to save theme settings', 'error');
-      }
-    } catch (error) {
-      console.error('Error updating color scheme:', error);
-      showToast('Failed to save theme settings', 'error');
-    }
-  };
+  //     if (error) {
+  //       console.error('Error updating color scheme:', error);
+  //       showToast('Failed to save theme settings', 'error');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error updating color scheme:', error);
+  //     showToast('Failed to save theme settings', 'error');
+  //   }
+  // };
 
   const getUnreadNotificationCount = () => {
     if (!userProfile || !userProfile.notifications) {
@@ -827,10 +841,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         userProfile,
         loadUserProfile,
         placeOrder,
-        purchaseGiftCard,
-        sendPointsGiftCard,
-        receivePointsGiftCard,
-        redeemMerch,
         addPaymentMethod,
         removePaymentMethod,
         setDefaultPaymentMethod,
@@ -838,8 +848,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         markNotificationAsRead,
         addNotification,
         themeSettings,
-        updateThemeMode,
-        updateColorScheme,
         currentColors,
         isTabBarVisible,
         setTabBarVisible,

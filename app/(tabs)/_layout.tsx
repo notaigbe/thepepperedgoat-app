@@ -19,17 +19,17 @@ export default function TabLayout() {
       icon: 'cart.fill',
       label: 'Cart',
     },
+    // {
+    //   name: 'discover',
+    //   route: '/(tabs)/discover',
+    //   icon: 'photo.on.rectangle',
+    //   label: 'Discover',
+    // },
     {
-      name: 'discover',
-      route: '/(tabs)/discover',
-      icon: 'photo.on.rectangle',
-      label: 'Discover',
-    },
-    {
-      name: 'merch',
-      route: '/(tabs)/merch',
-      icon: 'bag.fill',
-      label: 'Merch',
+      name: 'enquiry',
+      route: '/(tabs)/enquiry',
+      icon: 'bubble.left.and.bubble.right',
+      label: 'Enquiry',
     },
     // {
     //   name: 'giftcards',
@@ -56,8 +56,8 @@ export default function TabLayout() {
       >
         <Stack.Screen name="(home)" />
         <Stack.Screen name="cart" />
-        <Stack.Screen name="discover" />
-        <Stack.Screen name="merch" />
+        {/* <Stack.Screen name="discover" /> */}
+        <Stack.Screen name="enquiry" />
         {/* <Stack.Screen name="giftcards" /> */}
         <Stack.Screen name="profile" />
       </Stack>

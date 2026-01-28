@@ -198,12 +198,12 @@ export interface UserProfile {
   phone: string;
   points: number;
   orders: Order[];
-  giftCards: GiftCard[];
+  // giftCards: GiftCard[];
   paymentMethods: PaymentMethod[];
   profileImage?: string;
   notifications: AppNotification[];
-  rsvpEvents: string[];
-  themeSettings?: ThemeSettings;
-  merchRedemptions?: MerchRedemption[];
+  // rsvpEvents: string[];
+  // themeSettings?: ThemeSettings;
+  // merchRedemptions?: MerchRedemption[];
   userRole: UserRole;
 }

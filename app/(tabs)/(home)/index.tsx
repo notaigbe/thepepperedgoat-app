@@ -98,7 +98,7 @@ export default function HomeScreen() {
     // Filter by search query
     const matchesSearch = searchQuery.trim() === "" || 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+      item.description?.toLowerCase().includes(searchQuery.toLowerCase());
     
     // Find the category by key to get its ID
     const selectedCategoryObj = menuCategories.find(cat => cat.key === selectedCategory);
@@ -242,7 +242,7 @@ export default function HomeScreen() {
               <IconSymbol
                 name={Platform.OS === 'ios' ? "line.3.horizontal.decrease.circle.fill" : "filter-list"}
                 size={28}
-                color="#000000"
+                color="#E26F5B"
               />
             </Pressable>
           )}
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
   addButton: {
     width: 44,
     height: 44,
-    borderRadius: 4,
+    borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
     boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",

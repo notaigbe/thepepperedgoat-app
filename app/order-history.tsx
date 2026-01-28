@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 24,
     borderBottomWidth: 0.2,
-    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    // boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
     elevation: 8,
   },
   backButton: {
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 0.5,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   headerTitle: {
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 16,
     borderWidth: 0.2,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   orderHeader: {
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     borderRadius: 0,
-    boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
+    // boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
     elevation: 8,
   },
   actionButtonInner: {

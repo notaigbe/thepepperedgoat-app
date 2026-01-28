@@ -127,6 +127,7 @@ const MAPPING = ({
   "exclamationmark.triangle": "warning-amber",
   "questionmark.circle.fill": "help",
   "questionmark.circle": "help-outline",
+  "bubble.left.and.bubble.right":"question-answer",
 
   // Shapes & Symbols
   "square": "square",

@@ -284,7 +284,7 @@ export default function InviteFriendScreen() {
 
                 <View style={styles.buttonRow}>
                   <LinearGradient
-                    colors={[currentColors.secondary, currentColors.highlight]}
+                    colors={[currentColors.highlight, currentColors.primary]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.actionButton}
@@ -298,7 +298,7 @@ export default function InviteFriendScreen() {
                   </LinearGradient>
 
                   <LinearGradient
-                    colors={[currentColors.secondary, currentColors.highlight]}
+                    colors={[currentColors.primary, currentColors.highlight]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.actionButton}
@@ -446,8 +446,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 24,
-    borderBottomWidth: 2,
-    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    borderBottomWidth: 0.5,
+    // boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
     elevation: 8,
   },
   backButton: {
@@ -456,8 +456,8 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    borderWidth: 0.5,
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   headerTitle: {
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   signInButton: {
     borderRadius: 0,
     marginTop: 32,
-    boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
+    // boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
     elevation: 8,
   },
   signInButtonInner: {
@@ -512,8 +512,8 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     padding: 24,
     marginBottom: 16,
-    borderWidth: 2,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    borderWidth: 0.2,
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   codeHeader: {
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     alignItems: 'center',
     marginBottom: 16,
-    borderWidth: 2,
+    borderWidth: 0.2,
   },
   codeText: {
     fontSize: 32,
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     borderRadius: 0,
-    boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
+    // boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
     elevation: 8,
   },
   actionButtonInner: {
@@ -572,8 +572,8 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     padding: 24,
     marginBottom: 16,
-    borderWidth: 2,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    borderWidth: 0.2,
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   infoTitle: {
@@ -613,8 +613,8 @@ const styles = StyleSheet.create({
   statsCard: {
     borderRadius: 0,
     padding: 24,
-    borderWidth: 2,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    borderWidth: 0.2,
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   statsTitle: {
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
-    borderBottomWidth: 2,
+    borderBottomWidth: 0.5,
   },
   referralInfo: {
     flex: 1,

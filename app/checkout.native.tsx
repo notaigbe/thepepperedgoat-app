@@ -96,7 +96,7 @@ const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
 // This means: 1 point = $0.01
 const POINTS_TO_DOLLAR_RATE = 0.01; // 1 point = $0.01, so 100 points = $1
 const DISCOUNT_PERCENTAGE = 0.15; // 15% discount
-const POINTS_REWARD_PERCENTAGE = 0.05; // 5% of order as points
+// const POINTS_REWARD_PERCENTAGE = 0.05; // 5% of order as points
 
 // ============================================================================
 // CHECKOUT CONTENT COMPONENT
@@ -166,15 +166,15 @@ function CheckoutContent() {
   // Cap at 20% of subtotal after discount
   const pointsValueInDollars = availablePoints * POINTS_TO_DOLLAR_RATE;
   const maxPointsDiscount = subtotalAfterDiscount * 0.2;
-  const pointsDiscount = usePoints ? Math.min(pointsValueInDollars, maxPointsDiscount) : 0;
+  // const pointsDiscount = usePoints ? Math.min(pointsValueInDollars, maxPointsDiscount) : 0;
   
   // Total after all discounts and tax
-  const total = subtotalAfterDiscount + tax - pointsDiscount;
+  const total = subtotalAfterDiscount + tax;
   
   // Points to earn: 15% of order total (after discount, before tax)
   // CORRECTED: Award points based on 100 points = $1
   // For $100 order, user gets 5% = $5 value = 500 points
-  const pointsToEarn = Math.floor((subtotalAfterDiscount * POINTS_REWARD_PERCENTAGE) / POINTS_TO_DOLLAR_RATE);
+  // const pointsToEarn = Math.floor((subtotalAfterDiscount * POINTS_REWARD_PERCENTAGE) / POINTS_TO_DOLLAR_RATE);
 
   // ============================================================================
   // HELPER FUNCTIONS
@@ -377,7 +377,7 @@ function CheckoutContent() {
 
     console.log('Creating order after successful payment...');
     console.log('Payment Intent ID:', paymentIntentId);
-    console.log('Points to earn:', pointsToEarn);
+    // console.log('Points to earn:', pointsToEarn);
 
     // Create order
     const { data: order, error: orderError } = await supabase
@@ -385,7 +385,7 @@ function CheckoutContent() {
       .insert({
         user_id: userProfile.id,
         total: total,
-        points_earned: pointsToEarn,
+        // points_earned: pointsToEarn,
         status: 'confirmed',
         payment_status: 'succeeded',
         payment_id: paymentIntentId,
@@ -421,36 +421,36 @@ function CheckoutContent() {
     }
 
     // Deduct points if used
-    if (usePoints && pointsDiscount > 0) {
-      // CORRECTED: Convert dollars back to points (divide by 0.01)
-      const pointsToDeduct = Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE);
-      const { error: pointsError } = await supabase
-        .from('user_profiles')
-        .update({ points: availablePoints - pointsToDeduct })
-        .eq('id', userProfile.id);
+    // if (usePoints && pointsDiscount > 0) {
+    //   // CORRECTED: Convert dollars back to points (divide by 0.01)
+    //   const pointsToDeduct = Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE);
+    //   const { error: pointsError } = await supabase
+    //     .from('user_profiles')
+    //     .update({ points: availablePoints - pointsToDeduct })
+    //     .eq('id', userProfile.id);
 
-      if (pointsError) {
-        console.error('Error deducting points:', pointsError);
-      } else {
-        console.log(`✓ Deducted ${pointsToDeduct} points (worth $${pointsDiscount.toFixed(2)})`);
-      }
-    }
+    //   if (pointsError) {
+    //     console.error('Error deducting points:', pointsError);
+    //   } else {
+    //     console.log(`✓ Deducted ${pointsToDeduct} points (worth $${pointsDiscount.toFixed(2)})`);
+    //   }
+    // }
 
     // Award points for this order
-    const newPointsTotal = availablePoints - (usePoints ? Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE) : 0) + pointsToEarn;
-    const { error: awardPointsError } = await supabase
-      .from('user_profiles')
-      .update({ points: newPointsTotal })
-      .eq('id', userProfile.id);
+    // const newPointsTotal = availablePoints - (usePoints ? Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE) : 0) + pointsToEarn;
+    // const { error: awardPointsError } = await supabase
+    //   .from('user_profiles')
+    //   .update({ points: newPointsTotal })
+    //   .eq('id', userProfile.id);
 
-    if (awardPointsError) {
-      console.error('Error awarding points:', awardPointsError);
-    } else {
-      console.log(`✓ Awarded ${pointsToEarn} points`);
-    }
+    // if (awardPointsError) {
+    //   console.error('Error awarding points:', awardPointsError);
+    // } else {
+    //   console.log(`✓ Awarded ${pointsToEarn} points`);
+    // }
 
     return order.id;
-  }, [userProfile, total, pointsToEarn, orderType, validatedAddress, deliveryAddress, pickupNotes, cart, usePoints, pointsDiscount, availablePoints]);
+  }, [userProfile, total, orderType, validatedAddress, deliveryAddress, pickupNotes, cart]);
 
   // ============================================================================
   // ORDER PLACEMENT
@@ -517,7 +517,7 @@ function CheckoutContent() {
       console.log('Return URL:', returnURL);
 
       const initConfig: any = {
-        merchantDisplayName: 'Jagabans LA',
+        merchantDisplayName: 'The Peppered Goat',
         paymentIntentClientSecret: clientSecret,
         allowsDelayedPaymentMethods: false,
         returnURL: returnURL,
@@ -528,10 +528,10 @@ function CheckoutContent() {
         customerId: customerId,
         customerEphemeralKeySecret: ephemeralKey,
         // Enable Apple Pay and Google Pay
-        applePay: {
-          merchantCountryCode: 'US',
-          merchantIdentifier: 'merchant.com.ooosumfoods.jagabansla',
-        },
+        // applePay: {
+        //   merchantCountryCode: 'US',
+        //   merchantIdentifier: 'merchant.com.ooosumfoods.thepepperedgoat',
+        // },
         googlePay: {
           merchantCountryCode: 'US',
           testEnv: false,
@@ -655,7 +655,7 @@ function CheckoutContent() {
       borderRadius: 0,
       justifyContent: 'center',
       alignItems: 'center',
-      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.3)',
+      // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.3)',
       elevation: 4,
     },
     infoBanner: {
@@ -666,7 +666,7 @@ function CheckoutContent() {
       gap: 12,
       borderWidth: 0.2,
       borderColor: currentColors.border,
-      boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.2)',
+      // boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.2)',
       elevation: 4,
     },
     infoText: {
@@ -700,7 +700,7 @@ function CheckoutContent() {
       borderRadius: 0,
       borderWidth: 0.2,
       gap: 8,
-      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+      // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
       elevation: 4,
     },
     orderTypeText: {
@@ -716,7 +716,7 @@ function CheckoutContent() {
       fontSize: 16,
       fontFamily: 'Inter_400Regular',
       minHeight: 80,
-      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+      // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
       elevation: 4,
       paddingRight: 48,
       backgroundColor: currentColors.card,
@@ -725,7 +725,7 @@ function CheckoutContent() {
       borderColor: currentColors.border,
     },
     inputWithValidation: {
-      borderWidth: 2,
+      borderWidth: 0.2,
     },
     validationIconContainer: {
       position: 'absolute',
@@ -751,7 +751,7 @@ function CheckoutContent() {
       borderWidth: 0.2,
       backgroundColor: currentColors.card,
       borderColor: currentColors.border,
-      boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.25)',
+      // boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.25)',
       elevation: 4,
     },
     suggestionHeader: {
@@ -774,7 +774,7 @@ function CheckoutContent() {
     },
     useSuggestionButton: {
       borderRadius: 0,
-      boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.3)',
+      // boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.3)',
       elevation: 4,
     },
     useSuggestionButtonInner: {
@@ -795,7 +795,7 @@ function CheckoutContent() {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+      // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
       elevation: 4,
       borderWidth: 0.2,
       borderColor: currentColors.border,
@@ -832,7 +832,7 @@ function CheckoutContent() {
     summaryCard: {
       borderRadius: 0,
       padding: 20,
-      boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+      // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
       elevation: 8,
       borderWidth: 0.2,
       borderColor: currentColors.border,
@@ -873,7 +873,7 @@ function CheckoutContent() {
     summaryValueTotal: {
       fontSize: 20,
       fontFamily: 'Inter_700Bold',
-      color: currentColors.secondary,
+      color: currentColors.primary,
     },
     pointsEarnCard: {
       flexDirection: 'row',
@@ -896,12 +896,12 @@ function CheckoutContent() {
       padding: 20,
       borderTopWidth: 0.2,
       borderTopColor: currentColors.border,
-      boxShadow: '0px -6px 20px rgba(74, 215, 194, 0.3)',
+      // boxShadow: '0px -6px 20px rgba(74, 215, 194, 0.3)',
       elevation: 10,
     },
     placeOrderButton: {
       borderRadius: 0,
-      boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.5)',
+      // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.5)',
       elevation: 10,
     },
     placeOrderButtonInner: {
@@ -925,7 +925,7 @@ function CheckoutContent() {
       borderColor: currentColors.border,
       backgroundColor: currentColors.card,
       gap: 12,
-      boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.2)',
+      // boxShadow: '0px 4px 12px rgba(74, 215, 194, 0.2)',
       elevation: 4,
     },
     paymentMethodsInfoText: {
@@ -992,7 +992,7 @@ function CheckoutContent() {
               <View style={styles.orderTypeSelector}>
                 <LinearGradient
                   colors={orderType === 'delivery' 
-                    ? [currentColors.secondary, currentColors.highlight]
+                    ? [currentColors.highlight, currentColors.primary]
                     : [currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]
                   }
                   start={{ x: 0, y: 0 }}
@@ -1030,7 +1030,7 @@ function CheckoutContent() {
 
                 <LinearGradient
                   colors={orderType === 'pickup' 
-                    ? [currentColors.secondary, currentColors.highlight]
+                    ? [currentColors.primary, currentColors.highlight]
                     : [currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]
                   }
                   start={{ x: 0, y: 0 }}
@@ -1190,7 +1190,7 @@ function CheckoutContent() {
               >
                 <IconSymbol name="payment" size={24} color={currentColors.primary} />
                 <Text style={styles.paymentMethodsInfoText}>
-                  Choose from multiple payment options including saved cards, Apple Pay, Google Pay, and more when you proceed to checkout.
+                  Choose from multiple payment options including saved cards, Google Pay, and more when you proceed to checkout.
                 </Text>
               </LinearGradient>
             </View>
@@ -1218,7 +1218,7 @@ function CheckoutContent() {
                 <Text style={styles.summaryLabel}>Tax (9.75%)</Text>
                 <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
               </View>
-              {usePoints && pointsDiscount > 0 && (
+              {/* {usePoints && pointsDiscount > 0 && (
                 <View style={styles.summaryRow}>
                   <Text style={[styles.summaryLabel, { color: currentColors.secondary }]}>
                     Points Discount
@@ -1227,17 +1227,17 @@ function CheckoutContent() {
                     -${pointsDiscount.toFixed(2)}
                   </Text>
                 </View>
-              )}
+              )} */}
               <View style={[styles.summaryRow, styles.summaryRowTotal]}>
                 <Text style={styles.summaryLabelTotal}>Total</Text>
                 <Text style={styles.summaryValueTotal}>${total.toFixed(2)}</Text>
               </View>
-              <View style={styles.pointsEarnCard}>
+              {/* <View style={styles.pointsEarnCard}>
                 <IconSymbol name="star" size={20} color={currentColors.highlight} />
                 <Text style={styles.pointsEarnText}>
                   You&apos;ll earn {pointsToEarn} points with this order! (${(pointsToEarn * POINTS_TO_DOLLAR_RATE).toFixed(2)} value)
                 </Text>
-              </View>
+              </View> */}
             </LinearGradient>
           </View>
         </ScrollView>
@@ -1251,7 +1251,7 @@ function CheckoutContent() {
           <LinearGradient
             colors={processing 
               ? [currentColors.textSecondary, currentColors.textSecondary]
-              : [currentColors.secondary, currentColors.highlight]
+              : [currentColors.primary, currentColors.highlight]
             }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}

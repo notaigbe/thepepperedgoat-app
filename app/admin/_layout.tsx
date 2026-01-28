@@ -14,12 +14,8 @@ export default function AdminLayout() {
       <Stack.Screen name="orders" />
       <Stack.Screen name="users" />
       <Stack.Screen name="admins" />
-      <Stack.Screen name="events" />
-      <Stack.Screen name="merch" />
-      <Stack.Screen name="giftcards" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="analytics" />
-      <Stack.Screen name="reservations" />
     </Stack>
   );
 }

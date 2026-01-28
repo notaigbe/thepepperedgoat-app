@@ -69,7 +69,7 @@ export default function CheckoutScreen() {
     },
     button: {
       borderRadius: 0,
-      boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
+      // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
       elevation: 8,
     },
     buttonInner: {

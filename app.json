@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/images/peppered-goat-logo.jpg",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,
@@ -22,7 +22,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/peppered-goat-logo.jpg",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.ooosumfoods.thepepperedgoat"
@@ -32,16 +32,16 @@
       "bundler": "metro"
     },
     "plugins": [
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "entitlements": {
-              "com.apple.developer.in-app-payments": "merchant.com.ooosumfoods.thepepperedgoat"
-            }
-          }
-        }
-      ],
+      // [
+      //   "expo-build-properties",
+      //   {
+      //     "ios": {
+      //       "entitlements": {
+      //         "com.apple.developer.in-app-payments": "merchant.com.ooosumfoods.thepepperedgoat"
+      //       }
+      //     }
+      //   }
+      // ],
       "expo-font",
       "expo-router",
       "expo-web-browser"
@@ -56,6 +56,5 @@
         "projectId": ""
       }
     }
-  },
-  "scheme": "Ooosum Foods LLC"
+  }
 }

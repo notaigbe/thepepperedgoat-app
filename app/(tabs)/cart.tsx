@@ -1,4 +1,3 @@
-
 import { useApp } from '@/contexts/AppContext';
 import type { CartItem } from '@/contexts/AppContext';
 import React, { useState } from 'react';
@@ -90,10 +89,16 @@ export default function CartScreen() {
                 Add some delicious items to get started!
               </Text>
               <Pressable
-                style={[styles.browseButton, { backgroundColor: currentColors.primary }]}
+                style={({ pressed }) => [
+                  styles.browseButton,
+                  { 
+                    backgroundColor: currentColors.primary,
+                    opacity: pressed ? 0.9 : 1,
+                  }
+                ]}
                 onPress={() => router.push('/')}
               >
-                <Text style={[styles.browseButtonText, { color: currentColors.text }]}>
+                <Text style={styles.browseButtonText}>
                   Browse Menu
                 </Text>
               </Pressable>
@@ -128,22 +133,39 @@ export default function CartScreen() {
                       </Text>
                       <View style={styles.quantityContainer}>
                         <Pressable
-                          style={[styles.quantityButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
+                          style={({ pressed }) => [
+                            styles.quantityButton,
+                            { 
+                              backgroundColor: currentColors.background,
+                              borderColor: currentColors.border,
+                              opacity: pressed ? 0.6 : 1,
+                            }
+                          ]}
                           onPress={() => handleQuantityChange(item.id, -1)}
                         >
-                          <IconSymbol name="minus" size={16} color={currentColors.secondary} />
+                          <IconSymbol name="minus" size={14} color={currentColors.text} />
                         </Pressable>
                         <Text style={[styles.quantity, { color: currentColors.text }]}>{item.quantity}</Text>
                         <Pressable
-                          style={[styles.quantityButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
+                          style={({ pressed }) => [
+                            styles.quantityButton,
+                            { 
+                              backgroundColor: currentColors.background,
+                              borderColor: currentColors.border,
+                              opacity: pressed ? 0.6 : 1,
+                            }
+                          ]}
                           onPress={() => handleQuantityChange(item.id, 1)}
                         >
-                          <IconSymbol name="plus" size={16} color={currentColors.secondary} />
+                          <IconSymbol name="plus" size={14} color={currentColors.text} />
                         </Pressable>
                       </View>
                     </View>
                     <Pressable
-                      style={styles.removeButton}
+                      style={({ pressed }) => [
+                        styles.removeButton,
+                        { opacity: pressed ? 0.5 : 1 }
+                      ]}
                       onPress={() => handleRemoveItem(item.id)}
                     >
                       <IconSymbol name="trash" size={20} color={currentColors.textSecondary} />
@@ -169,13 +191,19 @@ export default function CartScreen() {
                   <Text style={[styles.totalValue, { color: currentColors.primary }]}>${total.toFixed(2)}</Text>
                 </View>
                 <Pressable
-                  style={[styles.checkoutButton, { backgroundColor: currentColors.primary }]}
+                  style={({ pressed }) => [
+                    styles.checkoutButton,
+                    { 
+                      backgroundColor: currentColors.primary,
+                      opacity: pressed ? 0.9 : 1,
+                    }
+                  ]}
                   onPress={handleCheckout}
                 >
-                  <Text style={[styles.checkoutButtonText, { color: '#FFFFFF' }]}>
+                  <Text style={styles.checkoutButtonText}>
                     Proceed to Checkout
                   </Text>
-                  <IconSymbol name="arrow.right" size={20} color="#FFFFFF" />
+                  <IconSymbol name="arrow.right" size={18} color="#FFFFFF" />
                 </Pressable>
               </View>
             </>
@@ -236,7 +264,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 24,
     borderBottomWidth: 0.2,
-    // boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
     elevation: 8,
   },
   headerTitle: {
@@ -244,9 +271,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 4,
     letterSpacing: 0.5,
-    // textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    // textShadowOffset: { width: 0, height: 2 },
-    // textShadowRadius: 4,
   },
   itemCount: {
     fontSize: 14,
@@ -271,17 +295,24 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   browseButton: {
-    borderRadius: 0,
-    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
-    elevation: 8,
-  },
-  browseButtonInner: {
-    paddingHorizontal: 32,
+    paddingHorizontal: 40,
     paddingVertical: 14,
+    borderRadius: 2,
+    elevation: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+    }),
   },
   browseButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Cormorant_600SemiBold',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   cartList: {
     flex: 1,
@@ -297,14 +328,12 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
     borderWidth: 0.2,
-    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   imageContainer: {
     borderRadius: 0,
     overflow: 'hidden',
     borderWidth: 0.2,
-    // boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
     elevation: 4,
   },
   itemImage: {
@@ -333,30 +362,37 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   quantityButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 0.2,
-    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
-    elevation: 4,
+    borderWidth: 1,
+    elevation: 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 2,
+      },
+    }),
   },
   quantity: {
     fontSize: 16,
     fontFamily: 'Cormorant_600SemiBold',
-    minWidth: 24,
+    minWidth: 28,
     textAlign: 'center',
   },
   removeButton: {
     padding: 8,
+    justifyContent: 'flex-start',
   },
   summary: {
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 120,
     borderTopWidth: 0.2,
-    // boxShadow: '0px -6px 20px rgba(74, 215, 194, 0.3)',
     elevation: 10,
   },
   summaryRow: {
@@ -386,20 +422,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Cormorant_700Bold',
   },
   checkoutButton: {
-    borderRadius: 0,
-    marginTop: 20,
-    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.5)',
-    elevation: 10,
-  },
-  checkoutButtonInner: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 16,
     gap: 8,
+    borderRadius: 2,
+    marginTop: 20,
+    elevation: 3,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+      },
+    }),
   },
   checkoutButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Cormorant_700Bold',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
 });

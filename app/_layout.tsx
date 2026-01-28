@@ -128,13 +128,13 @@ export default function RootLayout() {
                 headerShown: false,
               }} 
             />
-            <Stack.Screen 
+            {/* <Stack.Screen 
               name="merch-redemption" 
               options={{ 
                 presentation: 'modal',
                 headerShown: false,
               }} 
-            />
+            /> */}
             <Stack.Screen 
               name="order-history" 
               options={{ 
@@ -163,13 +163,13 @@ export default function RootLayout() {
                 headerShown: false,
               }} 
             />
-            <Stack.Screen 
+            {/* <Stack.Screen 
               name="events" 
               options={{ 
                 presentation: 'modal',
                 headerShown: false,
               }} 
-            />
+            /> */}
             <Stack.Screen 
               name="theme-settings" 
               options={{ 
@@ -198,13 +198,13 @@ export default function RootLayout() {
                 headerShown: false,
               }} 
             />
-            <Stack.Screen 
+            {/* <Stack.Screen 
               name="reservations" 
               options={{ 
                 presentation: 'modal',
                 headerShown: false,
               }} 
-            />
+            /> */}
             <Stack.Screen 
               name="invite-friend" 
               options={{ 
@@ -226,20 +226,20 @@ export default function RootLayout() {
                 headerShown: false,
               }} 
             />
-            <Stack.Screen 
+            {/* <Stack.Screen 
               name="create-post" 
               options={{ 
                 presentation: 'modal',
                 headerShown: false,
               }} 
-            />
-          <Stack.Screen 
+            /> */}
+          {/* <Stack.Screen 
               name="post-detail" 
               options={{ 
                 presentation: 'modal',
                 headerShown: false,
               }} 
-            />
+            /> */}
           <Stack.Screen 
               name="order-detail" 
               options={{ 

@@ -35,69 +35,48 @@ interface HelpTopic {
 const helpTopics: HelpTopic[] = [
   {
     id: '1',
-    question: 'How do I earn points?',
-    answer: 'You earn 1 point for every dollar spent on orders. Points are automatically added to your account after each purchase. You can use these points for discounts on future orders or redeem exclusive merchandise.',
-    icon: 'star.fill',
-    category: 'Points & Rewards',
-  },
-  {
-    id: '2',
-    question: 'How do I redeem my points?',
-    answer: 'You can redeem points in two ways:\n\n1. During checkout, apply points as a discount (100 points = $1 off)\n2. Visit the Merch Store to redeem exclusive items using your points',
-    icon: 'gift.fill',
-    category: 'Points & Rewards',
-  },
-  {
-    id: '3',
-    question: 'How do gift cards work?',
-    answer: 'You can purchase gift cards and send them to other members on the app. Gift cards can be used for future purchases. To send a gift card, go to the Gift Cards section and select a recipient from your contacts.',
-    icon: 'card-giftcard',
-    category: 'Gift Cards',
-  },
-  {
-    id: '4',
     question: 'How do I track my order?',
     answer: 'After placing an order, you can track its status in real-time from your Order History. You\'ll receive notifications when your order status changes. Orders typically go through: Pending → Preparing → Ready → Delivered.',
     icon: 'receipt',
     category: 'Orders',
   },
   {
-    id: '5',
+    id: '2',
     question: 'Can I modify or cancel my order?',
     answer: 'Orders can be modified or cancelled within 5 minutes of placement. After that, please contact us directly. Go to Order History, select your order, and tap "Cancel Order" if available.',
     icon: 'xmark.circle.fill',
     category: 'Orders',
   },
   {
-    id: '6',
+    id: '3',
     question: 'What payment methods do you accept?',
     answer: 'We accept all major credit and debit cards (Visa, Mastercard, American Express, Discover). You can save multiple payment methods in your profile for faster checkout.',
     icon: 'creditcard.fill',
     category: 'Payments',
   },
   {
-    id: '7',
+    id: '4',
     question: 'How do I update my profile information?',
     answer: 'Go to your Profile tab, tap on your profile picture or name, and you can edit your personal information, including name, email, phone number, and profile picture.',
     icon: 'person.circle.fill',
     category: 'Account',
   },
   {
-    id: '8',
+    id: '5',
     question: 'How do I delete my account?',
     answer: 'You can delete your account from Profile → Delete Account. This will permanently remove your personal information while preserving anonymized order history for business records. This action cannot be undone.',
     icon: 'trash.fill',
     category: 'Account',
   },
   {
-    id: '9',
+    id: '6',
     question: 'Do you offer delivery?',
     answer: 'Yes! We offer delivery for orders. During checkout, enter your delivery address and we\'ll bring your order right to your door. Delivery fees may apply based on distance.',
     icon: 'local-shipping',
     category: 'Delivery',
   },
   {
-    id: '10',
+    id: '7',
     question: 'What are your operating hours?',
     answer: 'Our restaurant hours vary by day. You can place orders through the app during operating hours. Check our website or contact us for current hours and holiday schedules.',
     icon: 'clock.fill',
@@ -604,7 +583,7 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     padding: 24,
     marginBottom: 24,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   contactHeader: {
@@ -627,7 +606,7 @@ const styles = StyleSheet.create({
   },
   contactButton: {
     borderRadius: 0,
-    boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.4)',
+    // boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.4)',
     elevation: 6,
   },
   contactButtonInner: {
@@ -669,7 +648,7 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     marginBottom: 12,
     overflow: 'hidden',
-    boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
+    // boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
     elevation: 6,
   },
   topicHeader: {
@@ -705,7 +684,7 @@ const styles = StyleSheet.create({
   legalCard: {
     borderRadius: 0,
     overflow: 'hidden',
-    boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
+    // boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
     elevation: 6,
   },
   legalItem: {
