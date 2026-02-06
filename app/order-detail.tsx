@@ -236,7 +236,7 @@ export default function OrderDetailScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={currentColors.primary} />
-          <Text style={[styles.loadingText, { color: currentColors.text }]}>Loading order details...</Text>
+          <Text style={[styles.loadingText, { color: currentColors.textSecondary }]}>Loading order details...</Text>
         </View>
       </SafeAreaView>
     );
@@ -250,7 +250,7 @@ export default function OrderDetailScreen() {
           // android_material_icon_name="error" 
           size={64} 
           color={currentColors.textSecondary} />
-          <Text style={[styles.errorText, { color: currentColors.text }]}>Order not found</Text>
+          <Text style={[styles.errorText, { color: currentColors.textSecondary }]}>Order not found</Text>
           <Pressable onPress={() => router.back()} style={styles.backToOrdersButton}>
             <Text style={[styles.backToOrdersText, { color: currentColors.primary }]}>Back to Orders</Text>
           </Pressable>
@@ -288,7 +288,7 @@ export default function OrderDetailScreen() {
               size={24} 
               color={currentColors.secondary} />
             </Pressable>
-            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Order Details</Text>
+            <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>Order Details</Text>
             <View style={{ width: 40 }} />
           </LinearGradient>
 
@@ -307,7 +307,7 @@ export default function OrderDetailScreen() {
                 size={24} 
                 color={currentColors.highlight} />
                 <View style={styles.timerContent}>
-                  <Text style={[styles.timerTitle, { color: currentColors.text }]}>
+                  <Text style={[styles.timerTitle, { color: currentColors.textSecondary }]}>
                     Time to cancel/modify
                   </Text>
                   <Text style={[styles.timerValue, { color: currentColors.highlight }]}>
@@ -326,7 +326,7 @@ export default function OrderDetailScreen() {
             >
               <View style={styles.orderRow}>
                 <Text style={[styles.orderLabel, { color: currentColors.textSecondary }]}>Order Number</Text>
-                <Text style={[styles.orderValue, { color: currentColors.text }]}>#{order.order_number}</Text>
+                <Text style={[styles.orderValue, { color: currentColors.textSecondary }]}>#{order.order_number}</Text>
               </View>
               
               <View style={styles.orderRow}>
@@ -340,14 +340,14 @@ export default function OrderDetailScreen() {
               
               <View style={styles.orderRow}>
                 <Text style={[styles.orderLabel, { color: currentColors.textSecondary }]}>Payment Status</Text>
-                <Text style={[styles.orderValue, { color: currentColors.text, textTransform: 'capitalize' }]}>
+                <Text style={[styles.orderValue, { color: currentColors.textSecondary, textTransform: 'capitalize' }]}>
                   {order.payment_status}
                 </Text>
               </View>
 
               <View style={styles.orderRow}>
                 <Text style={[styles.orderLabel, { color: currentColors.textSecondary }]}>Order Date</Text>
-                <Text style={[styles.orderValue, { color: currentColors.text }]}>
+                <Text style={[styles.orderValue, { color: currentColors.textSecondary }]}>
                   {new Date(order.created_at).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
@@ -361,7 +361,7 @@ export default function OrderDetailScreen() {
               {order.delivery_address && (
                 <View style={styles.orderRow}>
                   <Text style={[styles.orderLabel, { color: currentColors.textSecondary }]}>Delivery Address</Text>
-                  <Text style={[styles.orderValue, { color: currentColors.text }]}>
+                  <Text style={[styles.orderValue, { color: currentColors.textSecondary }]}>
                     {order.delivery_address}
                   </Text>
                 </View>
@@ -370,7 +370,7 @@ export default function OrderDetailScreen() {
               {order.pickup_notes && (
                 <View style={styles.orderRow}>
                   <Text style={[styles.orderLabel, { color: currentColors.textSecondary }]}>Notes</Text>
-                  <Text style={[styles.orderValue, { color: currentColors.text }]}>
+                  <Text style={[styles.orderValue, { color: currentColors.textSecondary }]}>
                     {order.pickup_notes}
                   </Text>
                 </View>
@@ -384,16 +384,16 @@ export default function OrderDetailScreen() {
               end={{ x: 1, y: 1 }}
               style={[styles.orderCard, { borderColor: currentColors.border }]}
             >
-              <Text style={[styles.sectionTitle, { color: currentColors.text }]}>Order Items</Text>
+              <Text style={[styles.sectionTitle, { color: currentColors.textSecondary }]}>Order Items</Text>
               {order.order_items.map((item, index) => (
                 <View key={item.id} style={styles.itemRow}>
                   <Text style={[styles.itemQuantity, { color: currentColors.textSecondary }]}>
                     {item.quantity}x
                   </Text>
-                  <Text style={[styles.itemName, { color: currentColors.text }]}>
+                  <Text style={[styles.itemName, { color: currentColors.textSecondary }]}>
                     {item.name}
                   </Text>
-                  <Text style={[styles.itemPrice, { color: currentColors.text }]}>
+                  <Text style={[styles.itemPrice, { color: currentColors.textSecondary }]}>
                     ${(item.price * item.quantity).toFixed(2)}
                   </Text>
                 </View>
@@ -402,7 +402,7 @@ export default function OrderDetailScreen() {
               <View style={[styles.divider, { backgroundColor: currentColors.border }]} />
               
               <View style={styles.totalRow}>
-                <Text style={[styles.totalLabel, { color: currentColors.text }]}>Total</Text>
+                <Text style={[styles.totalLabel, { color: currentColors.textSecondary }]}>Total</Text>
                 <Text style={[styles.totalValue, { color: currentColors.secondary }]}>
                   ${order.total.toFixed(2)}
                 </Text>
@@ -414,7 +414,7 @@ export default function OrderDetailScreen() {
                 // android_material_icon_name="star" 
                 size={16} 
                 color={currentColors.highlight} />
-                <Text style={[styles.pointsText, { color: currentColors.text }]}>
+                <Text style={[styles.pointsText, { color: currentColors.textSecondary }]}>
                   +{order.points_earned} points earned
                 </Text>
               </View>
@@ -487,7 +487,7 @@ export default function OrderDetailScreen() {
                 // android_material_icon_name="info" 
                 size={20} 
                 color={currentColors.primary} />
-                <Text style={[styles.infoText, { color: currentColors.text }]}>
+                <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
                   The 5-minute modification window has expired. Please contact support for any changes.
                 </Text>
               </LinearGradient>
@@ -543,7 +543,7 @@ export default function OrderDetailScreen() {
           <TextInput
             style={[styles.input, { 
               backgroundColor: currentColors.background,
-              color: currentColors.text,
+              color: currentColors.textSecondary,
               borderColor: currentColors.border,
             }]}
             placeholder="e.g., Add extra sauce, change delivery address, remove an item..."
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 20,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     textAlign: 'center',
   },
   backToOrdersButton: {

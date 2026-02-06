@@ -34,7 +34,7 @@ export const appleGreen = "#00BC7D"; // Cool teal accent
 export const borderColor = "#D4D4D880";
 export const Colors = {
   light: {
-    text: "#FFFFFF",
+    text: "#FFFFFFb2",
     background: "#1A1A1A",
     tint: tintColorLight,
     icon: "#E0E0E0",
@@ -45,12 +45,12 @@ export const Colors = {
     secondary: "#3A3A3A",
     accent: "#FFF8F3",
     card: "#2A2A2A",
-    cardText: "#FFFFFF",
+    cardText: "#FFFFFFb2",
     highlight: "#3A3A3A",
     border: "#00BC7D",
   },
   dark: {
-    text: "#FFFFFF",
+    text: "#ffffffb2",
     background: "#000000",
     tint: tintColorDark,
     icon: "#E0E0E0",
@@ -61,7 +61,7 @@ export const Colors = {
     secondary: "#1A1A1A",
     accent: "#FFF8F3",
     card: "#2A2A2A",
-    cardText: "#FFFFFF",
+    cardText: "#FFFFFFb2",
     highlight: "#333333",
     border: "#00BC7D",
   },

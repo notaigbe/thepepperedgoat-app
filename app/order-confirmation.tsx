@@ -202,8 +202,8 @@ export default function OrderConfirmationScreen() {
     },
     errorTitle: {
       fontSize: 24,
-      fontFamily: 'PlayfairDisplay_700Bold',
-      color: currentColors.text,
+      fontFamily: 'LibertinusSans_700Bold',
+      color: currentColors.textSecondary,
       marginBottom: 8,
       letterSpacing: 0.5,
     },
@@ -240,8 +240,8 @@ export default function OrderConfirmationScreen() {
     },
     successTitle: {
       fontSize: 32,
-      fontFamily: 'PlayfairDisplay_700Bold',
-      color: currentColors.text,
+      fontFamily: 'LibertinusSans_700Bold',
+      color: currentColors.textSecondary,
       marginBottom: 8,
       textAlign: 'center',
       letterSpacing: 0.5,
@@ -282,7 +282,7 @@ export default function OrderConfirmationScreen() {
     statusValue: {
       fontSize: 18,
       fontFamily: 'Inter_700Bold',
-      color: currentColors.text,
+      color: currentColors.textSecondary,
     },
     pointsCard: {
       borderRadius: 0,
@@ -311,7 +311,7 @@ export default function OrderConfirmationScreen() {
     pointsTitle: {
       fontSize: 16,
       fontFamily: 'Inter_600SemiBold',
-      color: currentColors.text,
+      color: currentColors.textSecondary,
       marginBottom: 4,
     },
     pointsValue: {
@@ -321,8 +321,8 @@ export default function OrderConfirmationScreen() {
     },
     sectionTitle: {
       fontSize: 20,
-      fontFamily: 'PlayfairDisplay_700Bold',
-      color: currentColors.text,
+      fontFamily: 'LibertinusSans_700Bold',
+      color: currentColors.textSecondary,
       marginBottom: 16,
       letterSpacing: 0.5,
     },
@@ -358,12 +358,12 @@ export default function OrderConfirmationScreen() {
       flex: 1,
       fontSize: 16,
       fontFamily: 'Inter_400Regular',
-      color: currentColors.text,
+      color: currentColors.textSecondary,
     },
     itemPrice: {
       fontSize: 16,
       fontFamily: 'Inter_600SemiBold',
-      color: currentColors.text,
+      color: currentColors.textSecondary,
     },
     totalRow: {
       flexDirection: 'row',
@@ -376,8 +376,8 @@ export default function OrderConfirmationScreen() {
     },
     totalLabel: {
       fontSize: 18,
-      fontFamily: 'PlayfairDisplay_700Bold',
-      color: currentColors.text,
+      fontFamily: 'LibertinusSans_700Bold',
+      color: currentColors.textSecondary,
     },
     totalValue: {
       fontSize: 24,
@@ -396,7 +396,7 @@ export default function OrderConfirmationScreen() {
     deliveryTitle: {
       fontSize: 16,
       fontFamily: 'Inter_600SemiBold',
-      color: currentColors.text,
+      color: currentColors.textSecondary,
       marginBottom: 8,
     },
     deliveryText: {
@@ -425,7 +425,7 @@ export default function OrderConfirmationScreen() {
     orderIdValue: {
       fontSize: 16,
       fontFamily: 'Inter_700Bold',
-      color: currentColors.text,
+      color: currentColors.textSecondary,
       textAlign: 'center',
       fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     },

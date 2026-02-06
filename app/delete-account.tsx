@@ -163,7 +163,7 @@ export default function DeleteAccountScreen() {
         </LinearGradient>
       </View>
 
-      <Text style={[styles.title, { color: currentColors.text }]}>
+      <Text style={[styles.title, { color: currentColors.textSecondary }]}>
         Delete Your Account?
       </Text>
 
@@ -178,37 +178,37 @@ export default function DeleteAccountScreen() {
         style={[styles.infoCard, { borderColor: currentColors.border }]}
       >
         <View style={styles.infoSection}>
-          <Text style={[styles.infoTitle, { color: currentColors.text }]}>
+          <Text style={[styles.infoTitle, { color: currentColors.textSecondary }]}>
             What will be deleted:
           </Text>
           <View style={styles.infoList}>
             <View style={styles.infoItem}>
               <IconSymbol name="checkmark.circle.fill" size={20} color="#FF6B6B" />
-              <Text style={[styles.infoText, { color: currentColors.text }]}>
+              <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
                 Your name, email, and phone number
               </Text>
             </View>
             <View style={styles.infoItem}>
               <IconSymbol name="checkmark.circle.fill" size={20} color="#FF6B6B" />
-              <Text style={[styles.infoText, { color: currentColors.text }]}>
+              <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
                 Saved addresses and preferences
               </Text>
             </View>
             <View style={styles.infoItem}>
               <IconSymbol name="checkmark.circle.fill" size={20} color="#FF6B6B" />
-              <Text style={[styles.infoText, { color: currentColors.text }]}>
+              <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
                 Authentication credentials
               </Text>
             </View>
             <View style={styles.infoItem}>
               <IconSymbol name="checkmark.circle.fill" size={20} color="#FF6B6B" />
-              <Text style={[styles.infoText, { color: currentColors.text }]}>
+              <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
                 Active sessions and tokens
               </Text>
             </View>
             <View style={styles.infoItem}>
               <IconSymbol name="checkmark.circle.fill" size={20} color="#FF6B6B" />
-              <Text style={[styles.infoText, { color: currentColors.text }]}>
+              <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
                 Points balance and rewards
               </Text>
             </View>
@@ -218,25 +218,25 @@ export default function DeleteAccountScreen() {
         <View style={[styles.divider, { backgroundColor: currentColors.border }]} />
 
         <View style={styles.infoSection}>
-          <Text style={[styles.infoTitle, { color: currentColors.text }]}>
+          <Text style={[styles.infoTitle, { color: currentColors.textSecondary }]}>
             What will be retained (anonymized):
           </Text>
           <View style={styles.infoList}>
             <View style={styles.infoItem}>
               <IconSymbol name="shield.checkmark.fill" size={20} color={currentColors.primary} />
-              <Text style={[styles.infoText, { color: currentColors.text }]}>
+              <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
                 Order history (for business records)
               </Text>
             </View>
             <View style={styles.infoItem}>
               <IconSymbol name="shield.checkmark.fill" size={20} color={currentColors.primary} />
-              <Text style={[styles.infoText, { color: currentColors.text }]}>
+              <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
                 Payment transaction records
               </Text>
             </View>
             <View style={styles.infoItem}>
               <IconSymbol name="shield.checkmark.fill" size={20} color={currentColors.primary} />
-              <Text style={[styles.infoText, { color: currentColors.text }]}>
+              <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
                 Order totals and timestamps
               </Text>
             </View>
@@ -290,7 +290,7 @@ export default function DeleteAccountScreen() {
         </LinearGradient>
       </View>
 
-      <Text style={[styles.title, { color: currentColors.text }]}>
+      <Text style={[styles.title, { color: currentColors.textSecondary }]}>
         Final Confirmation
       </Text>
 
@@ -314,7 +314,7 @@ export default function DeleteAccountScreen() {
           styles.confirmInput,
           {
             backgroundColor: currentColors.card,
-            color: currentColors.text,
+            color: currentColors.textSecondary,
             borderColor: currentColors.border,
           }
         ]}
@@ -370,7 +370,7 @@ export default function DeleteAccountScreen() {
         </LinearGradient>
       </View>
 
-      <Text style={[styles.title, { color: currentColors.text }]}>
+      <Text style={[styles.title, { color: currentColors.textSecondary }]}>
         Verify Your Identity
       </Text>
 
@@ -379,7 +379,7 @@ export default function DeleteAccountScreen() {
       </Text>
 
       <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, { color: currentColors.text }]}>
+        <Text style={[styles.inputLabel, { color: currentColors.textSecondary }]}>
           Email
         </Text>
         <TextInput
@@ -397,7 +397,7 @@ export default function DeleteAccountScreen() {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, { color: currentColors.text }]}>
+        <Text style={[styles.inputLabel, { color: currentColors.textSecondary }]}>
           Password
         </Text>
         <View style={styles.passwordContainer}>
@@ -406,7 +406,7 @@ export default function DeleteAccountScreen() {
               styles.passwordInput,
               {
                 backgroundColor: currentColors.card,
-                color: currentColors.text,
+                color: currentColors.textSecondary,
                 borderColor: currentColors.border,
               }
             ]}
@@ -505,7 +505,7 @@ export default function DeleteAccountScreen() {
             >
               <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
             </Pressable>
-            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Delete Account</Text>
+            <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>Delete Account</Text>
             <View style={{ width: 40 }} />
           </LinearGradient>
 
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 24,
     borderBottomWidth: 2,
-    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    // boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
     elevation: 8,
   },
   backButton: {
@@ -567,12 +567,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   headerTitle: {
     fontSize: 32,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     letterSpacing: 0.5,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
@@ -598,12 +598,12 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    boxShadow: '0px 8px 24px rgba(255, 107, 107, 0.4)',
+    // boxShadow: '0px 8px 24px rgba(255, 107, 107, 0.4)',
     elevation: 8,
   },
   title: {
     fontSize: 28,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 32,
     borderWidth: 2,
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   infoSection: {
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 0,
     marginBottom: 16,
-    boxShadow: '0px 8px 24px rgba(255, 107, 107, 0.4)',
+    // boxShadow: '0px 8px 24px rgba(255, 107, 107, 0.4)',
     elevation: 8,
   },
   continueButtonInner: {
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     borderWidth: 2,
     alignItems: 'center',
-    boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
+    // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
     elevation: 8,
   },
   confirmTextLabel: {
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     textAlign: 'center',
     fontFamily: 'Inter_600SemiBold',
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   inputGroup: {
@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     borderWidth: 2,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   passwordContainer: {
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
     paddingRight: 50,
     fontSize: 16,
     borderWidth: 2,
-    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
+    // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
   eyeButton: {
@@ -744,7 +744,7 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     marginTop: 12,
     marginBottom: 16,
-    boxShadow: '0px 8px 24px rgba(255, 107, 107, 0.4)',
+    // boxShadow: '0px 8px 24px rgba(255, 107, 107, 0.4)',
     elevation: 8,
   },
   deleteButtonInner: {

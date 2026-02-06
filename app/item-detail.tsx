@@ -110,7 +110,7 @@ export default function ItemDetailScreen() {
               color={currentColors.primary}
             />
             <Text
-              style={[styles.backButtonText, { color: currentColors.text }]}
+              style={[styles.backButtonText, { color: currentColors.textSecondary }]}
             >
               Back
             </Text>
@@ -212,7 +212,7 @@ export default function ItemDetailScreen() {
             size={24}
             color={currentColors.primary}
           />
-          <Text style={[styles.backButtonText, { color: currentColors.text }]}>
+          <Text style={[styles.backButtonText, { color: currentColors.textSecondary }]}>
             Back
           </Text>
         </Pressable>
@@ -277,7 +277,7 @@ export default function ItemDetailScreen() {
         <View style={styles.content}>
           <View style={styles.headerInfo}>
             <View style={styles.headerLeft}>
-              <Text style={[styles.name, { color: currentColors.text }]}>
+              <Text style={[styles.name, { color: currentColors.textSecondary }]}>
                 {item.name}
               </Text>
               {item.popular && (
@@ -300,7 +300,7 @@ export default function ItemDetailScreen() {
                 </View>
               )}
             </View>
-            <Text style={[styles.price, { color: currentColors.text }]}>
+            <Text style={[styles.price, { color: currentColors.textSecondary }]}>
               ${item.price.toFixed(2)}
             </Text>
           </View>
@@ -330,7 +330,7 @@ export default function ItemDetailScreen() {
               size={20}
               color={currentColors.secondary}
             />
-            <Text style={[styles.infoText, { color: currentColors.text }]}>
+            <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
               Earn {Math.floor(item.price * quantity)} points with this order!
             </Text>
           </View>
@@ -341,7 +341,7 @@ export default function ItemDetailScreen() {
               { backgroundColor: currentColors.card, borderColor: currentColors.border },
             ]}
           >
-            <Text style={[styles.quantityLabel, { color: currentColors.text }]}>
+            <Text style={[styles.quantityLabel, { color: currentColors.textSecondary }]}>
               Quantity
             </Text>
             <View style={styles.quantityControls}>
@@ -359,7 +359,7 @@ export default function ItemDetailScreen() {
                 />
               </Pressable>
               <Text
-                style={[styles.quantityValue, { color: currentColors.text }]}
+                style={[styles.quantityValue, { color: currentColors.textSecondary }]}
               >
                 {quantity}
               </Text>
@@ -396,7 +396,7 @@ export default function ItemDetailScreen() {
           >
             Total
           </Text>
-          <Text style={[styles.totalValue, { color: currentColors.text }]}>
+          <Text style={[styles.totalValue, { color: currentColors.textSecondary }]}>
             ${(item.price * quantity).toFixed(2)}
           </Text>
         </View>
@@ -404,8 +404,8 @@ export default function ItemDetailScreen() {
           style={[styles.addButton, { backgroundColor: currentColors.primary }]}
           onPress={handleAddToCart}
         >
-          <IconSymbol name="cart.fill" size={20} color={currentColors.text} />
-          <Text style={[styles.addButtonText, { color: currentColors.text}]}>
+          <IconSymbol name="cart.fill" size={20} color={currentColors.textSecondary} />
+          <Text style={[styles.addButtonText, { color: currentColors.textSecondary}]}>
             Add to Cart
           </Text>
         </Pressable>
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 28,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 8,
     letterSpacing: 0.5,
   },
@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
   },
   quantityLabel: {
     fontSize: 16,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 12,
   },
   quantityControls: {

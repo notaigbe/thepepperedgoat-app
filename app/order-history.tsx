@@ -161,7 +161,7 @@ export default function OrderHistoryScreen() {
             >
               <IconSymbol name="arrow-back" size={24} color={currentColors.secondary} />
             </Pressable>
-            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Order History</Text>
+            <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>Order History</Text>
             <View style={{ width: 40 }} />
           </LinearGradient>
 
@@ -173,7 +173,7 @@ export default function OrderHistoryScreen() {
             {!userProfile || userProfile.orders.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <IconSymbol name="shopping-bag" size={80} color={currentColors.textSecondary} />
-                <Text style={[styles.emptyText, { color: currentColors.text }]}>No Orders Yet</Text>
+                <Text style={[styles.emptyText, { color: currentColors.textSecondary }]}>No Orders Yet</Text>
                 <Text style={[styles.emptySubtext, { color: currentColors.textSecondary }]}>
                   Start ordering delicious food to see your order history here
                 </Text>
@@ -199,7 +199,7 @@ export default function OrderHistoryScreen() {
                   </View>
                 </LinearGradient>
 
-                <Text style={[styles.sectionTitle, { color: currentColors.text }]}>All Orders</Text>
+                <Text style={[styles.sectionTitle, { color: currentColors.textSecondary }]}>All Orders</Text>
 
                 {userProfile?.orders?.map((order) => {
                   const isExpanded = expandedOrders.has(order.id);
@@ -219,7 +219,7 @@ export default function OrderHistoryScreen() {
                         {/* Always visible header */}
                         <View style={styles.orderHeader}>
                           <View style={styles.orderHeaderLeft}>
-                            <Text style={[styles.orderId, { color: currentColors.text }]}>Order #{order.orderNumber}</Text>
+                            <Text style={[styles.orderId, { color: currentColors.textSecondary }]}>Order #{order.orderNumber}</Text>
                             <Text style={[styles.orderDate, { color: currentColors.textSecondary }]}>
                               {new Date(order.date).toLocaleDateString('en-US', {
                                 year: 'numeric',
@@ -252,8 +252,8 @@ export default function OrderHistoryScreen() {
                               {order.items.map((item, index) => (
                                 <View key={`${item.id}-${index}`} style={styles.orderItem}>
                                   <Text style={[styles.itemQuantity, { color: currentColors.textSecondary }]}>{item.quantity}x</Text>
-                                  <Text style={[styles.itemName, { color: currentColors.text }]}>{item.name}</Text>
-                                  <Text style={[styles.itemPrice, { color: currentColors.text }]}>
+                                  <Text style={[styles.itemName, { color: currentColors.textSecondary }]}>{item.name}</Text>
+                                  <Text style={[styles.itemPrice, { color: currentColors.textSecondary }]}>
                                     ${(item.price * item.quantity).toFixed(2)}
                                   </Text>
                                 </View>
@@ -264,12 +264,12 @@ export default function OrderHistoryScreen() {
 
                             <View style={styles.orderFooter}>
                               <View style={styles.orderTotalRow}>
-                                <Text style={[styles.orderTotalLabel, { color: currentColors.text }]}>Total</Text>
+                                <Text style={[styles.orderTotalLabel, { color: currentColors.textSecondary }]}>Total</Text>
                                 <Text style={[styles.orderTotal, { color: currentColors.secondary }]}>${order.total.toFixed(2)}</Text>
                               </View>
                               <View style={styles.orderPoints}>
                                 <IconSymbol name="star" size={16} color={currentColors.highlight} />
-                                <Text style={[styles.orderPointsText, { color: currentColors.text }]}>
+                                <Text style={[styles.orderPointsText, { color: currentColors.textSecondary }]}>
                                   +{order.pointsEarned} points earned
                                 </Text>
                               </View>
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 32,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     letterSpacing: 0.5,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 24,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginTop: 20,
     marginBottom: 8,
   },
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 24,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 4,
   },
   statLabel: {
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 16,
   },
   orderCard: {
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   },
   orderId: {
     fontSize: 18,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 4,
   },
   orderDate: {
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
   },
   orderTotalLabel: {
     fontSize: 16,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
   },
   orderTotal: {
     fontSize: 20,

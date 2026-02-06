@@ -199,7 +199,7 @@ export default function EnquiriesScreen() {
             end={{ x: 1, y: 0 }}
             style={[styles.header, { borderBottomColor: currentColors.border }]}
           >
-            <Text style={[styles.title, { color: currentColors.text }]}>
+            <Text style={[styles.title, { color: currentColors.textSecondary }]}>
               Catering Bookings
             </Text>
             <Text
@@ -233,14 +233,14 @@ export default function EnquiriesScreen() {
             >
               {/* Name Field */}
               <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: currentColors.text }]}>
+                <Text style={[styles.label, { color: currentColors.textSecondary }]}>
                   Name <Text style={{ color: currentColors.secondary }}>*</Text>
                 </Text>
                 <TextInput
                   style={[
                     styles.input,
                     {
-                      color: currentColors.text,
+                      color: currentColors.textSecondary,
                       borderColor: currentColors.border,
                       backgroundColor: currentColors.background,
                     },
@@ -255,14 +255,14 @@ export default function EnquiriesScreen() {
 
               {/* Email Field */}
               <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: currentColors.text }]}>
+                <Text style={[styles.label, { color: currentColors.textSecondary }]}>
                   Email <Text style={{ color: currentColors.secondary }}>*</Text>
                 </Text>
                 <TextInput
                   style={[
                     styles.input,
                     {
-                      color: currentColors.text,
+                      color: currentColors.textSecondary,
                       borderColor: currentColors.border,
                       backgroundColor: currentColors.background,
                     },
@@ -279,14 +279,14 @@ export default function EnquiriesScreen() {
 
               {/* Phone Field */}
               <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: currentColors.text }]}>
+                <Text style={[styles.label, { color: currentColors.textSecondary }]}>
                   Phone Number
                 </Text>
                 <TextInput
                   style={[
                     styles.input,
                     {
-                      color: currentColors.text,
+                      color: currentColors.textSecondary,
                       borderColor: currentColors.border,
                       backgroundColor: currentColors.background,
                     },
@@ -302,7 +302,7 @@ export default function EnquiriesScreen() {
 
               {/* Event Date Field */}
               <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: currentColors.text }]}>
+                <Text style={[styles.label, { color: currentColors.textSecondary }]}>
                   Event Date
                 </Text>
                 <Pressable
@@ -321,7 +321,7 @@ export default function EnquiriesScreen() {
                       styles.datePickerText,
                       {
                         color: formData.event_date
-                          ? currentColors.text
+                          ? currentColors.textSecondary
                           : currentColors.textSecondary,
                       },
                     ]}
@@ -349,14 +349,14 @@ export default function EnquiriesScreen() {
 
               {/* Guest Count Field */}
               <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: currentColors.text }]}>
+                <Text style={[styles.label, { color: currentColors.textSecondary }]}>
                   Number of Guests
                 </Text>
                 <TextInput
                   style={[
                     styles.input,
                     {
-                      color: currentColors.text,
+                      color: currentColors.textSecondary,
                       borderColor: currentColors.border,
                       backgroundColor: currentColors.background,
                     },
@@ -372,7 +372,7 @@ export default function EnquiriesScreen() {
 
               {/* Details Field */}
               <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: currentColors.text }]}>
+                <Text style={[styles.label, { color: currentColors.textSecondary }]}>
                   Event Details
                 </Text>
                 <TextInput
@@ -380,7 +380,7 @@ export default function EnquiriesScreen() {
                     styles.input,
                     styles.textArea,
                     {
-                      color: currentColors.text,
+                      color: currentColors.textSecondary,
                       borderColor: currentColors.border,
                       backgroundColor: currentColors.background,
                     },
@@ -442,7 +442,7 @@ export default function EnquiriesScreen() {
               <Text
                 style={[
                   styles.contactInfoTitle,
-                  { color: currentColors.text },
+                  { color: currentColors.textSecondary },
                 ]}
               >
                 Questions About Catering?
@@ -478,7 +478,7 @@ export default function EnquiriesScreen() {
                     <Text
                       style={[
                         styles.contactInfoValue,
-                        { color: currentColors.text },
+                        { color: currentColors.textSecondary },
                       ]}
                     >
                       info@thepepperedgoat.com
@@ -511,7 +511,7 @@ export default function EnquiriesScreen() {
                     <Text
                       style={[
                         styles.contactInfoValue,
-                        { color: currentColors.text },
+                        { color: currentColors.textSecondary },
                       ]}
                     >
                       +1 (818) 210-6659
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontFamily: "PlayfairDisplay_700Bold",
+    fontFamily: "LibertinusSans_700Bold",
     letterSpacing: 0.5,
   },
   headerSubtitle: {
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
   },
   contactInfoTitle: {
     fontSize: 18,
-    fontFamily: "PlayfairDisplay_700Bold",
+    fontFamily: "LibertinusSans_700Bold",
     marginBottom: 16,
   },
   contactInfoCard: {

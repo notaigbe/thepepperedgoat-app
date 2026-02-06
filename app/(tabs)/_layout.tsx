@@ -19,24 +19,12 @@ export default function TabLayout() {
       icon: 'cart.fill',
       label: 'Cart',
     },
-    // {
-    //   name: 'discover',
-    //   route: '/(tabs)/discover',
-    //   icon: 'photo.on.rectangle',
-    //   label: 'Discover',
-    // },
     {
       name: 'enquiry',
       route: '/(tabs)/enquiry',
       icon: 'bubble.left.and.bubble.right',
       label: 'Enquiry',
     },
-    // {
-    //   name: 'giftcards',
-    //   route: '/(tabs)/giftcards',
-    //   icon: 'gift.fill',
-    //   label: 'Gift Cards',
-    // },
     {
       name: 'profile',
       route: '/(tabs)/profile',
@@ -56,9 +44,7 @@ export default function TabLayout() {
       >
         <Stack.Screen name="(home)" />
         <Stack.Screen name="cart" />
-        {/* <Stack.Screen name="discover" /> */}
         <Stack.Screen name="enquiry" />
-        {/* <Stack.Screen name="giftcards" /> */}
         <Stack.Screen name="profile" />
       </Stack>
       <FloatingTabBar tabs={tabs} />

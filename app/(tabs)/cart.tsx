@@ -73,7 +73,7 @@ export default function CartScreen() {
           <View
             style={[styles.header, { backgroundColor: currentColors.card, borderBottomColor: currentColors.border }]}
           >
-            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Shopping Cart</Text>
+            <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>Shopping Cart</Text>
             <Text style={[styles.itemCount, { color: currentColors.textSecondary }]}>
               {cart.length} {cart.length === 1 ? 'item' : 'items'}
             </Text>
@@ -82,7 +82,7 @@ export default function CartScreen() {
           {cart.length === 0 ? (
             <View style={styles.emptyContainer}>
               <IconSymbol name="cart.fill" size={80} color={currentColors.textSecondary} />
-              <Text style={[styles.emptyText, { color: currentColors.text }]}>
+              <Text style={[styles.emptyText, { color: currentColors.textSecondary }]}>
                 Your cart is empty
               </Text>
               <Text style={[styles.emptySubtext, { color: currentColors.textSecondary }]}>
@@ -125,10 +125,10 @@ export default function CartScreen() {
                       />
                     </View>
                     <View style={styles.itemDetails}>
-                      <Text style={[styles.itemName, { color: currentColors.text }]}>
+                      <Text style={[styles.itemName, { color: currentColors.textSecondary }]}>
                         {item.name}
                       </Text>
-                      <Text style={[styles.itemPrice, { color: currentColors.secondary }]}>
+                      <Text style={[styles.itemPrice, { color: currentColors.textSecondary }]}>
                         ${item.price.toFixed(2)}
                       </Text>
                       <View style={styles.quantityContainer}>
@@ -143,9 +143,9 @@ export default function CartScreen() {
                           ]}
                           onPress={() => handleQuantityChange(item.id, -1)}
                         >
-                          <IconSymbol name="minus" size={14} color={currentColors.text} />
+                          <IconSymbol name="minus" size={14} color={currentColors.textSecondary} />
                         </Pressable>
-                        <Text style={[styles.quantity, { color: currentColors.text }]}>{item.quantity}</Text>
+                        <Text style={[styles.quantity, { color: currentColors.textSecondary }]}>{item.quantity}</Text>
                         <Pressable
                           style={({ pressed }) => [
                             styles.quantityButton,
@@ -157,7 +157,7 @@ export default function CartScreen() {
                           ]}
                           onPress={() => handleQuantityChange(item.id, 1)}
                         >
-                          <IconSymbol name="plus" size={14} color={currentColors.text} />
+                          <IconSymbol name="plus" size={14} color={currentColors.textSecondary} />
                         </Pressable>
                       </View>
                     </View>
@@ -180,14 +180,14 @@ export default function CartScreen() {
               >
                 <View style={styles.summaryRow}>
                   <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>Subtotal</Text>
-                  <Text style={[styles.summaryValue, { color: currentColors.text }]}>${subtotal.toFixed(2)}</Text>
+                  <Text style={[styles.summaryValue, { color: currentColors.textSecondary }]}>${subtotal.toFixed(2)}</Text>
                 </View>
                 <View style={styles.summaryRow}>
                   <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>Tax (9.75%)</Text>
-                  <Text style={[styles.summaryValue, { color: currentColors.text }]}>${tax.toFixed(2)}</Text>
+                  <Text style={[styles.summaryValue, { color: currentColors.textSecondary }]}>${tax.toFixed(2)}</Text>
                 </View>
                 <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: currentColors.border }]}>
-                  <Text style={[styles.totalLabel, { color: currentColors.text }]}>Total</Text>
+                  <Text style={[styles.totalLabel, { color: currentColors.textSecondary }]}>Total</Text>
                   <Text style={[styles.totalValue, { color: currentColors.primary }]}>${total.toFixed(2)}</Text>
                 </View>
                 <Pressable
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 32,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 4,
     letterSpacing: 0.5,
   },
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 24,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginTop: 20,
     marginBottom: 8,
   },
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 16,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 4,
   },
   itemPrice: {
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 18,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
   },
   totalValue: {
     fontSize: 20,

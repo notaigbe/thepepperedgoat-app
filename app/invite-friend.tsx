@@ -169,7 +169,7 @@ export default function InviteFriendScreen() {
             >
               <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
             </Pressable>
-            <Text style={[styles.headerTitle, { color: currentColors.text }]}>
+            <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>
               Invite a Friend
             </Text>
             <View style={{ width: 40 }} />
@@ -177,7 +177,7 @@ export default function InviteFriendScreen() {
 
           <View style={styles.notAuthContainer}>
             <IconSymbol name="person.2" size={80} color={currentColors.textSecondary} />
-            <Text style={[styles.notAuthText, { color: currentColors.text }]}>
+            <Text style={[styles.notAuthText, { color: currentColors.textSecondary }]}>
               Sign in to invite friends
             </Text>
             <Text style={[styles.notAuthSubtext, { color: currentColors.textSecondary }]}>
@@ -239,7 +239,7 @@ export default function InviteFriendScreen() {
           >
             <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: currentColors.text }]}>
+          <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>
             Invite a Friend
           </Text>
           <View style={{ width: 40 }} />
@@ -262,7 +262,7 @@ export default function InviteFriendScreen() {
           >
             <View style={styles.codeHeader}>
               <IconSymbol name="gift.fill" size={48} color={currentColors.highlight} />
-              <Text style={[styles.codeTitle, { color: currentColors.text }]}>
+              <Text style={[styles.codeTitle, { color: currentColors.textSecondary }]}>
                 Your Referral Code
               </Text>
               <Text style={[styles.codeSubtitle, { color: currentColors.textSecondary }]}>
@@ -325,7 +325,7 @@ export default function InviteFriendScreen() {
             end={{ x: 1, y: 1 }}
             style={[styles.infoCard, { borderColor: currentColors.border }]}
           >
-            <Text style={[styles.infoTitle, { color: currentColors.text }]}>
+            <Text style={[styles.infoTitle, { color: currentColors.textSecondary }]}>
               How It Works
             </Text>
 
@@ -334,7 +334,7 @@ export default function InviteFriendScreen() {
                 <Text style={[styles.stepNumberText, { color: currentColors.background }]}>1</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={[styles.stepTitle, { color: currentColors.text }]}>
+                <Text style={[styles.stepTitle, { color: currentColors.textSecondary }]}>
                   Share Your Code
                 </Text>
                 <Text style={[styles.stepDescription, { color: currentColors.textSecondary }]}>
@@ -348,7 +348,7 @@ export default function InviteFriendScreen() {
                 <Text style={[styles.stepNumberText, { color: currentColors.background }]}>2</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={[styles.stepTitle, { color: currentColors.text }]}>
+                <Text style={[styles.stepTitle, { color: currentColors.textSecondary }]}>
                   Friend Signs Up
                 </Text>
                 <Text style={[styles.stepDescription, { color: currentColors.textSecondary }]}>
@@ -362,7 +362,7 @@ export default function InviteFriendScreen() {
                 <Text style={[styles.stepNumberText, { color: currentColors.background }]}>3</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={[styles.stepTitle, { color: currentColors.text }]}>
+                <Text style={[styles.stepTitle, { color: currentColors.textSecondary }]}>
                   Earn Rewards
                 </Text>
                 <Text style={[styles.stepDescription, { color: currentColors.textSecondary }]}>
@@ -382,7 +382,7 @@ export default function InviteFriendScreen() {
             end={{ x: 1, y: 1 }}
             style={[styles.statsCard, { borderColor: currentColors.border }]}
           >
-            <Text style={[styles.statsTitle, { color: currentColors.text }]}>
+            <Text style={[styles.statsTitle, { color: currentColors.textSecondary }]}>
               Your Referrals
             </Text>
 
@@ -405,7 +405,7 @@ export default function InviteFriendScreen() {
                 {referrals.map((referral, index) => (
                   <View key={index} style={[styles.referralItem, { borderBottomColor: currentColors.border }]}>
                     <View style={styles.referralInfo}>
-                      <Text style={[styles.referralEmail, { color: currentColors.text }]}>
+                      <Text style={[styles.referralEmail, { color: currentColors.textSecondary }]}>
                         {referral.referred_user?.name || referral.referred_email || 'Pending'}
                       </Text>
                       <Text style={[styles.referralDate, { color: currentColors.textSecondary }]}>
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 32,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     letterSpacing: 0.5,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
   },
   notAuthText: {
     fontSize: 24,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginTop: 24,
     textAlign: 'center',
   },
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
   },
   codeTitle: {
     fontSize: 24,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginTop: 16,
   },
   codeSubtitle: {
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     fontSize: 20,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 20,
   },
   stepContainer: {
@@ -619,7 +619,7 @@ const styles = StyleSheet.create({
   },
   statsTitle: {
     fontSize: 20,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 20,
   },
   emptyContainer: {

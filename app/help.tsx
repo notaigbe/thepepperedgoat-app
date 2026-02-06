@@ -207,10 +207,10 @@ export default function HelpScreen() {
             <IconSymbol
               name="chevron.left"
               size={28}
-              color={currentColors.text}
+              color={currentColors.textSecondary}
             />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: currentColors.text }]}>
+          <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>
             Help & Support
           </Text>
           <View style={styles.headerSpacer} />
@@ -237,7 +237,7 @@ export default function HelpScreen() {
                 size={40}
                 color={currentColors.primary}
               />
-              <Text style={[styles.contactTitle, { color: currentColors.text }]}>
+              <Text style={[styles.contactTitle, { color: currentColors.textSecondary }]}>
                 Need More Help?
               </Text>
               <Text
@@ -327,7 +327,7 @@ export default function HelpScreen() {
 
           {/* FAQ Section */}
           <View style={styles.faqSection}>
-            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>
+            <Text style={[styles.sectionTitle, { color: currentColors.textSecondary }]}>
               Frequently Asked Questions
             </Text>
 
@@ -374,7 +374,7 @@ export default function HelpScreen() {
                         <Text
                           style={[
                             styles.topicQuestion,
-                            { color: currentColors.text },
+                            { color: currentColors.textSecondary },
                           ]}
                         >
                           {topic.question}
@@ -407,7 +407,7 @@ export default function HelpScreen() {
 
           {/* Legal Links Section */}
           <View style={styles.legalSection}>
-            <Text style={[styles.sectionTitle, { color: currentColors.text }]}>
+            <Text style={[styles.sectionTitle, { color: currentColors.textSecondary }]}>
               Legal Information
             </Text>
 
@@ -443,7 +443,7 @@ export default function HelpScreen() {
                 </View>
                 <View style={styles.legalContent}>
                   <Text
-                    style={[styles.legalTitle, { color: currentColors.text }]}
+                    style={[styles.legalTitle, { color: currentColors.textSecondary }]}
                   >
                     Terms and Conditions
                   </Text>
@@ -493,7 +493,7 @@ export default function HelpScreen() {
                 </View>
                 <View style={styles.legalContent}>
                   <Text
-                    style={[styles.legalTitle, { color: currentColors.text }]}
+                    style={[styles.legalTitle, { color: currentColors.textSecondary }]}
                   >
                     Privacy Policy
                   </Text>

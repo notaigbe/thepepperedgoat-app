@@ -272,7 +272,7 @@ export default function EditProfileScreen() {
             >
               <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
             </Pressable>
-            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Edit Profile</Text>
+            <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>Edit Profile</Text>
             <Pressable 
               onPress={handleSave}
               disabled={saving}
@@ -355,13 +355,13 @@ export default function EditProfileScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: currentColors.text }]}>Full Name</Text>
+              <Text style={[styles.inputLabel, { color: currentColors.textSecondary }]}>Full Name</Text>
               <TextInput
                 style={[
                   styles.input, 
                   { 
                     backgroundColor: currentColors.card, 
-                    color: currentColors.text, 
+                    color: currentColors.textSecondary, 
                     borderColor: currentColors.border
                   }
                 ]}
@@ -374,13 +374,13 @@ export default function EditProfileScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: currentColors.text }]}>Email</Text>
+              <Text style={[styles.inputLabel, { color: currentColors.textSecondary }]}>Email</Text>
               <TextInput
                 style={[
                   styles.input, 
                   { 
                     backgroundColor: currentColors.card, 
-                    color: currentColors.text, 
+                    color: currentColors.textSecondary, 
                     borderColor: currentColors.border
                   }
                 ]}
@@ -395,13 +395,13 @@ export default function EditProfileScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: currentColors.text }]}>Phone</Text>
+              <Text style={[styles.inputLabel, { color: currentColors.textSecondary }]}>Phone</Text>
               <TextInput
                 style={[
                   styles.input, 
                   { 
                     backgroundColor: currentColors.card, 
-                    color: currentColors.text, 
+                    color: currentColors.textSecondary, 
                     borderColor: currentColors.border
                   }
                 ]}
@@ -422,7 +422,7 @@ export default function EditProfileScreen() {
               style={[styles.infoBox, { borderColor: currentColors.border }]}
             >
               <IconSymbol name="info.circle.fill" size={20} color={currentColors.secondary} />
-              <Text style={[styles.infoText, { color: currentColors.text }]}>
+              <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
                 Changes will be saved to your profile when you tap Save
               </Text>
             </LinearGradient>
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 24,
     borderBottomWidth: 2,
-    boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
+    // boxShadow: '0px 6px 20px rgba(74, 215, 194, 0.3)',
     elevation: 8,
   },
   backButton: {
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 32,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     letterSpacing: 0.5,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },

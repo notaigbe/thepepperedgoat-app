@@ -84,7 +84,7 @@ export default function FloatingTabBar({
                     <IconSymbol
                       name={tab.icon as any}
                       size={24}
-                      color={active ? '#FFFFFF' : '#888888'}
+                      color={active ? '#0f766e' : '#888888'}
                     />
                     {isCartTab && cartItemCount > 0 && (
                       <View
@@ -99,7 +99,7 @@ export default function FloatingTabBar({
                   <Text
                     style={[
                       styles.label,
-                      { color: active ? '#FFFFFF' : '#888888' },
+                      { color: active ? '#0f766e' : '#888888' },
                     ]}
                   >
                     {tab.label}

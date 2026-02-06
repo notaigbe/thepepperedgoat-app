@@ -192,7 +192,7 @@ export default function HomeScreen() {
               <IconSymbol
                 name={Platform.OS === 'ios' ? "bell.fill" : "notifications"}
                 size={28}
-                color="#ffffff"
+                color="#ffffffb2"
               />
               {unreadCount > 0 && (
                 <View style={styles.notificationBadge}>
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
   },
   dropdownTitle: {
     fontSize: 20,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     color: '#FFFFFF',
   },
   dropdownScroll: {
@@ -740,10 +740,10 @@ const styles = StyleSheet.create({
   },
   menuItemName: {
     fontSize: 22,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 10,
     letterSpacing: 0.5,
-    color: '#FFFFFF',
+    color: '#ffffffb2',
   },
   menuItemDescription: {
     fontSize: 14,
@@ -759,9 +759,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuItemPrice: {
-    fontSize: 24,
-    fontFamily: 'LibertinusSans_700Bold',
-    color: '#FFFFFF',
+    fontSize: 32,
+    fontFamily: 'Cormorant_700Bold',
+    color: '#FFFFFFb2',
   },
   addButton: {
     width: 44,

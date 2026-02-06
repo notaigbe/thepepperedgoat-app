@@ -152,7 +152,7 @@ export default function NotificationsScreen() {
     },
     headerTitle: {
       fontSize: 32,
-      fontFamily: 'PlayfairDisplay_700Bold',
+      fontFamily: 'LibertinusSans_700Bold',
       letterSpacing: 0.5,
       // textShadowColor: 'rgba(0, 0, 0, 0.3)',
       // textShadowOffset: { width: 0, height: 2 },
@@ -178,7 +178,7 @@ export default function NotificationsScreen() {
     },
     emptyStateTitle: {
       fontSize: 24,
-      fontFamily: 'PlayfairDisplay_700Bold',
+      fontFamily: 'LibertinusSans_700Bold',
       marginTop: 20,
       marginBottom: 8,
     },
@@ -218,7 +218,7 @@ export default function NotificationsScreen() {
     },
     notificationTitle: {
       fontSize: 16,
-      fontFamily: 'PlayfairDisplay_700Bold',
+      fontFamily: 'LibertinusSans_700Bold',
       flex: 1,
     },
     unreadBadge: {
@@ -297,7 +297,7 @@ export default function NotificationsScreen() {
                 <IconSymbol name="chevron.left" size={24} color={currentColors.primary} />
               </Pressable>
               <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={[styles.headerTitle, { color: currentColors.text }]}>
+                <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>
                   Notifications
                 </Text>
               </View>
@@ -318,7 +318,7 @@ export default function NotificationsScreen() {
             {!userProfile || userProfile.notifications.length === 0 ? (
               <View style={styles.emptyState}>
                 <IconSymbol name="bell" size={80} color={currentColors.textSecondary} />
-                <Text style={[styles.emptyStateTitle, { color: currentColors.text }]}>
+                <Text style={[styles.emptyStateTitle, { color: currentColors.textSecondary }]}>
                   No Notifications
                 </Text>
                 <Text style={[styles.emptyStateText, { color: currentColors.textSecondary }]}>
@@ -370,7 +370,7 @@ export default function NotificationsScreen() {
                         <View style={styles.notificationContent}>
                           <View style={styles.notificationHeader}>
                             <Text
-                              style={[styles.notificationTitle, { color: currentColors.text }]}
+                              style={[styles.notificationTitle, { color: currentColors.textSecondary }]}
                             >
                               {notification.title}
                             </Text>

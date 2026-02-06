@@ -371,7 +371,7 @@ export default function PaymentMethodsScreen() {
             >
               <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
             </Pressable>
-            <Text style={[styles.headerTitle, { color: currentColors.text }]}>Payment Methods</Text>
+            <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>Payment Methods</Text>
             <View style={{ width: 40 }} />
           </LinearGradient>
 
@@ -387,7 +387,7 @@ export default function PaymentMethodsScreen() {
               style={[styles.infoCard, { borderColor: currentColors.border }]}
             >
               <IconSymbol name="info.circle.fill" size={20} color={currentColors.secondary} />
-              <Text style={[styles.infoText, { color: currentColors.text }]}>
+              <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
                 Securely save your payment methods for faster checkout. Your card information is encrypted and stored by Stripe.
               </Text>
             </LinearGradient>
@@ -399,7 +399,7 @@ export default function PaymentMethodsScreen() {
                 end={{ x: 1, y: 1 }}
                 style={[styles.addCardForm, { borderColor: currentColors.border }]}
               >
-                <Text style={[styles.addCardTitle, { color: currentColors.text }]}>Add New Card</Text>
+                <Text style={[styles.addCardTitle, { color: currentColors.textSecondary }]}>Add New Card</Text>
                 <CardField
                   postalCodeEnabled={false}
                   placeholders={{
@@ -407,7 +407,7 @@ export default function PaymentMethodsScreen() {
                   }}
                   cardStyle={{
                     backgroundColor: currentColors.background,
-                    textColor: currentColors.text,
+                    textColor: currentColors.textSecondary,
                   }}
                   style={styles.cardField}
                   onCardChange={(cardDetails) => {
@@ -420,7 +420,7 @@ export default function PaymentMethodsScreen() {
                     onPress={() => setShowAddCard(false)}
                     disabled={processing}
                   >
-                    <Text style={[styles.cancelButtonText, { color: currentColors.text }]}>Cancel</Text>
+                    <Text style={[styles.cancelButtonText, { color: currentColors.textSecondary }]}>Cancel</Text>
                   </Pressable>
                   <LinearGradient
                     colors={[currentColors.secondary, currentColors.highlight]}
@@ -479,7 +479,7 @@ export default function PaymentMethodsScreen() {
             ) : storedCards.length === 0 && !showAddCard ? (
               <View style={styles.emptyState}>
                 <IconSymbol name="creditcard" size={80} color={currentColors.textSecondary} />
-                <Text style={[styles.emptyStateTitle, { color: currentColors.text }]}>No Payment Methods</Text>
+                <Text style={[styles.emptyStateTitle, { color: currentColors.textSecondary }]}>No Payment Methods</Text>
                 <Text style={[styles.emptyStateText, { color: currentColors.textSecondary }]}>
                   Add a payment method to make checkout faster and easier.
                 </Text>
@@ -499,7 +499,7 @@ export default function PaymentMethodsScreen() {
                         <IconSymbol name={getCardBrandIcon(card.cardBrand)} size={32} color={currentColors.secondary} />
                       </View>
                       <View style={styles.cardDetails}>
-                        <Text style={[styles.cardNumber, { color: currentColors.text }]}>
+                        <Text style={[styles.cardNumber, { color: currentColors.textSecondary }]}>
                           {card.cardBrand.toUpperCase()} •••• {card.last4}
                         </Text>
                         <Text style={[styles.cardExpiry, { color: currentColors.textSecondary }]}>
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 32,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     letterSpacing: 0.5,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
   },
   emptyStateTitle: {
     fontSize: 24,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginTop: 20,
     marginBottom: 8,
   },
@@ -674,7 +674,7 @@ const styles = StyleSheet.create({
   },
   cardNumber: {
     fontSize: 16,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 4,
   },
   cardExpiry: {
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
   },
   addCardTitle: {
     fontSize: 18,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     marginBottom: 16,
   },
   cardField: {

@@ -50,7 +50,7 @@ export default function CheckoutScreen() {
     },
     title: {
       fontSize: 28,
-      fontFamily: 'PlayfairDisplay_700Bold',
+      fontFamily: 'LibertinusSans_700Bold',
       color: currentColors.text,
       textAlign: 'center',
       marginBottom: 12,

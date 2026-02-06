@@ -286,7 +286,7 @@ export default function ProfileScreen() {
                   size={80}
                   color={currentColors.primary}
                 />
-                <Text style={[styles.authTitle, { color: currentColors.text }]}>
+                <Text style={[styles.authTitle, { color: currentColors.textSecondary }]}>
                   {isSignUp ? "Create Account" : "Welcome Back"}
                 </Text>
                 <Text
@@ -318,7 +318,7 @@ export default function ProfileScreen() {
                       color={currentColors.textSecondary}
                     />
                     <TextInput
-                      style={[styles.input, { color: currentColors.text }]}
+                      style={[styles.input, { color: currentColors.textSecondary }]}
                       placeholder="Full Name"
                       placeholderTextColor={currentColors.textSecondary}
                       value={name}
@@ -344,7 +344,7 @@ export default function ProfileScreen() {
                     color={currentColors.textSecondary}
                   />
                   <TextInput
-                    style={[styles.input, { color: currentColors.text }]}
+                    style={[styles.input, { color: currentColors.textSecondary }]}
                     placeholder="Email"
                     placeholderTextColor={currentColors.textSecondary}
                     value={email}
@@ -370,7 +370,7 @@ export default function ProfileScreen() {
                     color={currentColors.textSecondary}
                   />
                   <TextInput
-                    style={[styles.input, { color: currentColors.text }]}
+                    style={[styles.input, { color: currentColors.textSecondary }]}
                     placeholder="Password"
                     placeholderTextColor={currentColors.textSecondary}
                     value={password}
@@ -414,7 +414,7 @@ export default function ProfileScreen() {
                         color={currentColors.textSecondary}
                       />
                       <TextInput
-                        style={[styles.input, { color: currentColors.text }]}
+                        style={[styles.input, { color: currentColors.textSecondary }]}
                         placeholder="Phone (optional)"
                         placeholderTextColor={currentColors.textSecondary}
                         value={phone}
@@ -439,7 +439,7 @@ export default function ProfileScreen() {
                         color={currentColors.textSecondary}
                       />
                       <TextInput
-                        style={[styles.input, { color: currentColors.text }]}
+                        style={[styles.input, { color: currentColors.textSecondary }]}
                         placeholder="Invite Code (optional)"
                         placeholderTextColor={currentColors.textSecondary}
                         value={inviteCode}
@@ -638,7 +638,7 @@ export default function ProfileScreen() {
                 </Pressable>
               </LinearGradient>
             </View>
-            <Text style={[styles.profileName, { color: currentColors.text }]}>
+            <Text style={[styles.profileName, { color: currentColors.textSecondary }]}>
               {userProfile?.name}
             </Text>
             <Text
@@ -657,7 +657,7 @@ export default function ProfileScreen() {
                 color={currentColors.primary}
               />
               <View style={styles.pointsInfo}>
-                <Text style={[styles.pointsValue, { color: currentColors.text }]}>
+                <Text style={[styles.pointsValue, { color: currentColors.textSecondary }]}>
                   {userProfile?.points || 0}
                 </Text>
                 <Text
@@ -697,7 +697,7 @@ export default function ProfileScreen() {
                   />
                 </View>
                 <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
+                  <Text style={[styles.menuTitle, { color: currentColors.textSecondary }]}>
                     Order History
                   </Text>
                   <Text
@@ -735,7 +735,7 @@ export default function ProfileScreen() {
                     <IconSymbol name="creditcard.fill" size={24} color="#4ECDC4" />
                   </View>
                   <View style={styles.menuContent}>
-                    <Text style={[styles.menuTitle, { color: currentColors.text }]}>
+                    <Text style={[styles.menuTitle, { color: currentColors.textSecondary }]}>
                       Payment Methods
                     </Text>
                     <Text
@@ -772,7 +772,7 @@ export default function ProfileScreen() {
                   <IconSymbol name="calendar" size={24} color="#95E1D3" />
                 </View>
                 <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
+                  <Text style={[styles.menuTitle, { color: currentColors.textSecondary }]}>
                     Events
                   </Text>
                   <Text
@@ -809,7 +809,7 @@ export default function ProfileScreen() {
                   <IconSymbol name="calendar.badge.clock" size={24} color="#FF6B6B" />
                 </View>
                 <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
+                  <Text style={[styles.menuTitle, { color: currentColors.textSecondary }]}>
                     Reservations
                   </Text>
                   <Text
@@ -846,7 +846,7 @@ export default function ProfileScreen() {
                   <IconSymbol name="person.2.fill" size={24} color="#2196F3" />
                 </View>
                 <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
+                  <Text style={[styles.menuTitle, { color: currentColors.textSecondary }]}>
                     Invite a Friend
                   </Text>
                   <Text
@@ -883,7 +883,7 @@ export default function ProfileScreen() {
                   <IconSymbol name="questionmark.circle.fill" size={24} color="#9C27B0" />
                 </View>
                 <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
+                  <Text style={[styles.menuTitle, { color: currentColors.textSecondary }]}>
                     Help & Support
                   </Text>
                   <Text
@@ -957,7 +957,7 @@ export default function ProfileScreen() {
                   <IconSymbol name="logout" size={24} color="#FF9800" />
                 </View>
                 <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
+                  <Text style={[styles.menuTitle, { color: currentColors.textSecondary }]}>
                     Sign Out
                   </Text>
                   <Text
