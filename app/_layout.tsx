@@ -226,6 +226,20 @@ export default function RootLayout() {
                 headerShown: false,
               }} 
             />
+            <Stack.Screen 
+              name="privacy-policy" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="terms-and-conditions" 
+              options={{ 
+                presentation: 'modal',
+                headerShown: false,
+              }} 
+            />
             {/* <Stack.Screen 
               name="create-post" 
               options={{ 

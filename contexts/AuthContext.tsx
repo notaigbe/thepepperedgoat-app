@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password,
         options: {
           data: { name, phone },
-          emailRedirectTo: 'https://jagabansla.com/email-confirmed',
+          emailRedirectTo: 'https://thepepperedgoat.com/email-confirmed',
         },
       });
 

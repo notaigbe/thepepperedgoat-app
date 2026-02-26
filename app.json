@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Ooosum Foods LLC",
-    "slug": "ooosum-foods-llc",
-    "version": "1.0.0",
+    "name": "The Peppered Goat",
+    "slug": "the-peppered-goat",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/peppered-goat-logo.jpg",
     "userInterfaceStyle": "automatic",
@@ -32,16 +32,6 @@
       "bundler": "metro"
     },
     "plugins": [
-      // [
-      //   "expo-build-properties",
-      //   {
-      //     "ios": {
-      //       "entitlements": {
-      //         "com.apple.developer.in-app-payments": "merchant.com.ooosumfoods.thepepperedgoat"
-      //       }
-      //     }
-      //   }
-      // ],
       "expo-font",
       "expo-router",
       "expo-web-browser"
@@ -53,7 +43,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": ""
+        "projectId": "85dee9c3-316f-4103-bdcb-6c322c575992"
       }
     }
   }
