@@ -51,7 +51,7 @@ export default function WebsiteMenu() {
           >
             <IconSymbol name="arrow-back" size={24} color={colors.text} />
           </Pressable>
-          <Text style={styles.logo}>Jagabans LA</Text>
+          <Text style={styles.logo}>The Peppered Goat</Text>
           <View style={{ width: 24 }} />
         </View>
 

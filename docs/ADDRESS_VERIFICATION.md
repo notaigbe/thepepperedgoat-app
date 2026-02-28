@@ -1,7 +1,7 @@
 
 # Address Verification Guide
 
-This guide explains how address verification works in the Jagabans LA app and how to configure it.
+This guide explains how address verification works in the The Peppered Goat app and how to configure it.
 
 ## Overview
 

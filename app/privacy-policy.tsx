@@ -135,9 +135,9 @@ const privacySections: Section[] = [
     title: 'Contact Us',
     content: [
       'Questions: If you have questions about this Privacy Policy or our privacy practices, please contact us at:',
-      'Email: privacy@jagabansla.com',
+      'Email: privacy@thepepperedgoat.com',
       'Phone: +1 (818) 210-6659',
-      'Mailing Address: Jagabans LA, 7970 W. Sunset Blvd, Los Angeles, CA 90046',
+      'Mailing Address: The Peppered Goat, 15136 Stagg Street, Van Nuys, CA 91405',
       'Response Time: We will respond to privacy inquiries within 30 days.',
     ],
   },

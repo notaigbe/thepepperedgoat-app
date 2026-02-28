@@ -117,7 +117,7 @@ export default function HelpScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    const email = 'info@jagabansla.com';
+    const email = 'info@thepepperedgoat.com';
     const subject = 'Help Request';
     const url = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
     
@@ -281,7 +281,7 @@ export default function HelpScreen() {
                         { color: currentColors.card, opacity: 0.9 },
                       ]}
                     >
-                      info@jagabansla.com
+                      info@thepepperedgoat.com
                     </Text>
                   </View>
                 </Pressable>
@@ -424,7 +424,7 @@ export default function HelpScreen() {
                 style={styles.legalItem}
                 onPress={() =>
                   handleWebLink(
-                    'https://jagabansla.com/terms',
+                    'https://thepepperedgoat.com/terms',
                     'Terms and Conditions'
                   )
                 }
@@ -474,7 +474,7 @@ export default function HelpScreen() {
                 style={styles.legalItem}
                 onPress={() =>
                   handleWebLink(
-                    'https://jagabansla.com/privacy',
+                    'https://thepepperedgoat.com/privacy',
                     'Privacy Policy'
                   )
                 }

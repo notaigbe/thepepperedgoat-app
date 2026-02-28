@@ -1,7 +1,7 @@
 
 # Stripe Integration Guide
 
-This guide explains how to set up and use Stripe payments in the Jagabans LA mobile app.
+This guide explains how to set up and use Stripe payments in the The Peppered Goat mobile app.
 
 ## Overview
 

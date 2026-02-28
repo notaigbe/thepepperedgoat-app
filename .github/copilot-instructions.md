@@ -1,5 +1,5 @@
-<!-- Copilot instructions for working with the Ooosum / Jagabans Rewards app -->
-# Copilot usage notes — Jagabans Rewards (Expo + Supabase)
+<!-- Copilot instructions for working with the Ooosum / The Peppered Goat app -->
+# Copilot usage notes — The Peppered Goat (Expo + Supabase)
 
 This file gives focused, actionable guidance for AI coding agents working in this repository.
 

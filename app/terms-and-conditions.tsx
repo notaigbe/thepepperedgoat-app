@@ -25,7 +25,7 @@ const termsSections: Section[] = [
     id: '1',
     title: 'Agreement to Terms',
     content: [
-      'By accessing and using the Jagabans Rewards app (the "App"), you accept and agree to be bound by the terms and provision of this agreement.',
+      'By accessing and using the Peppered Goat app (the "App"), you accept and agree to be bound by the terms and provision of this agreement.',
       'If you do not agree to abide by the above, please do not use this service.',
       'We reserve the right to update these terms at any time without notice. Your continued use of the App following the posting of changes means that you accept and agree to the changes.',
     ],
@@ -57,7 +57,7 @@ const termsSections: Section[] = [
     id: '4',
     title: 'Limitations',
     content: [
-      'In no event shall Jagabans LA or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on the App, even if we or our authorized representative has been notified orally or in writing of the possibility of such damage.',
+      'In no event shall The Peppered Goat or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on the App, even if we or our authorized representative has been notified orally or in writing of the possibility of such damage.',
       'Because some jurisdictions do not allow limitations on implied warranties, or limitations of liability for consequential or incidental damages, these limitations may not apply to you.',
     ],
   },
@@ -105,7 +105,7 @@ const termsSections: Section[] = [
     id: '9',
     title: 'Order & Payment Terms',
     content: [
-      'All orders are subject to acceptance and confirmation by Jagabans LA.',
+      'All orders are subject to acceptance and confirmation by The Peppered Goat.',
       'We reserve the right to refuse any order.',
       'Prices are subject to change without notice.',
       'Payment must be received before order fulfillment unless other arrangements have been made.',
@@ -140,9 +140,9 @@ const termsSections: Section[] = [
     id: '12',
     title: 'Intellectual Property',
     content: [
-      'The App and its content, features, and functionality are owned by Jagabans LA and are protected by international copyright, trademark, and other intellectual property laws.',
+      'The App and its content, features, and functionality are owned by The Peppered Goat and are protected by international copyright, trademark, and other intellectual property laws.',
       'You may not reproduce, distribute, transmit, or prepare derivative works of the App without our prior written permission.',
-      'All content, including text, graphics, logos, and images, is the property of Jagabans LA or its content suppliers.',
+      'All content, including text, graphics, logos, and images, is the property of The Peppered Goat or its content suppliers.',
     ],
   },
   {
@@ -158,7 +158,7 @@ const termsSections: Section[] = [
     id: '14',
     title: 'Indemnification',
     content: [
-      'You agree to indemnify, defend, and hold harmless Jagabans LA and its owners, operators, employees, and agents from any claims, damages, losses, or expenses (including legal fees) arising from:',
+      'You agree to indemnify, defend, and hold harmless The Peppered Goat and its owners, operators, employees, and agents from any claims, damages, losses, or expenses (including legal fees) arising from:',
       '• Your violation of these terms',
       '• Your use of the App',
       '• Your violation of any law or third-party rights',
@@ -202,7 +202,7 @@ const termsSections: Section[] = [
     id: '18',
     title: 'Contact & Disputes',
     content: [
-      'For questions regarding these terms, contact us at: legal@jagabansla.com',
+      'For questions regarding these terms, contact us at: legal@thepepperedgoat.com',
       'For billing disputes, contact us within 30 days of the transaction.',
       'We will attempt to resolve disputes in good faith.',
       'If resolution cannot be reached, disputes are subject to binding arbitration as specified by California law.',

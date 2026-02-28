@@ -125,7 +125,7 @@ serve(async (req) => {
     const smtpPort = Deno.env.get('SMTP_PORT');
     const smtpUser = Deno.env.get('SMTP_USER');
     const smtpPassword = Deno.env.get('SMTP_PASSWORD');
-    const smtpFrom = Deno.env.get('SMTP_FROM') || 'orders@jagabansla.com';
+    const smtpFrom = Deno.env.get('SMTP_FROM') || 'orders@thepepperedgoat.com';
 
     if (!smtpHost || !smtpPort || !smtpUser || !smtpPassword) {
       console.error('SMTP configuration incomplete');
@@ -152,12 +152,12 @@ serve(async (req) => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Order - Jagabans LA</title>
+  <title>New Order - The Peppered Goat</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background: linear-gradient(135deg, #D4AF37 0%, #4AD7C2 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 28px;">New Order Received</h1>
-    <p style="color: white; margin: 10px 0 0 0; font-size: 16px;">Jagabans LA</p>
+    <p style="color: white; margin: 10px 0 0 0; font-size: 16px;">The Peppered Goat</p>
   </div>
   
   <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
@@ -228,8 +228,8 @@ serve(async (req) => {
   </div>
 
   <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
-    <p>This is an automated notification from Jagabans LA order system.</p>
-    <p>© ${new Date().getFullYear()} Jagabans LA. All rights reserved.</p>
+    <p>This is an automated notification from The Peppered Goat order system.</p>
+    <p>© ${new Date().getFullYear()} The Peppered Goat. All rights reserved.</p>
   </div>
 </body>
 </html>
@@ -237,7 +237,7 @@ serve(async (req) => {
 
     // Create plain text version
     const emailText = `
-New Order Received - Jagabans LA
+New Order Received - The Peppered Goat
 
 Order Details:
 - Order ID: ${orderData.orderId}
@@ -263,8 +263,8 @@ This order has been paid and is ready to be prepared.
 Please log in to the admin dashboard to update the order status.
 
 ---
-This is an automated notification from Jagabans LA order system.
-© ${new Date().getFullYear()} Jagabans LA. All rights reserved.
+This is an automated notification from The Peppered Goat order system.
+© ${new Date().getFullYear()} The Peppered Goat. All rights reserved.
     `;
 
     // Send email using SMTP (using a simple fetch to an SMTP relay service)

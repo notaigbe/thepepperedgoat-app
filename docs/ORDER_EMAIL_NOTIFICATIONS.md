@@ -40,7 +40,7 @@ Set these in your Supabase project dashboard under Settings > Edge Functions:
 
 ```bash
 # Admin email recipients (comma-separated)
-ADMIN_EMAIL_RECIPIENTS=admin@jagabansla.com,orders@jagabansla.com,manager@jagabansla.com
+ADMIN_EMAIL_RECIPIENTS=admin@thepepperedgoat.com,orders@thepepperedgoat.com,manager@thepepperedgoat.com
 
 # Email service configuration (using Resend API - recommended)
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxx
@@ -50,7 +50,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
-SMTP_FROM=orders@jagabansla.com
+SMTP_FROM=orders@thepepperedgoat.com
 ```
 
 ### Setting Environment Variables
@@ -59,7 +59,7 @@ Using Supabase CLI:
 
 ```bash
 # Set admin email recipients
-supabase secrets set ADMIN_EMAIL_RECIPIENTS="admin@jagabansla.com,orders@jagabansla.com"
+supabase secrets set ADMIN_EMAIL_RECIPIENTS="admin@thepepperedgoat.com,orders@thepepperedgoat.com"
 
 # Set Resend API key (recommended)
 supabase secrets set RESEND_API_KEY="re_xxxxxxxxxxxxxxxxxxxxx"
@@ -69,7 +69,7 @@ supabase secrets set SMTP_HOST="smtp.gmail.com"
 supabase secrets set SMTP_PORT="587"
 supabase secrets set SMTP_USER="your-email@gmail.com"
 supabase secrets set SMTP_PASSWORD="your-app-password"
-supabase secrets set SMTP_FROM="orders@jagabansla.com"
+supabase secrets set SMTP_FROM="orders@thepepperedgoat.com"
 ```
 
 ## Email Service Options
@@ -188,7 +188,7 @@ supabase functions deploy stripe-webhook
 The email includes:
 
 ### Header
-- Jagabans LA branding with gradient background
+- The Peppered Goat branding with gradient background
 - "New Order Received" title
 
 ### Order Details Section
@@ -333,4 +333,4 @@ Potential improvements:
 For issues or questions:
 - Check Supabase Edge Function logs
 - Review the `email_notifications` table for audit trail
-- Contact Jagabans LA technical support
+- Contact The Peppered Goat technical support

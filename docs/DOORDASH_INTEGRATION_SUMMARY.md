@@ -3,7 +3,7 @@
 
 ## Overview
 
-Successfully integrated DoorDash delivery service as an additional delivery option alongside Uber Direct in the Jagabans LA food ordering app. Admins can now choose between DoorDash and Uber Direct for order deliveries, with automatic triggering, real-time tracking, and status updates.
+Successfully integrated DoorDash delivery service as an additional delivery option alongside Uber Direct in the The Peppered Goat food ordering app. Admins can now choose between DoorDash and Uber Direct for order deliveries, with automatic triggering, real-time tracking, and status updates.
 
 ## Features Implemented
 

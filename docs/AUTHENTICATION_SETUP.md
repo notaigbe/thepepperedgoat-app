@@ -1,7 +1,7 @@
 
 # Authentication Setup Guide
 
-This guide explains how to set up authentication for the Jagabans LA app.
+This guide explains how to set up authentication for the The Peppered Goat app.
 
 ## Overview
 
@@ -29,7 +29,7 @@ To create the default admin user for testing, follow these steps:
 2. Navigate to Authentication > Users
 3. Click "Add User"
 4. Enter the following details:
-   - Email: `admin@jagabansla.com`
+   - Email: `admin@thepepperedgoat.com`
    - Password: `admin`
    - Auto Confirm User: ✅ (checked)
 5. Click "Create User"
@@ -61,7 +61,7 @@ INSERT INTO auth.users (
   gen_random_uuid(),
   'authenticated',
   'authenticated',
-  'admin@jagabansla.com',
+  'admin@thepepperedgoat.com',
   crypt('admin', gen_salt('bf')),
   NOW(),
   '{"provider":"email","providers":["email"]}',
@@ -76,15 +76,15 @@ INSERT INTO auth.users (
 
 -- Create admin user profile
 INSERT INTO user_profiles (id, name, email, phone, points)
-SELECT id, 'Admin User', 'admin@jagabansla.com', '', 1000
+SELECT id, 'Admin User', 'admin@thepepperedgoat.com', '', 1000
 FROM auth.users
-WHERE email = 'admin@jagabansla.com';
+WHERE email = 'admin@thepepperedgoat.com';
 ```
 
 ## Default Credentials
 
 ### Admin Dashboard
-- **Email**: `admin@jagabansla.com`
+- **Email**: `admin@thepepperedgoat.com`
 - **Password**: `admin`
 
 ### Regular User (for testing)
@@ -158,7 +158,7 @@ All mock data has been migrated to Supabase:
 ### Test Admin Authentication
 1. Navigate to `/admin` in the app
 2. Enter admin credentials:
-   - Email: admin@jagabansla.com
+   - Email: admin@thepepperedgoat.com
    - Password: admin
 3. Access admin dashboard
 
@@ -173,7 +173,7 @@ All mock data has been migrated to Supabase:
 
 ### "Invalid credentials" error
 - Make sure you've created the admin user
-- Check that the email is exactly `admin@jagabansla.com`
+- Check that the email is exactly `admin@thepepperedgoat.com`
 - Verify the password is `admin`
 
 ### Email verification not working
@@ -189,7 +189,7 @@ All mock data has been migrated to Supabase:
 
 ## Security Notes
 
-⚠️ **Important**: The default admin credentials (`admin@jagabansla.com` / `admin`) are for testing only. In production:
+⚠️ **Important**: The default admin credentials (`admin@thepepperedgoat.com` / `admin`) are for testing only. In production:
 
 1. Change the admin password to a strong, unique password
 2. Use environment variables for sensitive data

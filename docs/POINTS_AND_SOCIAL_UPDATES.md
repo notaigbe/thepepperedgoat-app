@@ -39,7 +39,7 @@ This document describes the recent updates to the points awarding system and soc
 
 - **Discover Feed** (`app/(tabs)/discover.tsx`):
   - Shows location verification badge on posts taken at restaurant
-  - Badge displays "Taken at Jagabans L.A." with checkmark icon
+  - Badge displays "Taken at The Peppered Goat" with checkmark icon
   - Posts without location verification show normally without badge
 
 #### Service Layer
@@ -187,7 +187,7 @@ CREATE TABLE post_comments (
 ### Location Settings
 Location configuration is defined in `constants/LocationConfig.ts`:
 ```typescript
-export const JAGABANS_LOCATION = {
+export const THE_PEPPERED_GOAT_LOCATION = {
   latitude: 34.0522,  // Update with actual restaurant coordinates
   longitude: -118.2437,
   radius: 100, // meters

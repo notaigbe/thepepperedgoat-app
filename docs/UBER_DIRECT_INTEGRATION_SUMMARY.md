@@ -3,7 +3,7 @@
 
 ## Overview
 
-Successfully integrated Uber Direct delivery service into the Jagabans LA food ordering app. The integration automatically triggers delivery when an order status is updated to "Ready" and provides real-time tracking, status updates, and proof of delivery.
+Successfully integrated Uber Direct delivery service into the The Peppered Goat food ordering app. The integration automatically triggers delivery when an order status is updated to "Ready" and provides real-time tracking, status updates, and proof of delivery.
 
 ## Features Implemented
 

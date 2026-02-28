@@ -38,8 +38,8 @@ export default function DeliverySettingsScreen() {
   const [settings, setSettings] = useState<DeliverySettings>({
     autoTriggerDelivery: false,
     defaultProvider: 'uber_direct',
-    restaurantName: 'Jagabans LA',
-    restaurantPhone: '+1234567890',
+    restaurantName: 'The Peppered Goat',
+    restaurantPhone: '+18182106659',
     restaurantStreet: '123 Restaurant Street',
     restaurantCity: 'Los Angeles',
     restaurantState: 'CA',
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
   },
   backButton: {
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   settingInfo: {
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     padding: 14,
     fontSize: 15,
     color: colors.text,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   textArea: {
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.primary,
     gap: 12,
   },
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
-    borderWidth: 2,
+    borderWidth: 0.5,
     borderColor: colors.border,
   },
   providerButtonActive: {

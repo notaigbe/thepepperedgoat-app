@@ -2,7 +2,7 @@
 # Account Deletion Implementation Summary
 
 ## Overview
-Successfully implemented a secure, GDPR-compliant self-service account deletion feature for the Jagabans LA food ordering app.
+Successfully implemented a secure, GDPR-compliant self-service account deletion feature for the The Peppered Goat food ordering app.
 
 ## What Was Implemented
 

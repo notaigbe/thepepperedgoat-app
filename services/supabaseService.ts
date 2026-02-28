@@ -33,7 +33,7 @@ export const authService = {
         email,
         password,
         options: {
-          emailRedirectTo: 'https://jagabansla.com/email-confirmed',
+          emailRedirectTo: 'https://thepepperedgoat.com/email-confirmed',
           data: {
             name,
             phone,
@@ -413,22 +413,23 @@ export const menuService = {
    */
   async updateMenuItem(itemId: string, updates: Partial<MenuItem>) {
     try {
-      const { data, error } = await (supabase as any)
-        .from('menu_items')
-        .update({
-          name: updates.name,
-          description: updates.description,
-          price: updates.price,
-          category_id: updates.category_id,
-          image_url: updates.image_url,
-          spicy_level: updates.spicy_level,
-          sort_order: updates.sort_order,
-          tag: updates.tag,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', itemId)
-        .select()
-        .single();
+const { data, error } = await (supabase as any)
+      .from('menu_items')
+      .update({
+        name: updates.name,
+        description: updates.description,
+        price: updates.price,
+        category_id: updates.category_id,
+        image_url: updates.image_url,
+        spicy_level: updates.spicy_level,
+        sort_order: updates.sort_order,
+        tag: updates.tag,
+        is_available: updates.is_available,   // ← ADD THIS LINE
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', itemId)
+      .select()
+      .single();
 
       if (error) throw error;
       return { data, error: null };

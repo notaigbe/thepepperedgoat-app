@@ -22,7 +22,7 @@ To use the Square In-App Payments SDK, you need to configure your Square Applica
 
 1. Log in to [Square Developer Dashboard](https://developer.squareup.com/apps)
 2. Click "Create App" or "+" button
-3. Enter your application name (e.g., "Jagabans LA Food Ordering")
+3. Enter your application name (e.g., "The Peppered Goat Food Ordering")
 4. Select your business location
 5. Click "Create Application"
 

@@ -1,9 +1,9 @@
-// Jagabans L.A. Restaurant Location
+// The Peppered Goat Restaurant Location
 // Replace with actual restaurant coordinates
 export const RESTAURANT_LOCATION = {
   latitude: process.env.GEOFENCE_LATITUDE ? parseFloat(process.env.GEOFENCE_LATITUDE) : 34.0438676, // Los Angeles latitude (replace with actual)
   longitude: process.env.GEOFENCE_LONGITUDE ? parseFloat(process.env.GEOFENCE_LONGITUDE) : -118.2772777, // Los Angeles longitude (replace with actual)
-  name: process.env.RESTAURANT_NAME || 'Jagabans L.A.', // Replace with actual
+  name: process.env.RESTAURANT_NAME || 'The Peppered Goat', // Replace with actual
   address: process.env.RESTAURANT_ADDRESS || '1423 W Pico Blvd, Los Angeles, CA 90015', // Replace with actual
 };
 
@@ -11,7 +11,7 @@ export const RESTAURANT_LOCATION = {
 export const GEOFENCE_RADIUS_METERS = process.env.GEOFENCE_RADIUS_METERS ? parseInt(process.env.GEOFENCE_RADIUS_METERS) : 500; // Default to 500 meters
 
 // Alias for consistency with social features
-export const JAGABANS_LOCATION = {
+export const THE_PEPPERED_GOAT_LOCATION = {
   latitude: RESTAURANT_LOCATION.latitude,
   longitude: RESTAURANT_LOCATION.longitude,
   radius: GEOFENCE_RADIUS_METERS,

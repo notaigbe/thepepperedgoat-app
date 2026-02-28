@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
   },
   backButton: {
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   searchInput: {
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   statValue: {
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   userHeader: {
@@ -850,8 +850,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 16,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
     borderColor: colors.border,
   },
   userStat: {
@@ -890,7 +890,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: colors.card,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.primary,
   },
   actionButtonText: {
@@ -938,7 +938,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   detailLabel: {
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   rsvpInfo: {
@@ -1009,7 +1009,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 10,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.2,
   },
   cancelBtn: {
     backgroundColor: '#FF6B6B20',

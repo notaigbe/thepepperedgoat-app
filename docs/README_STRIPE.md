@@ -1,7 +1,7 @@
 
 # Stripe Payment Integration
 
-Welcome to the Stripe payment integration documentation for Jagabans LA mobile app.
+Welcome to the Stripe payment integration documentation for The Peppered Goat mobile app.
 
 ## Quick Links
 

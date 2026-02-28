@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
   },
   backButton: {
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   statusChipActive: {
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   orderHeader: {
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   orderFooter: {
-    borderTopWidth: 1,
+    borderTopWidth: 0.5,
     borderTopColor: colors.border,
     paddingTop: 12,
     marginBottom: 16,
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   statusActions: {
-    borderTopWidth: 1,
+    borderTopWidth: 0.5,
     borderTopColor: colors.border,
     paddingTop: 12,
   },
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 0.2,
     backgroundColor: colors.background,
   },
   actionButtonActive: {
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
   },
   deliveryTrackingContainer: {
     marginTop: 16,
-    borderTopWidth: 1,
+    borderTopWidth: 0.5,
     borderTopColor: colors.border,
     paddingTop: 16,
   },

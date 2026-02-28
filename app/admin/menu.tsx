@@ -16,7 +16,7 @@ import { IconSymbol } from "@/components/IconSymbol";
 import { colors } from "@/styles/commonStyles";
 import { menuItems as staticMenuItems } from "@/data/menuData";
 import { menuService } from "@/services/supabaseService";
-import { MenuItem } from "@/types";
+import { MenuItem, MenuCategory } from "@/types";
 import * as Haptics from "expo-haptics";
 import ImagePicker from "@/components/ImagePicker";
 import Dialog from "@/components/Dialog";
@@ -28,16 +28,19 @@ export default function AdminMenuManagement() {
   const router = useRouter();
   const { userProfile } = useApp();
   const [items, setItems] = useState<MenuItem[]>(staticMenuItems);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | "All">("All");
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     price: "",
-    category: "Main Dishes",
-    image: "",
+    category_id: "",
+    image_url: "",
+    spicy_level: "",
+    tag: "",
   });
 
   // Dialog state
@@ -66,16 +69,16 @@ export default function AdminMenuManagement() {
   };
 
   const handleImageSelected = (imageUrl: string) => {
-    setFormData({ ...formData, image: imageUrl });
+    setFormData({ ...formData, image_url: imageUrl });
     showToast('success', 'Image uploaded successfully');
   };
 
   // Check user role - only super_admin should see analytics/order totals
   const isSuperAdmin = userProfile?.userRole === 'super_admin';
 
-  const categories: string[] = [
-    "All",
-    ...Array.from(new Set(items.map((i) => i.category))),
+  const categoryFilterOptions = [
+    { id: "All", title: "All" },
+    ...categories,
   ];
 
   const handleAddItem = () => {
@@ -88,14 +91,16 @@ export default function AdminMenuManagement() {
 
       const payload: Omit<MenuItem, "id"> = {
         name: formData.name,
-        description: formData.description,
+        description: formData.description || null,
         price: parseFloat(formData.price),
-        category: formData.category,
-        image:
-          formData.image ||
+        category_id: formData.category_id || null,
+        image_url:
+          formData.image_url ||
           "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
-        popular: false,
-        available: true,
+        tag: formData.tag || null,
+        spicy_level: formData.spicy_level ? parseInt(formData.spicy_level) : null,
+        is_available: true,
+        sort_order: null,
       };
 
       try {
@@ -118,10 +123,12 @@ export default function AdminMenuManagement() {
     (async () => {
       const updates: Partial<MenuItem> = {
         name: formData.name,
-        description: formData.description,
+        description: formData.description || null,
         price: parseFloat(formData.price),
-        category: formData.category,
-        image: formData.image,
+        category_id: formData.category_id || null,
+        image_url: formData.image_url || null,
+        tag: formData.tag || null,
+        spicy_level: formData.spicy_level ? parseInt(formData.spicy_level) : null,
       };
 
       try {
@@ -139,6 +146,23 @@ export default function AdminMenuManagement() {
       } catch (err) {
         console.error("Update menu item failed", err);
         showToast('error', 'Unable to update menu item');
+      }
+    })();
+  };
+
+  const handleToggleAvailability = (item: MenuItem) => {
+    const newValue = !(item.is_available ?? true);
+    (async () => {
+      try {
+        const res = await menuService.updateMenuItem(item.id, { is_available: newValue });
+        if (res.error || !res.data) throw res.error || new Error("Update failed");
+        setItems((prev) =>
+          prev.map((it) => (it.id === item.id ? (res.data as MenuItem) : it))
+        );
+        showToast('success', newValue ? `${item.name} is now available` : `${item.name} marked unavailable`);
+      } catch (err) {
+        console.error("Toggle availability failed", err);
+        showToast('error', 'Unable to update availability');
       }
     })();
   };
@@ -178,10 +202,12 @@ export default function AdminMenuManagement() {
     setEditingItemId(item.id);
     setFormData({
       name: item.name,
-      description: item.description,
+      description: item.description ?? "",
       price: item.price.toString(),
-      category: item.category,
-      image: item.image,
+      category_id: item.category_id ?? "",
+      image_url: item.image_url ?? "",
+      tag: item.tag ?? "",
+      spicy_level: item.spicy_level != null ? item.spicy_level.toString() : "",
     });
   };
 
@@ -190,24 +216,41 @@ export default function AdminMenuManagement() {
       name: "",
       description: "",
       price: "",
-      category: "Main Dishes",
-      image: "",
+      category_id: categories[0]?.id ?? "",
+      image_url: "",
+      tag: "",
+      spicy_level: "",
     });
   };
 
+  const getCategoryTitle = (categoryId: string | null) => {
+    if (!categoryId) return "Uncategorized";
+    return categories.find((c) => c.id === categoryId)?.title ?? categoryId;
+  };
+
   const filteredItems =
-    selectedCategory === "All"
+    selectedCategoryId === "All"
       ? items
-      : items.filter((item) => item.category === selectedCategory);
+      : items.filter((item) => item.category_id === selectedCategoryId);
 
   React.useEffect(() => {
     (async () => {
       try {
-        const res = await menuService.getMenuItems();
-        if (res.error) throw res.error;
-        setItems(res.data || []);
+        const [itemsRes, categoriesRes] = await Promise.all([
+          menuService.getMenuItems(),
+          menuService.getMenuCategories(),
+        ]);
+        if (itemsRes.error) throw itemsRes.error;
+        if (categoriesRes.error) throw categoriesRes.error;
+        const sortedCategories = (categoriesRes.data as MenuCategory[] || [])
+          .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        setItems(itemsRes.data || []);
+        setCategories(sortedCategories);
+        if (sortedCategories.length > 0) {
+          setFormData((prev) => ({ ...prev, category_id: sortedCategories[0].id }));
+        }
       } catch (err) {
-        console.error("Failed to load menu items", err);
+        console.error("Failed to load menu data", err);
       }
     })();
   }, []);
@@ -247,56 +290,71 @@ export default function AdminMenuManagement() {
         keyboardType="decimal-pad"
       />
 
+      <TextInput
+        style={styles.input}
+        placeholder="Tag (e.g. New, Popular)"
+        placeholderTextColor={colors.textSecondary}
+        value={formData.tag}
+        onChangeText={(text) => setFormData({ ...formData, tag: text })}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Spicy Level (0–5)"
+        placeholderTextColor={colors.textSecondary}
+        value={formData.spicy_level}
+        onChangeText={(text) => setFormData({ ...formData, spicy_level: text })}
+        keyboardType="number-pad"
+      />
+
       <View style={styles.categorySelector}>
         <Text style={styles.inputLabel}>Category:</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {categories
-            .filter((cat) => cat !== "All")
-            .map((category) => (
-              <Pressable
-                key={category}
+          {categories.map((category) => (
+            <Pressable
+              key={category.id}
+              style={[
+                styles.categoryChip,
+                formData.category_id === category.id &&
+                  styles.categoryChipActive,
+              ]}
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(
+                    Haptics.ImpactFeedbackStyle.Light
+                  );
+                }
+                setFormData({ ...formData, category_id: category.id });
+              }}
+            >
+              <Text
                 style={[
-                  styles.categoryChip,
-                  formData.category === category &&
-                    styles.categoryChipActive,
+                  styles.categoryChipText,
+                  formData.category_id === category.id &&
+                    styles.categoryChipTextActive,
                 ]}
-                onPress={() => {
-                  if (Platform.OS !== "web") {
-                    Haptics.impactAsync(
-                      Haptics.ImpactFeedbackStyle.Light
-                    );
-                  }
-                  setFormData({ ...formData, category });
-                }}
               >
-                <Text
-                  style={[
-                    styles.categoryChipText,
-                    formData.category === category &&
-                      styles.categoryChipTextActive,
-                  ]}
-                >
-                  {category}
-                </Text>
-              </Pressable>
-            ))}
+                {category.title}
+              </Text>
+            </Pressable>
+          ))}
         </ScrollView>
       </View>
 
       <View style={styles.imageSection}>
         <Text style={styles.inputLabel}>Menu Image:</Text>
         
-        {formData.image ? (
+        {formData.image_url ? (
           <View style={styles.imagePreviewContainer}>
             <Image 
-              source={{ uri: formData.image }} 
+              source={{ uri: formData.image_url }} 
               style={styles.imagePreview}
               resizeMode="cover"
             />
             <Pressable
               style={styles.removeImageButton}
               onPress={() => {
-                setFormData({ ...formData, image: "" });
+                setFormData({ ...formData, image_url: "" });
                 showToast('info', 'Image removed');
               }}
             >
@@ -306,7 +364,7 @@ export default function AdminMenuManagement() {
         ) : null}
 
         <ImagePicker
-          currentImageUrl={formData.image}
+          currentImageUrl={formData.image_url}
           onImageSelected={handleImageSelected}
           bucket="menu"
           folder="items"
@@ -389,27 +447,27 @@ export default function AdminMenuManagement() {
           style={styles.categoryFilter}
           contentContainerStyle={styles.categoryFilterContent}
         >
-          {categories.map((category) => (
+          {categoryFilterOptions.map((category) => (
             <Pressable
-              key={category}
+              key={category.id}
               style={[
                 styles.filterChip,
-                selectedCategory === category && styles.filterChipActive,
+                selectedCategoryId === category.id && styles.filterChipActive,
               ]}
               onPress={() => {
                 if (Platform.OS !== "web") {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
-                setSelectedCategory(category);
+                setSelectedCategoryId(category.id);
               }}
             >
               <Text
                 style={[
                   styles.filterChipText,
-                  selectedCategory === category && styles.filterChipTextActive,
+                  selectedCategoryId === category.id && styles.filterChipTextActive,
                 ]}
               >
-                {category}
+                {category.title}
               </Text>
             </Pressable>
           ))}
@@ -419,18 +477,53 @@ export default function AdminMenuManagement() {
           {filteredItems.map((item) => (
             <React.Fragment key={item.id}>
               <View style={styles.menuItem}>
-                <Image source={{ uri: item.image }} style={styles.itemImage} />
+                {item.image_url ? (
+                  <Image source={{ uri: item.image_url }} style={styles.itemImage} />
+                ) : (
+                  <View style={[styles.itemImage, styles.itemImagePlaceholder]}>
+                    <IconSymbol name="photo" size={32} color={colors.textSecondary} />
+                  </View>
+                )}
                 <View style={styles.itemContent}>
-                  <Text style={styles.itemName}>{item.name}</Text>
+                  <View style={styles.itemNameRow}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    {item.tag ? (
+                      <Text style={styles.itemTag}>{item.tag}</Text>
+                    ) : null}
+                  </View>
                   <Text style={styles.itemDescription} numberOfLines={2}>
                     {item.description}
                   </Text>
                   <View style={styles.itemFooter}>
                     <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
-                    <Text style={styles.itemCategory}>{item.category}</Text>
+                    <Text style={styles.itemCategory}>
+                      {getCategoryTitle(item.category_id)}
+                    </Text>
+                    {item.spicy_level != null && item.spicy_level > 0 ? (
+                      <Text style={styles.itemSpicy}>
+                        {"🌶️".repeat(item.spicy_level)}
+                      </Text>
+                    ) : null}
+                    {item.is_available === false ? (
+                      <Text style={styles.itemUnavailable}>Unavailable</Text>
+                    ) : null}
                   </View>
                 </View>
                 <View style={styles.itemActions}>
+                  <Pressable
+                    style={[
+                      styles.actionButton,
+                      styles.availabilityButton,
+                      (item.is_available ?? true) ? styles.availabilityButtonOn : styles.availabilityButtonOff,
+                    ]}
+                    onPress={() => handleToggleAvailability(item)}
+                  >
+                    <IconSymbol
+                      name={(item.is_available ?? true) ? "eye.fill" : "eye.slash.fill"}
+                      size={16}
+                      color={(item.is_available ?? true) ? "#22C55E" : "#FF6B6B"}
+                    />
+                  </Pressable>
                   <Pressable
                     style={styles.actionButton}
                     onPress={() => handleEditItem(item)}
@@ -483,7 +576,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
   },
   backButton: {
@@ -504,7 +597,7 @@ const styles = StyleSheet.create({
     margin: 16,
     padding: 20,
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   formTitle: {
@@ -520,7 +613,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     marginBottom: 12,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   textArea: {
@@ -542,7 +635,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: colors.background,
     marginRight: 8,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   categoryChipActive: {
@@ -596,7 +689,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: colors.background,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   cancelButtonText: {
@@ -624,7 +717,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   filterChipActive: {
@@ -648,7 +741,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 12,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   itemImage: {
@@ -656,14 +749,35 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 12,
   },
+  itemImagePlaceholder: {
+    backgroundColor: colors.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   itemContent: {
     flex: 1,
     marginLeft: 12,
+  },
+  itemNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
   },
   itemName: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
+  },
+  itemTag: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.primary,
+    backgroundColor: colors.primary + "20",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: "hidden",
   },
   itemDescription: {
     fontSize: 14,
@@ -674,7 +788,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 8,
-    gap: 12,
+    gap: 8,
+    flexWrap: "wrap",
   },
   itemPrice: {
     fontSize: 16,
@@ -689,11 +804,36 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
+  itemSpicy: {
+    fontSize: 12,
+  },
+  itemUnavailable: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#FF6B6B",
+    backgroundColor: "#FF6B6B20",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: "hidden",
+  },
   itemActions: {
     justifyContent: "center",
     gap: 8,
   },
   actionButton: {
     padding: 8,
+  },
+  availabilityButton: {
+    borderRadius: 8,
+    borderWidth: 0.2,
+  },
+  availabilityButtonOn: {
+    backgroundColor: "#22C55E18",
+    borderColor: "#22C55E40",
+  },
+  availabilityButtonOff: {
+    backgroundColor: "#FF6B6B18",
+    borderColor: "#FF6B6B40",
   },
 });

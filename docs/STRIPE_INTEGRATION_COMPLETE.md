@@ -1,7 +1,7 @@
 
 # Stripe Integration Complete Guide
 
-This guide covers the complete Stripe payment integration for the Jagabans LA mobile app.
+This guide covers the complete Stripe payment integration for the The Peppered Goat mobile app.
 
 ## Overview
 

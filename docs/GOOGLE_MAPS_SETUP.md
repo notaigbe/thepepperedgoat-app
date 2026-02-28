@@ -1,13 +1,13 @@
 
 # Google Maps API Setup Guide
 
-Quick guide to set up Google Maps API for address verification in the Jagabans LA app.
+Quick guide to set up Google Maps API for address verification in the The Peppered Goat app.
 
 ## Step 1: Create Google Cloud Project
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Click "Select a project" → "New Project"
-3. Enter project name: "Jagabans LA"
+3. Enter project name: "The Peppered Goat"
 4. Click "Create"
 
 ## Step 2: Enable Address Validation API
@@ -57,7 +57,7 @@ supabase secrets set GOOGLE_MAPS_API_KEY=your_api_key_here
 ### Option B: Using Supabase Dashboard
 
 1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
-2. Select your project: "Jagabans LA"
+2. Select your project: "The Peppered Goat"
 3. Go to "Project Settings" → "Edge Functions"
 4. Scroll to "Secrets"
 5. Click "Add new secret"

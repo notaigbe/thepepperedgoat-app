@@ -1,12 +1,12 @@
 
 export const RESTAURANT_PICKUP_ADDRESS = {
-  name: process.env.RESTAURANT_NAME || 'Jagabans L.A.', // Replace with actual restaurant name
+  name: process.env.RESTAURANT_NAME || 'The Peppered Goat', // Replace with actual restaurant name
   phoneNumber: process.env.RESTAURANT_PHONE || '+8182106659', // Replace with actual restaurant phone
   address: {
-    street: '1423 W Pico Blvd', // Replace with actual address
-    city: 'Los Angeles',
+    street: '15136 Stagg Street,', // Replace with actual address
+    city: 'Van Nuys',
     state: 'CA',
-    zipCode: '90015',
+    zipCode: '91405',
     country: 'US',
   },
   notes: 'Please call upon arrival',

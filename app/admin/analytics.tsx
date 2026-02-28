@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
   },
   backButton: {
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   metricIcon: {
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   topItemRank: {

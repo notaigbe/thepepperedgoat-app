@@ -1,7 +1,7 @@
 
-# Jagabans LA Backend Guide
+# The Peppered Goat Backend Guide
 
-This guide explains how to use the Supabase backend functions for the Jagabans LA food ordering app.
+This guide explains how to use the Supabase backend functions for the The Peppered Goat food ordering app.
 
 ## Table of Contents
 
@@ -372,7 +372,7 @@ const { data: items, error } = await merchService.getMerchItems();
 const { data, error } = await merchService.redeemMerch(
   userId,
   merchId,
-  'Jagabans T-Shirt',
+  'The Peppered Goat T-Shirt',
   500,
   '123 Main St, Los Angeles, CA',
   'Leave at door'
@@ -383,8 +383,8 @@ const { data: redemptions, error } = await merchService.getMerchRedemptions(user
 
 // Add merch item (Admin)
 const { data, error } = await merchService.addMerchItem({
-  name: 'Jagabans T-Shirt',
-  description: 'Official Jagabans LA t-shirt',
+  name: 'The Peppered Goat T-Shirt',
+  description: 'Official The Peppered Goat t-shirt',
   pointsCost: 500,
   image: 'https://...',
   inStock: true,
@@ -416,7 +416,7 @@ const { data, error } = await eventService.createEvent({
   title: 'Nigerian Food Festival',
   description: 'Join us for an evening of authentic Nigerian cuisine',
   date: '2024-06-15T18:00:00Z',
-  location: 'Jagabans LA Restaurant',
+  location: 'The Peppered Goat Restaurant',
   capacity: 50,
   image: 'https://...',
   isPrivate: false,
@@ -556,7 +556,7 @@ Redeems merchandise using points.
 ```json
 {
   "merchId": "uuid",
-  "merchName": "Jagabans T-Shirt",
+  "merchName": "The Peppered Goat T-Shirt",
   "pointsCost": 500,
   "deliveryAddress": "123 Main St, Los Angeles, CA",
   "pickupNotes": "Leave at door"
@@ -570,7 +570,7 @@ Redeems merchandise using points.
   "redemption": {
     "id": "uuid",
     "user_id": "uuid",
-    "merch_name": "Jagabans T-Shirt",
+    "merch_name": "The Peppered Goat T-Shirt",
     "points_cost": 500,
     "status": "pending"
   }

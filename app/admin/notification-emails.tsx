@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
     backgroundColor: colors.surface,
   },
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
     ...Platform.select({
       ios: {
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   toggleButton: {
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: colors.background,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
     borderRadius: 12,
     padding: 16,

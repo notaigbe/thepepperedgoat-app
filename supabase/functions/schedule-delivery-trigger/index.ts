@@ -75,22 +75,22 @@ serve(async (req) => {
 
         // Get restaurant config
         const restaurantAddress = {
-          street: '123 Restaurant Street',
-          city: 'Los Angeles',
+          street: '15136 Stagg Street,',
+          city: 'Van Nuys',
           state: 'CA',
-          zipCode: '90001',
+          zipCode: '91405',
           country: 'US',
         };
         const restaurantPhone = '+1234567890';
-        const restaurantName = 'Jagabans LA';
+        const restaurantName = 'The Peppered Goat';
 
         // Parse delivery address (simplified - in production, you'd want proper address parsing)
         const deliveryAddressParts = order.delivery_address.split(',').map((s: string) => s.trim());
         const dropoffAddress = {
           street: deliveryAddressParts[0] || order.delivery_address,
-          city: deliveryAddressParts[1] || 'Los Angeles',
+          city: deliveryAddressParts[1] || 'Van Nuys',
           state: deliveryAddressParts[2]?.split(' ')[0] || 'CA',
-          zipCode: deliveryAddressParts[2]?.split(' ')[1] || '90001',
+          zipCode: deliveryAddressParts[2]?.split(' ')[1] || '91405',
           country: 'US',
         };
 

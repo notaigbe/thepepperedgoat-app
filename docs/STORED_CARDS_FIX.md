@@ -71,7 +71,7 @@ Modified the `processSquarePayment()` function to:
 ## How It Works Now
 
 ### Adding New Cards
-1. Users must complete a purchase on the website (www.jagabansla.com)
+1. Users must complete a purchase on the website (www.thepepperedgoat.com)
 2. During website checkout, they can save their card
 3. The `process-square-payment` edge function saves the card to the `square_cards` table
 4. Saved cards automatically appear in the mobile app
@@ -122,7 +122,7 @@ A trigger ensures only one default card per user.
 To verify the fix:
 
 1. **Add a card via website:**
-   - Go to www.jagabansla.com
+   - Go to www.thepepperedgoat.com
    - Complete a purchase and save a card during checkout
    - Verify the card is saved in the `square_cards` table
 

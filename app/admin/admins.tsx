@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
   },
   backButton: {
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   searchInput: {
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   statValue: {
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   adminHeader: {
@@ -604,8 +604,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     paddingVertical: 12,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
     borderColor: colors.border,
   },
   actionButton: {
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 8,
     gap: 4,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   actionButtonActive: {
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   adminFooter: {

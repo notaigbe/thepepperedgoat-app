@@ -2,7 +2,7 @@
 # Points System and Delivery Flow
 
 ## Overview
-This document describes the updated points system and delivery flow for the Jagabans LA food ordering app.
+This document describes the updated points system and delivery flow for the The Peppered Goat food ordering app.
 
 ## Points System
 

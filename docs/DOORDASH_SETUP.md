@@ -1,7 +1,7 @@
 
 # DoorDash Delivery Setup Guide
 
-This guide will walk you through setting up DoorDash delivery integration for the Jagabans LA food ordering app.
+This guide will walk you through setting up DoorDash delivery integration for the The Peppered Goat food ordering app.
 
 ## Prerequisites
 
@@ -105,7 +105,7 @@ This guide will walk you through setting up DoorDash delivery integration for th
    // File: constants/DeliveryConfig.ts
    
    export const RESTAURANT_PICKUP_ADDRESS = {
-     name: 'Jagabans LA',
+     name: 'The Peppered Goat',
      phoneNumber: '+1234567890', // Update with real phone
      address: {
        street: '123 Restaurant Street', // Update with real address

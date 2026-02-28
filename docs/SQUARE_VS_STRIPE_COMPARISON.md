@@ -3,7 +3,7 @@
 
 ## Overview
 
-This document compares the Square and Stripe payment implementations in the Jagabans LA app.
+This document compares the Square and Stripe payment implementations in the The Peppered Goat app.
 
 ## Current Setup
 

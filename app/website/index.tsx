@@ -53,7 +53,7 @@ export default function WebsiteHome() {
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.navbar}>
-          <Text style={styles.logo}>Jagabans LA</Text>
+          <Text style={styles.logo}>The Peppered Goat</Text>
           <View style={styles.navLinks}>
             <Pressable onPress={() => handleNavigation('/website/menu')}>
               <Text style={styles.navLink}>Menu</Text>
@@ -78,7 +78,7 @@ export default function WebsiteHome() {
             style={styles.heroImage}
           />
           <View style={styles.heroOverlay}>
-            <Text style={styles.heroTitle}>Welcome to Jagabans LA</Text>
+            <Text style={styles.heroTitle}>Welcome to The Peppered Goat</Text>
             <Text style={styles.heroSubtitle}>
               Experience the authentic flavors of West Africa
             </Text>
@@ -93,7 +93,7 @@ export default function WebsiteHome() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Why Choose Jagabans LA?</Text>
+          <Text style={styles.sectionTitle}>Why Choose The Peppered Goat?</Text>
           <View style={styles.featuresGrid}>
             {features.map((feature, index) => (
               <View key={index} style={styles.featureCard}>
@@ -136,7 +136,7 @@ export default function WebsiteHome() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerTitle}>Jagabans LA</Text>
+          <Text style={styles.footerTitle}>The Peppered Goat</Text>
           <Text style={styles.footerText}>
             Bringing the authentic taste of West Africa to Los Angeles
           </Text>
@@ -158,7 +158,7 @@ export default function WebsiteHome() {
             </Pressable>
           </View>
           <Text style={styles.copyright}>
-            © 2024 Jagabans LA. All rights reserved.
+            © 2024 The Peppered Goat. All rights reserved.
           </Text>
         </View>
       </ScrollView>

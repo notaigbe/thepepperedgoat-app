@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -23,6 +22,14 @@ import { supabase } from "@/app/integrations/supabase/client";
 import { useApp } from "@/contexts/AppContext";
 import Dialog from "@/components/Dialog";
 import Toast from "@/components/Toast";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Constants for AsyncStorage keys
+const ADMIN_STORAGE_KEYS = {
+  REMEMBER_ME: '@admin_remember_me',
+  SAVED_USERNAME: '@admin_saved_username',
+  SAVED_PASSWORD: '@admin_saved_password',
+};
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -33,6 +40,7 @@ export default function AdminDashboard() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
   const [stats, setStats] = useState({
     totalOrders: 0,
     activeUsers: 0,
@@ -64,6 +72,57 @@ export default function AdminDashboard() {
     setToastVisible(true);
   };
 
+  // Load saved credentials on mount
+  useEffect(() => {
+    loadSavedCredentials();
+  }, []);
+
+  const loadSavedCredentials = async () => {
+    try {
+      const [savedRememberMe, savedUsername, savedPassword] = await Promise.all([
+        AsyncStorage.getItem(ADMIN_STORAGE_KEYS.REMEMBER_ME),
+        AsyncStorage.getItem(ADMIN_STORAGE_KEYS.SAVED_USERNAME),
+        AsyncStorage.getItem(ADMIN_STORAGE_KEYS.SAVED_PASSWORD),
+      ]);
+
+      if (savedRememberMe === 'true' && savedUsername) {
+        setRememberMe(true);
+        setUsername(savedUsername);
+        if (savedPassword) {
+          setPassword(savedPassword);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved admin credentials:', error);
+    }
+  };
+
+  const saveCredentials = async (usernameToSave: string, passwordToSave: string, shouldRemember: boolean) => {
+    try {
+      if (shouldRemember) {
+        await AsyncStorage.setItem(ADMIN_STORAGE_KEYS.REMEMBER_ME, 'true');
+        await AsyncStorage.setItem(ADMIN_STORAGE_KEYS.SAVED_USERNAME, usernameToSave);
+        await AsyncStorage.setItem(ADMIN_STORAGE_KEYS.SAVED_PASSWORD, passwordToSave);
+      } else {
+        await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.REMEMBER_ME);
+        await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.SAVED_USERNAME);
+        await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.SAVED_PASSWORD);
+      }
+    } catch (error) {
+      console.error('Error saving admin credentials:', error);
+    }
+  };
+
+  const clearSavedCredentials = async () => {
+    try {
+      await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.REMEMBER_ME);
+      await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.SAVED_USERNAME);
+      await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.SAVED_PASSWORD);
+    } catch (error) {
+      console.error('Error clearing saved admin credentials:', error);
+    }
+  };
+
   const isAdmin = userProfile?.userRole === 'admin' || userProfile?.userRole === 'super_admin';
   const isSuperAdmin = userProfile?.userRole === 'super_admin';
   
@@ -87,7 +146,7 @@ export default function AdminDashboard() {
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const email = username.includes("@") ? username : `${username}@jagabansla.com`;
+    const email = username.includes("@") ? username : `${username}@thepepperedgoat.com`;
     
     if (!emailRegex.test(email)) {
       showToast('error', 'Please enter a valid email address');
@@ -118,6 +177,13 @@ export default function AdminDashboard() {
       }
     } else {
       showToast('success', 'Welcome to Admin Dashboard!');
+      
+      // Save credentials if remember me is checked
+      await saveCredentials(username, password, rememberMe);
+      
+      // Clear password after successful login (keep username if remember me is checked)
+      setPassword("");
+      setShowPassword(false);
     }
   };
 
@@ -128,8 +194,13 @@ export default function AdminDashboard() {
     }
     try {
       await signOut();
-      setUsername("");
-      setPassword("");
+      
+      // Don't clear username and password if remember me is enabled
+      if (!rememberMe) {
+        setUsername("");
+        setPassword("");
+      }
+      
       showToast('success', 'Logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
@@ -142,6 +213,20 @@ export default function AdminDashboard() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setShowPassword(!showPassword);
+  };
+
+  const toggleRememberMe = async () => {
+    const newValue = !rememberMe;
+    setRememberMe(newValue);
+    
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    
+    // If unchecking, clear saved credentials immediately
+    if (!newValue) {
+      await clearSavedCredentials();
+    }
   };
 
   const fetchStats = useCallback(async () => {
@@ -213,15 +298,15 @@ export default function AdminDashboard() {
     color: "#FF6B35",
     superAdminOnly: false,
   },
-  {
-    id: "reservations",
-    title: "Reservations",
-    description: "Manage table bookings",
-    icon: "calendar.badge.clock" as const, // SF Symbol for iOS
-    route: "/admin/reservations",
-    color: "#9B59B6",
-    superAdminOnly: false,
-  },
+  // {
+  //   id: "reservations",
+  //   title: "Reservations",
+  //   description: "Manage table bookings",
+  //   icon: "calendar.badge.clock" as const, // SF Symbol for iOS
+  //   route: "/admin/reservations",
+  //   color: "#9B59B6",
+  //   superAdminOnly: false,
+  // },
   {
     id: "users",
     title: "User Management",
@@ -240,33 +325,33 @@ export default function AdminDashboard() {
     color: "#E74C3C",
     superAdminOnly: true,
   },
-  {
-    id: "events",
-    title: "Event Management",
-    description: "Create and manage events",
-    icon: "calendar" as const, // SF Symbol for iOS
-    route: "/admin/events",
-    color: "#95E1D3",
-    superAdminOnly: false,
-  },
-  {
-    id: "merch",
-    title: "Merchandise",
-    description: "Manage merch inventory",
-    icon: "bag" as const, // SF Symbol for iOS
-    route: "/admin/merch",
-    color: "#F38181",
-    superAdminOnly: false,
-  },
-  {
-    id: "giftcards",
-    title: "Gift Cards",
-    description: "View and manage gift cards",
-    icon: "giftcard" as const, // SF Symbol for iOS
-    route: "/admin/giftcards",
-    color: "#AA96DA",
-    superAdminOnly: false,
-  },
+  // {
+  //   id: "events",
+  //   title: "Event Management",
+  //   description: "Create and manage events",
+  //   icon: "calendar" as const, // SF Symbol for iOS
+  //   route: "/admin/events",
+  //   color: "#95E1D3",
+  //   superAdminOnly: false,
+  // },
+  // {
+  //   id: "merch",
+  //   title: "Merchandise",
+  //   description: "Manage merch inventory",
+  //   icon: "bag" as const, // SF Symbol for iOS
+  //   route: "/admin/merch",
+  //   color: "#F38181",
+  //   superAdminOnly: false,
+  // },
+  // {
+  //   id: "giftcards",
+  //   title: "Gift Cards",
+  //   description: "View and manage gift cards",
+  //   icon: "giftcard" as const, // SF Symbol for iOS
+  //   route: "/admin/giftcards",
+  //   color: "#AA96DA",
+  //   superAdminOnly: false,
+  // },
   {
     id: "notifications",
     title: "Notifications",
@@ -354,7 +439,7 @@ export default function AdminDashboard() {
                 color={colors.primary}
               />
               <Text style={styles.loginTitle}>Admin Dashboard</Text>
-              <Text style={styles.loginSubtitle}>Jagabans LA</Text>
+              <Text style={styles.loginSubtitle}>The Peppered Goat</Text>
             </View>
 
               <View style={styles.loginForm}>
@@ -396,6 +481,37 @@ export default function AdminDashboard() {
                     />
                   </Pressable>
                 </View>
+
+                {/* Remember Me Checkbox */}
+                <Pressable
+                  style={styles.rememberMeContainer}
+                  onPress={toggleRememberMe}
+                  disabled={loading}
+                >
+                  <View
+                    style={[
+                      styles.checkbox,
+                      { borderColor: colors.border },
+                      rememberMe && { backgroundColor: colors.primary },
+                    ]}
+                  >
+                    {rememberMe && (
+                      <IconSymbol
+                        name="checkmark"
+                        size={16}
+                        color="#FFFFFF"
+                      />
+                    )}
+                  </View>
+                  <Text
+                    style={[
+                      styles.rememberMeText,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Remember me
+                  </Text>
+                </Pressable>
 
                 <Pressable
                   style={({ pressed }) => [
@@ -469,7 +585,7 @@ export default function AdminDashboard() {
           <View style={styles.headerLeft}>
             <Text style={styles.title}>Admin Dashboard</Text>
             <View style={styles.subtitleRow}>
-              <Text style={styles.subtitle}>Jagabans LA Management</Text>
+              <Text style={styles.subtitle}>The Peppered Goat Management</Text>
               {isSuperAdmin && !viewAsAdmin && (
                 <View style={styles.superAdminBadge}>
                       <IconSymbol 
@@ -710,7 +826,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   input: {
@@ -722,6 +838,24 @@ const styles = StyleSheet.create({
   eyeIconButton: {
     padding: 4,
     marginLeft: 8,
+  },
+  rememberMeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    marginTop: -8,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 0.2,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  rememberMeText: {
+    fontSize: 14,
   },
   loginButton: {
     backgroundColor: colors.primary,
@@ -823,14 +957,14 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: colors.card,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   logoutButton: {
     padding: 8,
     backgroundColor: colors.card,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   roleSwitcherContainer: {
@@ -839,7 +973,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   roleSwitcher: {
@@ -875,7 +1009,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     alignItems: "center",
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   statValue: {
@@ -900,7 +1034,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   sectionCardPressed: {

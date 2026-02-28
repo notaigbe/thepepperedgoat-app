@@ -3,7 +3,7 @@
 
 ## Overview
 
-This document describes the role-based access control system implemented for the Jagabans LA admin dashboard. The system supports two admin roles with different permission levels:
+This document describes the role-based access control system implemented for the The Peppered Goat admin dashboard. The system supports two admin roles with different permission levels:
 
 - **Admin**: Can perform standard administrative functions (manage orders, menu, events, etc.)
 - **Super Admin**: Has all admin permissions plus the ability to manage admin users

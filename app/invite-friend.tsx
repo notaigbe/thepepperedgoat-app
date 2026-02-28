@@ -93,13 +93,13 @@ export default function InviteFriendScreen() {
 
     if (!referralCode) return;
 
-    const message = `Join me on Jagabans L.A. and earn rewards! Use my referral code: ${referralCode}`;
+    const message = `Join me on The Peppered Goat and get discounts! Use my referral code: ${referralCode}`;
 
     try {
       if (Platform.OS === 'web') {
         if (navigator.share) {
           await navigator.share({
-            title: 'Join Jagabans L.A.',
+            title: 'Join The Peppered Goat.',
             text: message,
           });
         } else {

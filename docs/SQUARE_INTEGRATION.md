@@ -1,7 +1,7 @@
 
 # Square Payment Integration Guide
 
-This guide explains how to set up and use Square payments in the Jagabans LA food ordering app.
+This guide explains how to set up and use Square payments in the The Peppered Goat food ordering app.
 
 ## Overview
 

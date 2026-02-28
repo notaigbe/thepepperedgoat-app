@@ -8,7 +8,7 @@
 **What Changed:**
 - Users can now create posts from anywhere, not just at the restaurant location
 - Location is checked after taking a photo (non-blocking)
-- Posts taken at the restaurant receive a special "Taken at Jagabans L.A." badge
+- Posts taken at the restaurant receive a special "Taken at The Peppered Goat" badge
 - Posts taken elsewhere are posted normally without the badge
 
 **Files Modified:**
@@ -28,7 +28,7 @@
 1. User opens create post screen
 2. User takes a photo (no location check required)
 3. App checks location in background
-4. If at restaurant: Shows "📍 Taken at Jagabans L.A." badge
+4. If at restaurant: Shows "📍 Taken at The Peppered Goat" badge
 5. If not at restaurant: Shows "You can post from anywhere!" message
 6. User adds optional caption
 7. User posts successfully regardless of location
@@ -127,7 +127,7 @@ All social tables have proper RLS policies:
 ### Location Settings
 Update in `constants/LocationConfig.ts`:
 ```typescript
-export const JAGABANS_LOCATION = {
+export const THE_PEPPERED_GOAT_LOCATION = {
   latitude: 34.0522,  // Replace with actual coordinates
   longitude: -118.2437,
   radius: 100, // meters
@@ -191,7 +191,7 @@ const POINTS_REWARD_PERCENTAGE = 0.05; // 5% of order
 
 ## Next Steps
 
-1. Update `JAGABANS_LOCATION` coordinates in `constants/LocationConfig.ts` with actual restaurant location
+1. Update `THE_PEPPERED_GOAT_LOCATION` coordinates in `constants/LocationConfig.ts` with actual restaurant location
 2. Test social posts from various locations
 3. Test payment flow and verify points are awarded correctly
 4. Monitor Stripe webhook logs for any issues

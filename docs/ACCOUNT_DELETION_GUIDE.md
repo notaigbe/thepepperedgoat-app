@@ -3,7 +3,7 @@
 
 ## Overview
 
-The Jagabans LA app implements a secure, GDPR-compliant self-service account deletion feature that allows users to permanently delete their accounts while preserving anonymized business records for legal and audit purposes.
+The Peppered Goat app implements a secure, GDPR-compliant self-service account deletion feature that allows users to permanently delete their accounts while preserving anonymized business records for legal and audit purposes.
 
 ## User Flow
 

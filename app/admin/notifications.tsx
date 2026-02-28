@@ -300,7 +300,7 @@ export default function AdminNotifications() {
                   size={24}
                   color={notificationTypes.find((t) => t.value === selectedType)?.color || colors.primary}
                 />
-                <Text style={styles.previewAppName}>Jagabans LA</Text>
+                <Text style={styles.previewAppName}>The Peppered Goat</Text>
               </View>
               <Text style={styles.previewNotificationTitle}>
                 {title || 'Notification Title'}
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
   },
   backButton: {
@@ -413,11 +413,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 0.5,
     borderColor: colors.border,
   },
   typeCardActive: {
-    borderWidth: 2,
+    borderWidth: 0.5,
   },
   typeIcon: {
     width: 48,
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     marginBottom: 12,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   textArea: {
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   previewHeader: {
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     margin: 16,
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
     gap: 12,
   },
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     alignItems: 'center',
     gap: 12,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   userCountContent: {
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
     gap: 12,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: colors.border,
   },
   historyContent: {

@@ -1,13 +1,13 @@
 
 import * as FileSystem from 'expo-file-system/legacy';
-import Share from 'react-native-share';
+// import Share from 'react-native-share';
 import { Post } from '@/services/socialService';
 
 export const formatPostShareOptions = (userName: string, caption: string, postId: string, imageUrl?: string) => {
-  const appScheme = 'jagabansla://';
+  const appScheme = 'thepepperedgoat://';
   const deepLink = `${appScheme}post/${postId}`;
-  const appStoreUrl = 'https://apps.apple.com/app/jagabansla';
-  const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.ooosumfoods.jagabansla';
+  const appStoreUrl = 'https://apps.apple.com/app/thepepperedgoat';
+  const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.ooosumfoods.thepepperedgoat';
   
   const message = `Check out this post by ${userName}!\n\n${caption}\n\nOpen in app: ${deepLink}\n\nDownload: ${appStoreUrl}`;
   
@@ -51,15 +51,15 @@ export const sharePost = async (post: Post) => {
       throw new Error('Failed to download image');
     }
 
-    const shareOptions = formatPostShareOptions(post.userName, post.caption, post.id, post.imageUrl);
+    // const shareOptions = formatPostShareOptions(post.userName, post.caption, post.id, post.imageUrl);
     
-    console.log('Sharing with options:', shareOptions);
+    // console.log('Sharing with options:', shareOptions);
     
-    await Share.open({
-      ...shareOptions,
-      url: downloadResult.uri,
-      type: 'image/jpeg',
-    });
+    // await Share.open({
+    //   ...shareOptions,
+    //   url: downloadResult.uri,
+    //   type: 'image/jpeg',
+    // });
 
     console.log('Share completed successfully');
 
