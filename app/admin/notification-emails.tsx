@@ -441,7 +441,7 @@ export default function AdminNotificationEmails() {
           >
             <IconSymbol
               ios_icon_name="chevron.left"
-              android_material_icon_name="arrow-back"
+              android_material_icon_name="chevron.left"
               size={24}
               color={colors.text}
             />
@@ -467,7 +467,7 @@ export default function AdminNotificationEmails() {
         >
           <IconSymbol
             ios_icon_name="chevron.left"
-            android_material_icon_name="arrow-back"
+            android_material_icon_name="chevron.left"
             size={24}
             color={colors.text}
           />

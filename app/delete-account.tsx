@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 0,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     width: '100%',
-    borderRadius: 0,
+    borderRadius: 12,
     padding: 20,
     marginBottom: 32,
     borderWidth: 2,
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     width: '100%',
-    borderRadius: 0,
+    borderRadius: 36,
     marginBottom: 16,
     // boxShadow: '0px 8px 24px rgba(255, 107, 107, 0.4)',
     elevation: 8,
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
   },
   confirmTextCard: {
     width: '100%',
-    borderRadius: 0,
+    borderRadius: 24,
     padding: 20,
     marginBottom: 24,
     borderWidth: 2,
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
   },
   confirmInput: {
     width: '100%',
-    borderRadius: 0,
+    borderRadius: 24,
     padding: 16,
     fontSize: 16,
     borderWidth: 2,
@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    borderRadius: 0,
+    borderRadius: 36,
     padding: 16,
     fontSize: 16,
     borderWidth: 2,
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
   },
   passwordInput: {
     width: '100%',
-    borderRadius: 0,
+    borderRadius: 36,
     padding: 16,
     paddingRight: 50,
     fontSize: 16,
@@ -741,7 +741,7 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     width: '100%',
-    borderRadius: 0,
+    borderRadius: 36,
     marginTop: 12,
     marginBottom: 16,
     // boxShadow: '0px 8px 24px rgba(255, 107, 107, 0.4)',

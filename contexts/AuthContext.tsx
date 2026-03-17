@@ -21,21 +21,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session:', session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+// Get initial session
+supabase.auth.getSession().then(({ data: { session }, error }) => {
+  if (error?.message?.includes('Refresh Token Not Found')) {
+    console.warn('Stale refresh token detected, signing out');
+    supabase.auth.signOut();
+    setLoading(false);
+    return;
+  }
+  console.log('Initial session:', session?.user?.email);
+  setSession(session);
+  setUser(session?.user ?? null);
+  setLoading(false);
+});
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('Auth state changed:', _event, session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+// Listen for auth changes
+const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+  if (_event === 'TOKEN_REFRESHED' && !session) {
+    console.warn('Token refresh failed, signing out');
+    supabase.auth.signOut();
+    return;
+  }
+  console.log('Auth state changed:', _event, session?.user?.email);
+  setSession(session);
+  setUser(session?.user ?? null);
+  setLoading(false);
+});
 
     return () => subscription.unsubscribe();
   }, []);

@@ -59,8 +59,9 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
-    Amarna: require('../assets/fonts/Amarna-Regular.ttf'),
-  });
+  Amarna: require('../assets/fonts/Amarna-Regular.ttf'),
+  PlaylistScript: require('../assets/fonts/PlaylistScript.ttf'),
+});
 
   const [googleFontsLoaded] = useGoogleFonts({
     PlayfairDisplay_400Regular,
@@ -170,13 +171,13 @@ export default function RootLayout() {
                 headerShown: false,
               }} 
             /> */}
-            <Stack.Screen 
+            {/* <Stack.Screen 
               name="theme-settings" 
               options={{ 
                 presentation: 'modal',
                 headerShown: false,
               }} 
-            />
+            /> */}
             <Stack.Screen 
               name="modal" 
               options={{ 

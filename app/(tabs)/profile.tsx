@@ -10,8 +10,10 @@ import {
   TextInput,
   KeyboardAvoidingView,
   RefreshControl,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
 import { IconSymbol } from "@/components/IconSymbol";
 import { useApp } from "@/contexts/AppContext";
@@ -21,10 +23,9 @@ import Toast from "@/components/Toast";
 import Dialog from "@/components/Dialog";
 import { ActivityIndicator } from "react-native";
 import { supabase } from "@/app/integrations/supabase/client";
-import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { blackGoldLight } from "@/styles/commonStyles";
 
-// Constants for AsyncStorage keys
 const STORAGE_KEYS = {
   REMEMBER_ME: '@remember_me',
   SAVED_EMAIL: '@saved_email',
@@ -45,15 +46,11 @@ export default function ProfileScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-
-  // Toast state
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
-
-  // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({
     title: '',
@@ -61,13 +58,9 @@ export default function ProfileScreen() {
     buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
   });
 
-  // Check if user is admin or super_admin
   const isAdmin = userProfile?.userRole === 'admin' || userProfile?.userRole === 'super_admin';
 
-  // Load saved credentials on mount
-  useEffect(() => {
-    loadSavedCredentials();
-  }, []);
+  useEffect(() => { loadSavedCredentials(); }, []);
 
   const loadSavedCredentials = async () => {
     try {
@@ -76,33 +69,25 @@ export default function ProfileScreen() {
         AsyncStorage.getItem(STORAGE_KEYS.SAVED_EMAIL),
         AsyncStorage.getItem(STORAGE_KEYS.SAVED_PASSWORD),
       ]);
-
       if (savedRememberMe === 'true' && savedEmail) {
-        setRememberMe(true);
-        setEmail(savedEmail);
-        if (savedPassword) {
-          setPassword(savedPassword);
-        }
+        setRememberMe(true); setEmail(savedEmail);
+        if (savedPassword) setPassword(savedPassword);
       }
-    } catch (error) {
-      console.error('Error loading saved credentials:', error);
-    }
+    } catch (error) { console.error('Error loading saved credentials:', error); }
   };
 
-  const saveCredentials = async (emailToSave: string, passwordToSave: string, shouldRemember: boolean) => {
+  const saveCredentials = async (e: string, p: string, remember: boolean) => {
     try {
-      if (shouldRemember) {
+      if (remember) {
         await AsyncStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true');
-        await AsyncStorage.setItem(STORAGE_KEYS.SAVED_EMAIL, emailToSave);
-        await AsyncStorage.setItem(STORAGE_KEYS.SAVED_PASSWORD, passwordToSave);
+        await AsyncStorage.setItem(STORAGE_KEYS.SAVED_EMAIL, e);
+        await AsyncStorage.setItem(STORAGE_KEYS.SAVED_PASSWORD, p);
       } else {
         await AsyncStorage.removeItem(STORAGE_KEYS.REMEMBER_ME);
         await AsyncStorage.removeItem(STORAGE_KEYS.SAVED_EMAIL);
         await AsyncStorage.removeItem(STORAGE_KEYS.SAVED_PASSWORD);
       }
-    } catch (error) {
-      console.error('Error saving credentials:', error);
-    }
+    } catch (error) { console.error('Error saving credentials:', error); }
   };
 
   const clearSavedCredentials = async () => {
@@ -110,35 +95,18 @@ export default function ProfileScreen() {
       await AsyncStorage.removeItem(STORAGE_KEYS.REMEMBER_ME);
       await AsyncStorage.removeItem(STORAGE_KEYS.SAVED_EMAIL);
       await AsyncStorage.removeItem(STORAGE_KEYS.SAVED_PASSWORD);
-    } catch (error) {
-      console.error('Error clearing saved credentials:', error);
-    }
+    } catch (error) { console.error('Error clearing credentials:', error); }
   };
 
   useEffect(() => {
     const fetchProfileImage = async () => {
       if (!userProfile?.profileImage) return;
-
       setImageLoading(true);
-
       try {
         const path = userProfile.profileImage;
-        let url = "";
-
-        // If the saved value is already a full URL
-        if (path.startsWith("http")) {
-          url = path;
-        } else {
-          // Generate signed URL for private bucket
-          const { data, error } = await supabase.storage
-            .from("profile")
-            .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
-
-          if (error) throw error;
-
-          url = data.signedUrl;
-        }
-
+        let url = path.startsWith("http")
+          ? path
+          : (await supabase.storage.from("profile").createSignedUrl(path, 60 * 60 * 24 * 7)).data?.signedUrl || '';
         setProfileImageUrl(url);
       } catch (err) {
         console.error("Failed to load profile image:", err);
@@ -147,22 +115,16 @@ export default function ProfileScreen() {
         setImageLoading(false);
       }
     };
-
-    if (isAuthenticated) {
-      fetchProfileImage();
-    }
+    if (isAuthenticated) fetchProfileImage();
   }, [userProfile?.profileImage, isAuthenticated]);
 
   const handleRefresh = async () => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setRefreshing(true);
     try {
       await loadUserProfile();
       showLocalToast('success', 'Profile refreshed');
     } catch (error) {
-      console.error('Error refreshing profile:', error);
       showLocalToast('error', 'Failed to refresh profile');
     } finally {
       setRefreshing(false);
@@ -170,105 +132,49 @@ export default function ProfileScreen() {
   };
 
   const showLocalToast = (type: "success" | "error" | "info", message: string) => {
-    setToastType(type);
-    setToastMessage(message);
-    setToastVisible(true);
+    setToastType(type); setToastMessage(message); setToastVisible(true);
   };
 
-  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
-    setDialogConfig({ title, message, buttons });
-    setDialogVisible(true);
+  const showDialog = (
+    title: string,
+    message: string,
+    buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+  ) => {
+    setDialogConfig({ title, message, buttons }); setDialogVisible(true);
   };
 
   const handleAuth = async () => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    if (!email || !password) {
-      showLocalToast("error", "Please fill in all required fields");
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      showLocalToast("error", "Please enter a valid email address");
-      return;
-    }
-
-    // Password length validation
-    if (password.length < 6) {
-      showLocalToast("error", "Password must be at least 6 characters");
-      return;
-    }
-
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (!email || !password) { showLocalToast("error", "Please fill in all required fields"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showLocalToast("error", "Please enter a valid email address"); return; }
+    if (password.length < 6) { showLocalToast("error", "Password must be at least 6 characters"); return; }
     setLoading(true);
     try {
       if (isSignUp) {
-        if (!name) {
-          showLocalToast("error", "Please enter your name");
-          setLoading(false);
-          return;
-        }
+        if (!name) { showLocalToast("error", "Please enter your name"); setLoading(false); return; }
         const { error } = await signUp(email, password, name, phone, inviteCode);
         if (error) {
-          console.error('Sign up error:', error);
-          if (error.message?.includes('already registered')) {
-            showLocalToast("error", "This email is already registered. Please sign in instead.");
-          } else if (error.message?.includes('Invalid email')) {
-            showLocalToast("error", "Please enter a valid email address");
-          } else if (error.message?.includes('Password')) {
-            showLocalToast("error", "Password must be at least 6 characters");
-          } else {
-            showLocalToast("error", error.message || "Sign up failed. Please try again.");
-          }
+          if (error.message?.includes('already registered')) showLocalToast("error", "This email is already registered. Please sign in instead.");
+          else showLocalToast("error", error.message || "Sign up failed. Please try again.");
         } else {
-          let successMessage = "Account created! Please check your email to verify your account.";
-          if (inviteCode && inviteCode.trim()) {
-            successMessage += " Your referral bonus will be applied once your email is verified.";
-          }
-          showLocalToast("success", successMessage);
-
-          // Save credentials if remember me is checked
+          showLocalToast("success", "Account created! Please check your email to verify your account.");
           await saveCredentials(email, password, rememberMe);
-
-          // Clear form after successful signup
-          setEmail("");
-          setPassword("");
-          setName("");
-          setPhone("");
-          setInviteCode("");
-          // Switch to sign in mode
-          setIsSignUp(false);
-          setShowPassword(false);
+          setEmail(""); setPassword(""); setName(""); setPhone(""); setInviteCode("");
+          setIsSignUp(false); setShowPassword(false);
         }
       } else {
         const { error } = await signIn(email, password);
         if (error) {
-          console.error('Sign in error:', error);
-          if (error.message?.includes('Invalid login credentials')) {
-            showLocalToast("error", "Invalid email or password. Please try again.");
-          } else if (error.message?.includes('Email not confirmed')) {
-            showLocalToast("error", "Please verify your email before signing in. Check your inbox for the verification link.");
-          } else if (error.message?.includes('Email')) {
-            showLocalToast("error", "Please enter a valid email address");
-          } else {
-            showLocalToast("error", error.message || "Sign in failed. Please try again.");
-          }
+          if (error.message?.includes('Invalid login credentials')) showLocalToast("error", "Invalid email or password. Please try again.");
+          else if (error.message?.includes('Email not confirmed')) showLocalToast("error", "Please verify your email before signing in.");
+          else showLocalToast("error", error.message || "Sign in failed. Please try again.");
         } else {
           showLocalToast("success", "Welcome back!");
-
-          // Save credentials if remember me is checked
           await saveCredentials(email, password, rememberMe);
-
-          // Clear password after successful sign in (keep email if remember me is checked)
-          setPassword("");
-          setShowPassword(false);
+          setPassword(""); setShowPassword(false);
         }
       }
     } catch (error: any) {
-      console.error("Auth error:", error);
       showLocalToast("error", "An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -276,41 +182,18 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = async () => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     showDialog("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", onPress: () => {}, style: "cancel" },
       {
-        text: "Cancel",
-        onPress: () => {
-          console.log("Sign out cancelled");
-        },
-        style: "cancel"
-      },
-      {
-        text: "Sign Out",
-        style: "destructive",
+        text: "Sign Out", style: "destructive",
         onPress: async () => {
-          console.log("Signing out...");
           try {
             await signOut();
-            // Clear any form data
-            setName("");
-            setPhone("");
-            setInviteCode("");
-            setIsSignUp(false);
-            setShowPassword(false);
-
-            // Don't clear email and password if remember me is enabled
-            if (!rememberMe) {
-              setEmail("");
-              setPassword("");
-            }
-
+            setName(""); setPhone(""); setInviteCode(""); setIsSignUp(false); setShowPassword(false);
+            if (!rememberMe) { setEmail(""); setPassword(""); }
             showLocalToast("success", "Signed out successfully");
           } catch (error) {
-            console.error("Sign out error:", error);
             showLocalToast("error", "Failed to sign out. Please try again.");
           }
         },
@@ -319,1038 +202,526 @@ export default function ProfileScreen() {
   };
 
   const handleMenuPress = (route: string) => {
-    console.log("Navigating to:", route);
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(route as any);
   };
 
   const toggleRememberMe = async () => {
     const newValue = !rememberMe;
     setRememberMe(newValue);
-
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
-    // If unchecking, clear saved credentials immediately
-    if (!newValue) {
-      await clearSavedCredentials();
-    }
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!newValue) await clearSavedCredentials();
   };
 
+  // ── Auth screen ──────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <LinearGradient
-        colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.gradientContainer}
-      >
-        <SafeAreaView
-          style={styles.safeArea}
-          edges={["top"]}
-        >
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor={blackGoldLight.HEADER_TOP} />
+        <SafeAreaView style={styles.flex} edges={["top"]}>
           <KeyboardAvoidingView
-            style={styles.keyboardAvoidingView}
+            style={styles.flex}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
           >
+            {/* Dark header with radial gold bloom */}
+            <LinearGradient
+              colors={[blackGoldLight.HEADER_TOP, blackGoldLight.HEADER_MID, blackGoldLight.HEADER_BOT]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.authHeaderContainer}
+            >
+              {/* Gold bloom — top-right, mirrors WelcomeHeader */}
+              <LinearGradient
+                colors={[blackGoldLight.GOLD, "rgba(184,146,42,0.07)", "transparent"]}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.headerBloom}
+                pointerEvents="none"
+              />
+              <View style={styles.authHeaderInner}>
+                <IconSymbol name="person.circle.fill" size={52} color={blackGoldLight.SILVER_SOFT} />
+                <Text style={styles.authTitle}>{isSignUp ? "Create Account" : "Welcome Back"}</Text>
+                <Text style={styles.authSubtitle}>
+                  {isSignUp ? "Sign up to start earning points" : "Sign in to your account"}
+                </Text>
+              </View>
+            </LinearGradient>
+
             <ScrollView
-              style={styles.container}
+              style={styles.flex}
               contentContainerStyle={styles.authContent}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              <View style={styles.authHeader}>
-                <IconSymbol
-                  name="person.circle.fill"
-                  size={80}
-                  color={currentColors.primary}
-                />
-                <Text style={[styles.authTitle, { color: currentColors.text }]}>
-                  {isSignUp ? "Create Account" : "Welcome Back"}
-                </Text>
-                <Text
-                  style={[
-                    styles.authSubtitle,
-                    { color: currentColors.textSecondary },
-                  ]}
-                >
-                  {isSignUp
-                    ? "Sign up to start earning points"
-                    : "Sign in to your account"}
-                </Text>
-              </View>
-
               <View style={styles.authForm}>
                 {isSignUp && (
-                  <LinearGradient
-                    colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[
-                      styles.inputContainer,
-                      { borderColor: currentColors.border },
-                    ]}
-                  >
-                    <IconSymbol
-                      name="person"
-                      size={20}
-                      color={currentColors.textSecondary}
-                    />
-                    <TextInput
-                      style={[styles.input, { color: currentColors.text }]}
-                      placeholder="Full Name"
-                      placeholderTextColor={currentColors.textSecondary}
-                      value={name}
-                      onChangeText={setName}
-                      autoCapitalize="words"
-                      editable={!loading}
-                    />
-                  </LinearGradient>
+                  <View style={styles.inputContainer}>
+                    <IconSymbol name="person" size={18} color={blackGoldLight.INK_MID} />
+                    <TextInput style={styles.input} placeholder="Full Name"
+                      placeholderTextColor={blackGoldLight.INK_SOFT}
+                      value={name} onChangeText={setName} autoCapitalize="words" editable={!loading} />
+                  </View>
                 )}
 
-                <LinearGradient
-                  colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[
-                    styles.inputContainer,
-                    { borderColor: currentColors.border },
-                  ]}
-                >
-                  <IconSymbol
-                    name="envelope"
-                    size={20}
-                    color={currentColors.textSecondary}
-                  />
-                  <TextInput
-                    style={[styles.input, { color: currentColors.text }]}
-                    placeholder="Email"
-                    placeholderTextColor={currentColors.textSecondary}
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    editable={!loading}
-                  />
-                </LinearGradient>
+                <View style={styles.inputContainer}>
+                  <IconSymbol name="envelope" size={18} color={blackGoldLight.INK_MID} />
+                  <TextInput style={styles.input} placeholder="Email"
+                    placeholderTextColor={blackGoldLight.INK_SOFT}
+                    value={email} onChangeText={setEmail} autoCapitalize="none"
+                    keyboardType="email-address" editable={!loading} />
+                </View>
 
-                <LinearGradient
-                  colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[
-                    styles.inputContainer,
-                    { borderColor: currentColors.border },
-                  ]}
-                >
-                  <IconSymbol
-                    name="lock"
-                    size={20}
-                    color={currentColors.textSecondary}
-                  />
-                  <TextInput
-                    style={[styles.input, { color: currentColors.text }]}
-                    placeholder="Password"
-                    placeholderTextColor={currentColors.textSecondary}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    editable={!loading}
-                  />
+                <View style={styles.inputContainer}>
+                  <IconSymbol name="lock" size={18} color={blackGoldLight.INK_MID} />
+                  <TextInput style={styles.input} placeholder="Password"
+                    placeholderTextColor={blackGoldLight.INK_SOFT}
+                    value={password} onChangeText={setPassword}
+                    secureTextEntry={!showPassword} autoCapitalize="none" editable={!loading} />
                   <Pressable
-                    onPress={() => {
-                      setShowPassword(!showPassword);
-                      if (Platform.OS !== "web") {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
-                    }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    disabled={loading}
+                    onPress={() => { setShowPassword(!showPassword); if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} disabled={loading}
                   >
-                    <IconSymbol
-                      name={showPassword ? "eye.slash.fill" : "eye.fill"}
-                      size={20}
-                      color={currentColors.textSecondary}
-                    />
+                    <IconSymbol name={showPassword ? "eye.slash.fill" : "eye.fill"} size={18} color={blackGoldLight.INK_MID} />
                   </Pressable>
-                </LinearGradient>
+                </View>
 
-                {/* Remember Me Checkbox - Only show on Sign In */}
                 {!isSignUp && (
-                  <Pressable
-                    style={styles.rememberMeContainer}
-                    onPress={toggleRememberMe}
-                    disabled={loading}
-                  >
-                    <View
-                      style={[
-                        styles.checkbox,
-                        { borderColor: currentColors.border },
-                        rememberMe && { backgroundColor: currentColors.primary },
-                      ]}
-                    >
-                      {rememberMe && (
-                        <IconSymbol
-                          name="checkmark"
-                          size={16}
-                          color={currentColors.card}
-                        />
-                      )}
+                  <Pressable style={styles.rememberMeContainer} onPress={toggleRememberMe} disabled={loading}>
+                    <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
+                      {rememberMe && <IconSymbol name="checkmark" size={12} color={blackGoldLight.INK_WHITE} />}
                     </View>
-                    <Text
-                      style={[
-                        styles.rememberMeText,
-                        { color: currentColors.textSecondary },
-                      ]}
-                    >
-                      Remember me
-                    </Text>
+                    <Text style={styles.rememberMeText}>Remember me</Text>
                   </Pressable>
                 )}
 
                 {isSignUp && (
                   <>
-                    <LinearGradient
-                      colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={[
-                        styles.inputContainer,
-                        { borderColor: currentColors.border },
-                      ]}
-                    >
-                      <IconSymbol
-                        name="phone.fill"
-                        size={20}
-                        color={currentColors.textSecondary}
-                      />
-                      <TextInput
-                        style={[styles.input, { color: currentColors.text }]}
-                        placeholder="Phone (optional)"
-                        placeholderTextColor={currentColors.textSecondary}
-                        value={phone}
-                        onChangeText={setPhone}
-                        keyboardType="phone-pad"
-                        editable={!loading}
-                      />
-                    </LinearGradient>
-
-                    <LinearGradient
-                      colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={[
-                        styles.inputContainer,
-                        { borderColor: currentColors.border },
-                      ]}
-                    >
-                      <IconSymbol
-                        name="gift.fill"
-                        size={20}
-                        color={currentColors.textSecondary}
-                      />
-                      <TextInput
-                        style={[styles.input, { color: currentColors.text }]}
-                        placeholder="Invite Code (optional)"
-                        placeholderTextColor={currentColors.textSecondary}
-                        value={inviteCode}
-                        onChangeText={setInviteCode}
-                        autoCapitalize="characters"
-                        editable={!loading}
-                      />
-                    </LinearGradient>
-                    <Text style={[styles.inviteCodeHint, { color: currentColors.textSecondary }]}>
-                      Have a referral code? Enter it to earn bonus points!
-                    </Text>
+                    <View style={styles.inputContainer}>
+                      <IconSymbol name="phone.fill" size={18} color={blackGoldLight.INK_MID} />
+                      <TextInput style={styles.input} placeholder="Phone (optional)"
+                        placeholderTextColor={blackGoldLight.INK_SOFT}
+                        value={phone} onChangeText={setPhone} keyboardType="phone-pad" editable={!loading} />
+                    </View>
+                    <View style={styles.inputContainer}>
+                      <IconSymbol name="gift.fill" size={18} color={blackGoldLight.INK_MID} />
+                      <TextInput style={styles.input} placeholder="Invite Code (optional)"
+                        placeholderTextColor={blackGoldLight.INK_SOFT}
+                        value={inviteCode} onChangeText={setInviteCode} autoCapitalize="characters" editable={!loading} />
+                    </View>
+                    <Text style={styles.inviteCodeHint}>Have a referral code? Enter it to earn bonus points!</Text>
                   </>
                 )}
 
+                {/* Auth button — gold gradient pill */}
                 <LinearGradient
-                  colors={[currentColors.primary, currentColors.secondary]}
+                  colors={loading
+                    ? [blackGoldLight.INK_MID, blackGoldLight.INK_MID]
+                    : [blackGoldLight.GOLD_BRIGHT, blackGoldLight.GOLD]
+                  }
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={[
-                    styles.authButton,
-                    { opacity: loading ? 0.6 : 1 },
-                  ]}
+                  style={[styles.authButton, loading && { opacity: 0.65 }]}
                 >
                   <Pressable
                     style={styles.authButtonInner}
                     onPress={handleAuth}
                     disabled={loading}
+                    android_ripple={{ color: "rgba(255,255,255,0.15)" }}
                   >
                     {loading ? (
                       <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="small" color={currentColors.card} />
-                        <Text style={[styles.authButtonText, { color: currentColors.card, marginLeft: 8 }]}>
-                          Please wait...
-                        </Text>
+                        <ActivityIndicator size="small" color={blackGoldLight.INK_WHITE} />
+                        <Text style={styles.authButtonText}>Please wait...</Text>
                       </View>
                     ) : (
-                      <Text style={[styles.authButtonText, { color: currentColors.card }]}>
-                        {isSignUp ? "Sign Up" : "Sign In"}
-                      </Text>
+                      <Text style={styles.authButtonText}>{isSignUp ? "Sign Up" : "Sign In"}</Text>
                     )}
                   </Pressable>
                 </LinearGradient>
 
-                <Pressable
-                  style={styles.switchButton}
-                  onPress={() => {
-                    setIsSignUp(!isSignUp);
-                    // Clear form when switching (except email and password if remember me is on)
-                    if (!rememberMe) {
-                      setEmail("");
-                      setPassword("");
-                    }
-                    setName("");
-                    setPhone("");
-                    setInviteCode("");
-                    setShowPassword(false);
-                  }}
-                  disabled={loading}
-                >
-                  <Text
-                    style={[
-                      styles.switchButtonText,
-                      { color: currentColors.textSecondary },
-                    ]}
-                  >
-                    {isSignUp
-                      ? "Already have an account? "
-                      : "Don't have an account? "}
-                    <Text
-                      style={{ color: currentColors.primary, fontWeight: "600" }}
-                    >
-                      {isSignUp ? "Sign In" : "Sign Up"}
-                    </Text>
+                <Pressable style={styles.switchButton} onPress={() => {
+                  setIsSignUp(!isSignUp);
+                  if (!rememberMe) { setEmail(""); setPassword(""); }
+                  setName(""); setPhone(""); setInviteCode(""); setShowPassword(false);
+                }} disabled={loading}>
+                  <Text style={styles.switchButtonText}>
+                    {isSignUp ? "Already have an account? " : "Don't have an account? "}
+                    <Text style={styles.switchButtonHighlight}>{isSignUp ? "Sign In" : "Sign Up"}</Text>
                   </Text>
                 </Pressable>
               </View>
             </ScrollView>
           </KeyboardAvoidingView>
-          <Toast
-            visible={toastVisible}
-            message={toastMessage}
-            type={toastType}
-            onHide={() => setToastVisible(false)}
-            currentColors={currentColors}
-          />
-          <Dialog
-            visible={dialogVisible}
-            title={dialogConfig.title}
-            message={dialogConfig.message}
-            buttons={dialogConfig.buttons}
-            onHide={() => setDialogVisible(false)}
-            currentColors={currentColors}
-          />
+
+          <Toast visible={toastVisible} message={toastMessage} type={toastType}
+            onHide={() => setToastVisible(false)} currentColors={currentColors} />
+          <Dialog visible={dialogVisible} title={dialogConfig.title} message={dialogConfig.message}
+            buttons={dialogConfig.buttons} onHide={() => setDialogVisible(false)} currentColors={currentColors} />
         </SafeAreaView>
-      </LinearGradient>
+      </View>
     );
   }
 
+  // ── Authenticated profile screen ─────────────────────────────────────────
+  const menuItems = [
+    ...(isAdmin ? [{
+      route: "/admin", icon: "person.badge.shield.checkmark",
+      title: "Admin Dashboard", subtitle: "Manage app settings and users",
+      iconBg: blackGoldLight.GOLD_DIM, iconColor: blackGoldLight.GOLD,
+    }] : []),
+    {
+      route: "/order-history", icon: "receipt",
+      title: "Order History", subtitle: `${userProfile?.orders?.length || 0} orders`,
+      iconBg: blackGoldLight.GOLD_DIM, iconColor: blackGoldLight.GOLD,
+    },
+    ...(Platform.OS !== 'web' ? [{
+      route: "/payment-methods", icon: "creditcard.fill",
+      title: "Payment Methods", subtitle: `${userProfile?.paymentMethods?.length || 0} cards`,
+      iconBg: blackGoldLight.GOLD_DIM, iconColor: blackGoldLight.GOLD,
+    }] : []),
+    {
+      route: "/invite-friend", icon: "person.2.fill",
+      title: "Invite a Friend", subtitle: "Share your referral code and earn rewards",
+      iconBg: blackGoldLight.GOLD_DIM, iconColor: blackGoldLight.GOLD,
+    },
+    {
+      route: "/help", icon: "questionmark.circle.fill",
+      title: "Help & Support", subtitle: "FAQs and contact information",
+      iconBg: blackGoldLight.SILVER_DIM, iconColor: blackGoldLight.SILVER,
+    },
+    {
+      route: "/delete-account", icon: "person.crop.circle.badge.xmark",
+      title: "Delete Account", subtitle: "Permanently delete your account",
+      iconBg: "rgba(192,57,43,0.08)", iconColor: "#C0392B",
+      titleColor: "#C0392B",
+    },
+  ];
+
   return (
-    <LinearGradient
-      colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      style={styles.gradientContainer}
-    >
-      <SafeAreaView
-        style={styles.safeArea}
-        edges={["top"]}
-      >
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={blackGoldLight.HEADER_TOP} />
+      <SafeAreaView style={styles.flex} edges={["top"]}>
+
+        {/* Dark profile header with radial bloom */}
+        <LinearGradient
+          colors={[blackGoldLight.GOLD, blackGoldLight.HEADER_MID, blackGoldLight.HEADER_BOT]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.profileHeaderContainer}
+        >
+          {/* Gold bloom — top-right */}
+          <LinearGradient
+            colors={["rgba(212,168,58,0.2)", "rgba(184,146,42,0.07)", "transparent"]}
+            start={{ x: 1, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.headerBloom}
+            pointerEvents="none"
+          />
+          <View style={styles.profileHeaderInner}>
+            <View style={styles.profileImageContainer}>
+              {imageLoading ? (
+                <View style={styles.profileImagePlaceholder}>
+                  <ActivityIndicator size="large" color={blackGoldLight.SILVER_SOFT} />
+                </View>
+              ) : profileImageUrl ? (
+                <Image source={{ uri: profileImageUrl }} style={styles.profileImage}
+                  onError={() => setProfileImageUrl(null)} />
+              ) : (
+                <View style={styles.profileImagePlaceholder}>
+                  <IconSymbol name="person" size={44} color={blackGoldLight.SILVER_SOFT} />
+                </View>
+              )}
+              <Pressable style={styles.editImageButton} onPress={() => handleMenuPress("/edit-profile")}>
+                <IconSymbol name="camera" size={14} color={blackGoldLight.GOLD} />
+              </Pressable>
+            </View>
+
+            <Text style={styles.profileName}>{userProfile?.name}</Text>
+            <Text style={styles.profileEmail}>{userProfile?.email}</Text>
+          </View>
+        </LinearGradient>
+
         <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={styles.profileContent}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={currentColors.secondary}
-              colors={[currentColors.secondary]}
+              tintColor={blackGoldLight.GOLD}
+              colors={[blackGoldLight.GOLD]}
             />
           }
         >
-          {/* Profile Header with Gradient */}
-          <LinearGradient
-            colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.profileHeader}
-          >
-            <View style={styles.profileImageContainer}>
-              {imageLoading ? (
-                <View
-                  style={[
-                    styles.profileImagePlaceholder,
-                    { backgroundColor: currentColors.primary + "20" },
-                  ]}
-                >
-                  <ActivityIndicator size="large" color={currentColors.primary} />
-                </View>
-              ) : profileImageUrl ? (
-                <Image
-                  source={{ uri: profileImageUrl }}
-                  style={styles.profileImage}
-                  onError={(error) => {
-                    console.error("Image load error:", error);
-                    setProfileImageUrl(null);
-                  }}
-                />
-              ) : (
-                <LinearGradient
-                  colors={[currentColors.primary, currentColors.secondary]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.profileImagePlaceholder}
-                >
-                  <IconSymbol
-                    name="person"
-                    size={48}
-                    color={currentColors.card}
-                  />
-                </LinearGradient>
-              )}
-              <LinearGradient
-                colors={[currentColors.primary, currentColors.secondary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.editImageButton}
-              >
-                <Pressable
-                  style={styles.editImageButtonInner}
-                  onPress={() => handleMenuPress("/edit-profile")}
-                >
-                  <IconSymbol name="camera" size={16} color={currentColors.card} />
-                </Pressable>
-              </LinearGradient>
-            </View>
-            <Text style={[styles.profileName, { color: currentColors.text }]}>
-              {userProfile?.name}
-            </Text>
-            <Text
-              style={[
-                styles.profileEmail,
-                { color: currentColors.textSecondary },
-              ]}
-            >
-              {userProfile?.email}
-            </Text>
-
-            <View style={styles.pointsCard}>
-              <IconSymbol
-                name="star.fill"
-                size={32}
-                color={currentColors.primary}
-              />
-              <View style={styles.pointsInfo}>
-                <Text style={[styles.pointsValue, { color: currentColors.text }]}>
-                  {userProfile?.points || 0}
-                </Text>
-                <Text
-                  style={[
-                    styles.pointsLabel,
-                    { color: currentColors.textSecondary },
-                  ]}
-                >
-                  Points Available
-                </Text>
-              </View>
-            </View>
-          </LinearGradient>
-
-          {/* Menu Options */}
           <View style={styles.menuSection}>
-
-            {/* Admin Dashboard - Only show for admin/super_admin */}
-            {isAdmin && (
-              <LinearGradient
-                colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.menuItem}
-              >
-                <Pressable
-                  style={styles.menuItemInner}
-                  onPress={() => handleMenuPress("/admin")}
-                >
-                  <View
-                    style={[styles.menuIcon, { backgroundColor: "#FF9800" + "20" }]}
-                  >
-                    <IconSymbol name="admin-panel-settings" size={24} color="#FF9800" />
-                  </View>
-                  <View style={styles.menuContent}>
-                    <Text style={[styles.menuTitle, { color: currentColors.text }]}>
-                      Admin Dashboard
-                    </Text>
-                    <Text
-                      style={[
-                        styles.menuSubtitle,
-                        { color: currentColors.textSecondary },
-                      ]}
-                    >
-                      Manage app settings and users
-                    </Text>
-                  </View>
-                  <IconSymbol
-                    name="chevron.right"
-                    size={24}
-                    color={currentColors.textSecondary}
-                  />
-                </Pressable>
-              </LinearGradient>
-            )}
-
-            <LinearGradient
-              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.menuItem}
-            >
+            {menuItems.map((item) => (
               <Pressable
-                style={styles.menuItemInner}
-                onPress={() => handleMenuPress("/order-history")}
+                key={item.route}
+                style={({ pressed }) => [styles.menuItem, { opacity: pressed ? 0.75 : 1 }]}
+                onPress={() => handleMenuPress(item.route)}
               >
-                <View
-                  style={[
-                    styles.menuIcon,
-                    { backgroundColor: currentColors.primary + "20" },
-                  ]}
-                >
-                  <IconSymbol
-                    name="receipt"
-                    size={24}
-                    color={currentColors.primary}
-                  />
+                <View style={[styles.menuIcon, { backgroundColor: item.iconBg }]}>
+                  <IconSymbol name={item.icon as any} size={22} color={item.iconColor} />
                 </View>
                 <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
-                    Order History
+                  <Text style={[styles.menuTitle, item.titleColor ? { color: item.titleColor } : null]}>
+                    {item.title}
                   </Text>
-                  <Text
-                    style={[
-                      styles.menuSubtitle,
-                      { color: currentColors.textSecondary },
-                    ]}
-                  >
-                    {userProfile?.orders?.length || 0} orders
-                  </Text>
+                  <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
                 </View>
-                <IconSymbol
-                  name="chevron.right"
-                  size={24}
-                  color={currentColors.textSecondary}
-                />
+                <IconSymbol name="chevron.right" size={18} color={blackGoldLight.INK_MID} />
               </Pressable>
-            </LinearGradient>
+            ))}
 
-            {/* Only show Payment Methods on mobile */}
-            {Platform.OS !== 'web' && (
-              <LinearGradient
-                colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.menuItem}
-              >
-                <Pressable
-                  style={styles.menuItemInner}
-                  onPress={() => handleMenuPress("/payment-methods")}
-                >
-                  <View
-                    style={[styles.menuIcon, { backgroundColor: "#4ECDC4" + "20" }]}
-                  >
-                    <IconSymbol name="creditcard.fill" size={24} color="#4ECDC4" />
-                  </View>
-                  <View style={styles.menuContent}>
-                    <Text style={[styles.menuTitle, { color: currentColors.text }]}>
-                      Payment Methods
-                    </Text>
-                    <Text
-                      style={[
-                        styles.menuSubtitle,
-                        { color: currentColors.textSecondary },
-                      ]}
-                    >
-                      {userProfile?.paymentMethods?.length || 0} cards
-                    </Text>
-                  </View>
-                  <IconSymbol
-                    name="chevron.right"
-                    size={24}
-                    color={currentColors.textSecondary}
-                  />
-                </Pressable>
-              </LinearGradient>
-            )}
-
-            {/* Events Option */}
-            {/* <LinearGradient
-              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.menuItem}
+            {/* Sign out */}
+            <Pressable
+              style={({ pressed }) => [styles.menuItem, { opacity: pressed ? 0.75 : 1 }]}
+              onPress={handleSignOut}
             >
-              <Pressable
-                style={styles.menuItemInner}
-                onPress={() => handleMenuPress("/events")}
-              >
-                <View
-                  style={[styles.menuIcon, { backgroundColor: "#95E1D3" + "20" }]}
-                >
-                  <IconSymbol name="calendar" size={24} color="#95E1D3" />
-                </View>
-                <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
-                    Events
-                  </Text>
-                  <Text
-                    style={[
-                      styles.menuSubtitle,
-                      { color: currentColors.textSecondary },
-                    ]}
-                  >
-                    View upcoming events
-                  </Text>
-                </View>
-                <IconSymbol
-                  name="chevron.right"
-                  size={24}
-                  color={currentColors.textSecondary}
-                />
-              </Pressable>
-            </LinearGradient> */}
-
-            {/* Reservations Option */}
-            {/* <LinearGradient
-              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.menuItem}
-            >
-              <Pressable
-                style={styles.menuItemInner}
-                onPress={() => handleMenuPress("/reservations")}
-              >
-                <View
-                  style={[styles.menuIcon, { backgroundColor: "#FF6B6B" + "20" }]}
-                >
-                  <IconSymbol name="calendar.badge.clock" size={24} color="#FF6B6B" />
-                </View>
-                <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
-                    Reservations
-                  </Text>
-                  <Text
-                    style={[
-                      styles.menuSubtitle,
-                      { color: currentColors.textSecondary },
-                    ]}
-                  >
-                    Make or view your reservations
-                  </Text>
-                </View>
-                <IconSymbol
-                  name="chevron.right"
-                  size={24}
-                  color={currentColors.textSecondary}
-                />
-              </Pressable>
-            </LinearGradient> */}
-
-            {/* Invite a Friend Option */}
-            <LinearGradient
-              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.menuItem}
-            >
-              <Pressable
-                style={styles.menuItemInner}
-                onPress={() => handleMenuPress("/invite-friend")}
-              >
-                <View
-                  style={[styles.menuIcon, { backgroundColor: "#2196F3" + "20" }]}
-                >
-                  <IconSymbol name="person.2.fill" size={24} color="#2196F3" />
-                </View>
-                <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
-                    Invite a Friend
-                  </Text>
-                  <Text
-                    style={[
-                      styles.menuSubtitle,
-                      { color: currentColors.textSecondary },
-                    ]}
-                  >
-                    Share your referral code and earn rewards
-                  </Text>
-                </View>
-                <IconSymbol
-                  name="chevron.right"
-                  size={24}
-                  color={currentColors.textSecondary}
-                />
-              </Pressable>
-            </LinearGradient>
-
-            {/* Help & Support Option */}
-            <LinearGradient
-              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.menuItem}
-            >
-              <Pressable
-                style={styles.menuItemInner}
-                onPress={() => handleMenuPress("/help")}
-              >
-                <View
-                  style={[styles.menuIcon, { backgroundColor: "#9C27B0" + "20" }]}
-                >
-                  <IconSymbol name="questionmark.circle.fill" size={24} color="#9C27B0" />
-                </View>
-                <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
-                    Help & Support
-                  </Text>
-                  <Text
-                    style={[
-                      styles.menuSubtitle,
-                      { color: currentColors.textSecondary },
-                    ]}
-                  >
-                    FAQs and contact information
-                  </Text>
-                </View>
-                <IconSymbol
-                  name="chevron.right"
-                  size={24}
-                  color={currentColors.textSecondary}
-                />
-              </Pressable>
-            </LinearGradient>
-
-            {/* Delete Account Option */}
-            <LinearGradient
-              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.menuItem}
-            >
-              <Pressable
-                style={styles.menuItemInner}
-                onPress={() => handleMenuPress("/delete-account")}
-              >
-                <View
-                  style={[styles.menuIcon, { backgroundColor: "#FF6B6B" + "20" }]}
-                >
-                  <IconSymbol name="person.crop.circle.badge.xmark" size={24} color="#FF6B6B" />
-                </View>
-                <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: "#FF6B6B" }]}>
-                    Delete Account
-                  </Text>
-                  <Text
-                    style={[
-                      styles.menuSubtitle,
-                      { color: currentColors.textSecondary },
-                    ]}
-                  >
-                    Permanently delete your account
-                  </Text>
-                </View>
-                <IconSymbol
-                  name="chevron.right"
-                  size={24}
-                  color={currentColors.textSecondary}
-                />
-              </Pressable>
-            </LinearGradient>
-
-            {/* Logout Option */}
-            <LinearGradient
-              colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.menuItem}
-            >
-              <Pressable
-                style={styles.menuItemInner}
-                onPress={handleSignOut}
-              >
-                <View
-                  style={[styles.menuIcon, { backgroundColor: "#FF9800" + "20" }]}
-                >
-                  <IconSymbol name="logout" size={24} color="#FF9800" />
-                </View>
-                <View style={styles.menuContent}>
-                  <Text style={[styles.menuTitle, { color: currentColors.text }]}>
-                    Sign Out
-                  </Text>
-                  <Text
-                    style={[
-                      styles.menuSubtitle,
-                      { color: currentColors.textSecondary },
-                    ]}
-                  >
-                    Sign out of your account
-                  </Text>
-                </View>
-                <IconSymbol
-                  name="chevron.right"
-                  size={24}
-                  color={currentColors.textSecondary}
-                />
-              </Pressable>
-            </LinearGradient>
+              <View style={[styles.menuIcon, { backgroundColor: blackGoldLight.SILVER_DIM }]}>
+                <IconSymbol name="rectangle.portrait.and.arrow.forward" size={22} color={blackGoldLight.INK_MID} />
+              </View>
+              <View style={styles.menuContent}>
+                <Text style={styles.menuTitle}>Sign Out</Text>
+                <Text style={styles.menuSubtitle}>Sign out of your account</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={18} color={blackGoldLight.INK_MID} />
+            </Pressable>
           </View>
         </ScrollView>
-        <Toast
-          visible={toastVisible}
-          message={toastMessage}
-          type={toastType}
-          onHide={() => setToastVisible(false)}
-          currentColors={currentColors}
-        />
-        <Dialog
-          visible={dialogVisible}
-          title={dialogConfig.title}
-          message={dialogConfig.message}
-          buttons={dialogConfig.buttons}
-          onHide={() => setDialogVisible(false)}
-          currentColors={currentColors}
-        />
+
+        <Toast visible={toastVisible} message={toastMessage} type={toastType}
+          onHide={() => setToastVisible(false)} currentColors={currentColors} />
+        <Dialog visible={dialogVisible} title={dialogConfig.title} message={dialogConfig.message}
+          buttons={dialogConfig.buttons} onHide={() => setDialogVisible(false)} currentColors={currentColors} />
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradientContainer: {
-    flex: 1,
+  container: { flex: 1, backgroundColor: blackGoldLight.BODY_BG },
+  flex: { flex: 1 },
+
+  // ── Header shared ────────────────────────────────────────────────────────
+  headerBloom: {
+    position: 'absolute',
+    top: 0, right: 0,
+    width: '100%', height: '100%',
+    zIndex: 0,
+  } as any,
+
+  // ── Auth — dark header ───────────────────────────────────────────────────
+  authHeaderContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: blackGoldLight.BORDER_GOLD,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  safeArea: {
-    flex: 1,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  content: {
-    paddingBottom: 120,
-  },
-  authContent: {
+  authHeaderInner: {
+    alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 120,
-  },
-  authHeader: {
-    alignItems: "center",
-    marginBottom: 40,
+    paddingVertical: 28,
+    gap: 6,
+    zIndex: 1,
   },
   authTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginTop: 16,
+    fontSize: 26,
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK_WHITE,
+    marginTop: 8,
   },
   authSubtitle: {
-    fontSize: 16,
-    marginTop: 8,
-    textAlign: "center",
+    fontSize: 14,
+    fontFamily: 'LibertinusSans_400Regular',
+    color: blackGoldLight.INK_SILVER,
+    textAlign: 'center',
   },
-  authForm: {
-    width: "100%",
-  },
+
+  // ── Auth — form ──────────────────────────────────────────────────────────
+  authContent: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 120 },
+  authForm: { width: '100%' },
   inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: blackGoldLight.CARD_BG,
+    borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    borderWidth: 0.2,
-    elevation: 6,
+    paddingVertical: 13,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: blackGoldLight.BORDER_GOLD,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   input: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
+    fontSize: 15,
+    fontFamily: 'LibertinusSans_400Regular',
+    color: blackGoldLight.INK,
   },
   inviteCodeHint: {
     fontSize: 12,
-    marginTop: -8,
-    marginBottom: 8,
+    color: blackGoldLight.INK_MID,
+    marginTop: -6,
+    marginBottom: 10,
     marginLeft: 4,
     fontStyle: 'italic',
   },
   rememberMeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    marginTop: -8,
+    flexDirection: 'row', alignItems: 'center',
+    marginBottom: 14, marginTop: -4, gap: 8,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
+    width: 20, height: 20, borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: blackGoldLight.BORDER_GOLD,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  checkboxActive: {
+    // Active checkbox: gold fill
+    backgroundColor: blackGoldLight.GOLD,
+    borderColor: blackGoldLight.GOLD,
   },
   rememberMeText: {
     fontSize: 14,
+    fontFamily: 'LibertinusSans_400Regular',
+    color: blackGoldLight.INK_MID,
   },
+
+  // Auth button — gold gradient pill with LinearGradient wrapper
   authButton: {
-    borderRadius: 0,
+    borderRadius: 36,
+    overflow: 'hidden',
     marginTop: 8,
-    elevation: 8,
+    shadowColor: blackGoldLight.GOLD,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  authButtonInner: {
-    paddingVertical: 16,
-    alignItems: "center",
-  },
+  authButtonInner: { paddingVertical: 16, alignItems: 'center' },
   authButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK_WHITE,
+    textAlign: 'center',
   },
   loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 8, paddingVertical: 15,
   },
-  switchButton: {
-    marginTop: 24,
-    alignItems: "center",
-  },
+  switchButton: { marginTop: 22, alignItems: 'center' },
   switchButtonText: {
     fontSize: 14,
+    fontFamily: 'LibertinusSans_400Regular',
+    color: blackGoldLight.INK_MID,
   },
-  demoContainer: {
-    marginTop: 32,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
+  switchButtonHighlight: {
+    // Gold highlight on the action word
+    color: blackGoldLight.GOLD,
+    fontFamily: 'LibertinusSans_700Bold',
   },
-  demoText: {
-    fontSize: 12,
-    textAlign: "center",
+
+  // ── Profile header ───────────────────────────────────────────────────────
+  profileHeaderContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: blackGoldLight.BORDER_GOLD,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  adminButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 24,
-    paddingVertical: 12,
-    gap: 8,
-    opacity: 0.7,
+  profileHeaderInner: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    zIndex: 1,
   },
-  adminButtonText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  profileHeader: {
-    alignItems: "center",
-    padding: 24,
-    marginBottom: 16,
-    elevation: 8,
-  },
-  profileImageContainer: {
-    position: "relative",
-    marginBottom: 16,
-  },
+  profileImageContainer: { position: 'relative', marginBottom: 14 },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    elevation: 6,
+    width: 96, height: 96, borderRadius: 48,
+    borderWidth: 2,
+    borderColor: blackGoldLight.BORDER_GOLD,
   },
   profileImagePlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 6,
+    width: 96, height: 96, borderRadius: 48,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: blackGoldLight.BORDER_GOLD,
+    justifyContent: 'center', alignItems: 'center',
   },
   editImageButton: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    elevation: 6,
-  },
-  editImageButtonInner: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
+    position: 'absolute', bottom: 0, right: 0,
+    width: 30, height: 30, borderRadius: 15,
+    // White pill with gold icon — consistent with bell/logo pills
+    backgroundColor: blackGoldLight.CARD_BG,
+    borderWidth: 1,
+    borderColor: blackGoldLight.BORDER_GOLD,
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: blackGoldLight.GOLD,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   profileName: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK_WHITE,
     marginBottom: 4,
   },
   profileEmail: {
-    fontSize: 16,
-    marginBottom: 24,
+    fontSize: 14,
+    fontFamily: 'LibertinusSans_400Regular',
+    color: blackGoldLight.INK_SILVER,
+    marginBottom: 20,
   },
-  pointsCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  pointsInfo: {
-    alignItems: "flex-start",
-  },
+  pointsCard: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   pointsValue: {
-    fontSize: 32,
-    fontWeight: "bold",
+    fontSize: 30,
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.GOLD,  // gold points value
   },
   pointsLabel: {
-    fontSize: 14,
+    fontSize: 13,
+    fontFamily: 'LibertinusSans_400Regular',
+    color: blackGoldLight.INK_SILVER,
   },
-  menuSection: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
+
+  // ── Menu items ───────────────────────────────────────────────────────────
+  profileContent: { paddingBottom: 120 },
+  menuSection: { paddingHorizontal: 16, paddingTop: 16, gap: 10 },
   menuItem: {
-    borderRadius: 0,
-    elevation: 6,
-  },
-  menuItemInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: blackGoldLight.CARD_BG,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: blackGoldLight.BORDER_LIGHT,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   menuIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
+    width: 44, height: 44, borderRadius: 22,
+    justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
-  menuContent: {
-    flex: 1,
-  },
+  menuContent: { flex: 1 },
   menuTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 15,
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK,
     marginBottom: 2,
   },
   menuSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
+    fontFamily: 'LibertinusSans_400Regular',
+    color: blackGoldLight.INK_MID,
   },
 });

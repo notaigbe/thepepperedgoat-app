@@ -323,7 +323,7 @@ export default function AdminOrderManagement() {
             router.back();
           }}
         >
-          <IconSymbol name="arrow.left" size={24} color={colors.text} />
+          <IconSymbol name="chevron.left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Order Management</Text>
         <View style={{ width: 40 }} />

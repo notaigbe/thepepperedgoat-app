@@ -4,14 +4,15 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Platform,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
-import { colors } from '@/styles/commonStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '@/contexts/AppContext';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { blackGoldLight } from "@/styles/commonStyles";
+
 
 export interface TabBarItem {
   name: string;
@@ -27,18 +28,12 @@ interface FloatingTabBarProps {
   bottomMargin?: number;
 }
 
-export default function FloatingTabBar({
-  tabs,
-  containerWidth = 350,
-  borderRadius = 0,
-  bottomMargin = 0,
-}: FloatingTabBarProps) {
-  const router = useRouter();
+export default function FloatingTabBar({ tabs }: FloatingTabBarProps) {
+  const router   = useRouter();
   const pathname = usePathname();
-  const { cart, currentColors } = useApp();
+  const { cart } = useApp();
 
   const handleTabPress = (route: string) => {
-    console.log('Tab pressed:', route);
     router.push(route as any);
   };
 
@@ -49,67 +44,91 @@ export default function FloatingTabBar({
     return pathname.includes(route.split('/').pop() || '');
   };
 
-  const getCartItemCount = () => {
-    return cart.reduce((total, item) => total + item.quantity, 0);
-  };
-
-  const cartItemCount = getCartItemCount();
+  const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.tabBarWrapper}>
-        {/* Texture overlay */}
-        <View style={styles.textureOverlay} />
-        
-        <BlurView
-          intensity={90}
-          tint="light"
-          style={styles.blurContainer}
-        >
-          <View
-            style={styles.tabBar}
-          >
-            {tabs.map((tab) => {
-              const active = isActive(tab.route);
-              const isCartTab = tab.name === 'cart';
-              
-              return (
-                <TouchableOpacity
-                  key={tab.name}
-                  style={styles.tab}
-                  onPress={() => handleTabPress(tab.route)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.iconContainer}>
+      {/* Light frosted glass layer */}
+      <BlurView intensity={55} tint="light" style={styles.blur}>
+
+        {/* Fading gold top border — matches the header divider treatment */}
+        <LinearGradient
+          colors={['transparent', blackGoldLight.BORDER_GOLD, blackGoldLight.BORDER_GOLD, 'transparent']}
+          locations={[0, 0.15, 0.85, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.topRule}
+        />
+
+        <View style={styles.tabBar}>
+          {tabs.map((tab) => {
+            const active    = isActive(tab.route);
+            const isCartTab = tab.name === 'cart';
+
+            return (
+              <TouchableOpacity
+                key={tab.name}
+                style={styles.tab}
+                onPress={() => handleTabPress(tab.route)}
+                activeOpacity={0.7}
+              >
+                {/*
+                  Two-layer pill for the active state:
+                  - activePill (outer): owns the shadow. No overflow:hidden here,
+                    because on iOS mixing shadow + overflow:hidden on the same view
+                    causes the rounded clip to drop on press.
+                  - gradientClip (inner): owns overflow:hidden + borderRadius to
+                    clip the LinearGradient cleanly without touching the shadow layer.
+                */}
+                {active ? (
+                  <View style={styles.activePill}>
+                    <View style={styles.gradientClip}>
+                      <LinearGradient
+                        colors={[blackGoldLight.GOLD, blackGoldLight.INK]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFillObject}
+                      />
+                      <IconSymbol
+                        name={tab.icon as any}
+                        size={21}
+                        color="#FFFFFF"
+                      />
+                      {isCartTab && cartItemCount > 0 && (
+                        <View style={styles.badge}>
+                          <Text style={styles.badgeText}>
+                            {cartItemCount > 99 ? '99+' : cartItemCount}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.inactivePill}>
                     <IconSymbol
                       name={tab.icon as any}
-                      size={24}
-                      color={active ? '#0f766e' : '#888888'}
+                      size={21}
+                      color={blackGoldLight.INK_MID}
                     />
                     {isCartTab && cartItemCount > 0 && (
-                      <View
-                        style={styles.badge}
-                      >
-                        <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>
+                      <View style={[styles.badge, styles.badgeDark]}>
+                        <Text style={styles.badgeText}>
                           {cartItemCount > 99 ? '99+' : cartItemCount}
                         </Text>
                       </View>
                     )}
                   </View>
-                  <Text
-                    style={[
-                      styles.label,
-                      { color: active ? '#0f766e' : '#888888' },
-                    ]}
-                  >
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </BlurView>
-      </View>
+                )}
+
+                {/* Label */}
+                <Text style={[styles.label, active && styles.labelActive]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </BlurView>
     </SafeAreaView>
   );
 }
@@ -120,75 +139,114 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: 'rgba(248,246,241,1)',
   },
-  tabBarWrapper: {
-    position: 'relative',
-    width: '100%',
+
+  // Frosted warm-parchment glass
+  blur: {
     overflow: 'hidden',
-    borderTopWidth: 0.2,
-    borderTopColor: '#00BC7D',
+    backgroundColor: 'rgba(248,246,241,0.9)',
+    shadowColor: blackGoldLight.INK,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    // elevation: 10,
   },
-  textureOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'transparent',
-    opacity: 0.02,
-    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px)',
-    zIndex: 1,
-    pointerEvents: 'none',
+
+  // Fading gold rule
+  topRule: {
+    height: 1,
   },
-  blurContainer: {
-    overflow: 'hidden',
-  },
+
   tabBar: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 0,
-    width: '100%',
+    paddingTop: 10,
+    paddingBottom: 4,
+    paddingHorizontal: 12,
     justifyContent: 'space-around',
     alignItems: 'center',
-    boxShadow: '0px -2px 8px rgba(0, 0, 0, 0.3)',
-    elevation: 4,
-    backgroundColor: '#2A2A2A',
   },
+
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    gap: 5,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  iconContainer: {
-    position: 'relative',
-    width: 24,
-    height: 24,
+
+  // Outer shadow container — deliberately NO overflow:hidden.
+  // Mixing overflow:hidden + shadow on the same view causes iOS to drop
+  // the rounded clip during the TouchableOpacity press animation.
+  activePill: {
+    width: 52,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: blackGoldLight.GOLD,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
+
+  // Inner clip container — owns overflow:hidden + borderRadius to clip
+  // the LinearGradient. Kept separate from the shadow layer above.
+  gradientClip: {
+    width: 52,
+    height: 40,
+    borderRadius: 12,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+
+  // Transparent pill for inactive tab — just icon, no bg
+  inactivePill: {
+    width: 52,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    backgroundColor: 'transparent',
+  },
+
+  // Cart count badge
   badge: {
     position: 'absolute',
-    top: -8,
-    right: -12,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    top: 4,
+    right: 4,
+    minWidth: 15,
+    height: 15,
+    borderRadius: 8,
+    backgroundColor: blackGoldLight.INK,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
-    boxShadow: '0px 2px 8px rgba(226, 111, 91, 0.4)',
-    elevation: 4,
-    backgroundColor: '#E26F5B',
+    paddingHorizontal: 2,
+  },
+  badgeDark: {
+    backgroundColor: blackGoldLight.GOLD,
   },
   badgeText: {
-    fontSize: 10,
-    fontWeight: 'bold',
+    fontSize: 8,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
+
+  // Labels
   label: {
-    fontSize: 11,
-    marginTop: 4,
-    fontWeight: '600',
+    fontSize: 9,
+    fontFamily: 'LibertinusSans_400Regular',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: blackGoldLight.INK_SOFT,
+  },
+  labelActive: {
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.GOLD,
   },
 });

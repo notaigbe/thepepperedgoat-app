@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react';
 import { MenuItem, MenuCategory, CartItem, Order, UserProfile, GiftCard, PaymentMethod, AppNotification, ThemeSettings, ThemeMode, ColorScheme, MerchRedemption, UserRole } from '@/types';
 import { useColorScheme } from 'react-native';
@@ -29,16 +28,12 @@ interface AppContextType {
   userProfile: UserProfile | null;
   loadUserProfile: () => Promise<void>;
   placeOrder: (deliveryAddress?: string, pickupNotes?: string) => Promise<void>;
-  // purchaseGiftCard: (giftCard: GiftCard) => void;
-  // sendPointsGiftCard: (recipientId: string, recipientName: string, points: number, message?: string) => Promise<void>;
-  // redeemMerch: (merchId: string, merchName: string, pointsCost: number, deliveryAddress: string, pickupNotes?: string) => Promise<void>;
   addPaymentMethod: (paymentMethod: PaymentMethod) => Promise<void>;
   removePaymentMethod: (paymentMethodId: string) => Promise<void>;
   setDefaultPaymentMethod: (paymentMethodId: string) => Promise<void>;
   updateProfileImage: (imageUri: string) => void;
   markNotificationAsRead: (notificationId: string) => Promise<void>;
   addNotification: (notification: AppNotification) => void;
-  // themeSettings: ThemeSettings;
   updateThemeMode: (mode: ThemeMode) => Promise<void>;
   updateColorScheme: (scheme: ColorScheme) => Promise<void>;
   currentColors: any;
@@ -81,12 +76,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('Loading menu items from Supabase (AppContext)');
       const { data, error } = await menuService.getMenuItems();
-      
-      if (error) {
-        console.error('Error loading menu items:', error);
-        return;
-      }
-
+      if (error) { console.error('Error loading menu items:', error); return; }
       if (data) {
         const items: MenuItem[] = data.map((item: any) => ({
           id: item.id,
@@ -111,12 +101,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('Loading menu categories from Supabase (AppContext)');
       const { data, error } = await menuService.getMenuCategories();
-      
-      if (error) {
-        console.error('Error loading menu categories:', error);
-        return;
-      }
-
+      if (error) { console.error('Error loading menu categories:', error); return; }
       if (data) {
         const categories: MenuCategory[] = data.map((category: any) => ({
           id: category.id,
@@ -125,7 +110,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           description: category.description,
           sort_order: category.sort_order,
         }));
-        // Add 'All' category at the beginning
         setMenuCategories([{ id: 'all', key: 'all', title: 'All', sort_order: -1 }, ...categories]);
         console.log('Loaded', categories.length, 'menu categories in context');
       }
@@ -136,19 +120,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const loadUserProfile = useCallback(async () => {
     if (!user) return;
-
     try {
       console.log('Loading user profile for:', user.id);
       const { data: profile, error } = await userService.getUserProfile(user.id);
-      
-      if (error) {
-        console.error('Error loading user profile:', error);
-        return;
-      }
-
+      if (error) { console.error('Error loading user profile:', error); return; }
       if (!profile) {
         console.log('No profile found, creating default profile');
-        // Create default profile if it doesn't exist
         await (supabase
           .from('user_profiles')
           .insert({
@@ -162,34 +139,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           } as any) as unknown) as { data: Database['public']['Tables']['user_profiles']['Row'][] | null; error: any };
         return loadUserProfile();
       }
-
-      // Load orders
       const { data: orders } = await orderService.getOrderHistory(user.id);
-      
-      // Load gift cards
-      // const { data: receivedGiftCards } = await giftCardService.getReceivedGiftCards(user.id);
-      // const { data: sentGiftCards } = await giftCardService.getSentGiftCards(user.id);
-      
-      // Load payment methods
       const { data: paymentMethods } = await paymentMethodService.getPaymentMethods(user.id);
-      
-      // Load notifications
       const { data: notifications } = await notificationService.getNotifications(user.id);
-      
-      // Load theme settings
-      // const { data: theme, error: themeError } = await themeService.getThemeSettings(user.id);
-      
-      // If no theme settings exist, create default ones
-      // if (!theme && !themeError) {
-      //   console.log('No theme settings found, creating default');
-      //   await themeService.updateThemeSettings(user.id, {
-      //     mode: 'auto',
-      //     colorScheme: 'default',
-      //   });
-      // }
-      
-      // Load merch redemptions
-      // const { data: merchRedemptions } = await merchService.getMerchRedemptions(user.id);
 
       const fullProfile: UserProfile = {
         id: profile.id,
@@ -218,17 +170,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           deliveryAddress: o.delivery_address,
           pickupNotes: o.pickup_notes,
         })) || [],
-        // giftCards: [...(receivedGiftCards || []), ...(sentGiftCards || [])].map((gc: any) => ({
-        //   id: gc.id,
-        //   points: gc.points,
-        //   recipientId: gc.recipient_id,
-        //   recipientName: gc.recipient_name,
-        //   recipientEmail: gc.recipient_email,
-        //   message: gc.message,
-        //   purchaseDate: gc.created_at,
-        //   senderId: gc.sender_id,
-        //   type: 'points',
-        // })),
         paymentMethods: paymentMethods?.map((pm: any) => ({
           id: pm.id,
           type: pm.type,
@@ -246,40 +187,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           read: n.read,
           actionUrl: n.action_url,
         })) || [],
-        // rsvpEvents: [],
-        // themeSettings: theme ? {
-        //   mode: (theme as any).mode as ThemeMode,
-        //   colorScheme: (((theme as any).color_scheme ?? (theme as any).colorScheme) as ColorScheme),
-        // } : { mode: 'auto', colorScheme: 'default' },
-        // merchRedemptions: merchRedemptions?.map((mr: any) => ({
-        //   id: mr.id,
-        //   merchId: mr.merch_item_id,
-        //   merchName: mr.merch_name,
-        //   pointsCost: mr.points_cost,
-        //   deliveryAddress: mr.delivery_address,
-        //   pickupNotes: mr.pickup_notes,
-        //   date: mr.created_at,
-        //   status: mr.status,
-        // })) || [],
       };
 
       setUserProfile(fullProfile);
-      // if (fullProfile.themeSettings) {
-      //   setThemeSettings(fullProfile.themeSettings);
-      // }
       console.log('User profile loaded successfully');
     } catch (error) {
       console.error('Error loading user profile:', error);
     }
   }, [user]);
-  
-  // Load menu items when the app starts (in useEffect):
+
   useEffect(() => {
     loadMenuItems();
     loadMenuCategories();
   }, [loadMenuItems, loadMenuCategories]);
-  
-  // Load user profile when authenticated
+
   useEffect(() => {
     if (isAuthenticated && user) {
       loadUserProfile();
@@ -288,217 +209,94 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isAuthenticated, user, loadUserProfile]);
 
-useEffect(() => {
-  if (!isAuthenticated || !user) {
-    if (orderChannelRef.current) {
-      supabase.removeChannel(orderChannelRef.current);
-      orderChannelRef.current = null;
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      if (orderChannelRef.current) {
+        supabase.removeChannel(orderChannelRef.current);
+        orderChannelRef.current = null;
+      }
+      return;
     }
-    return;
-  }
+    if ((orderChannelRef.current?.state as any) === 'subscribed') return;
 
-  if ((orderChannelRef.current?.state as any) === 'subscribed') {
-    console.log('Already subscribed to order updates');
-    return;
-  }
-
-  const setupRealtimeSubscription = async () => {
-    console.log('Setting up real-time order subscription for user:', user.id);
-    
-    // Use a simpler channel name for postgres_changes
-    const channel = supabase.channel(`orders-${user.id}`);
-    
-    orderChannelRef.current = channel;
-
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'orders',
-          filter: `user_id=eq.${user.id}` // Only listen to this user's orders
-        },
-        (payload) => {
+    const setupRealtimeSubscription = async () => {
+      console.log('Setting up real-time order subscription for user:', user.id);
+      const channel = supabase.channel(`orders-${user.id}`);
+      orderChannelRef.current = channel;
+      channel
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, (payload) => {
           console.log('New order created:', payload);
           showToast('New order placed!', 'success');
           loadUserProfile();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, (payload) => {
           console.log('Order updated:', payload);
           const order = payload.new as any;
           showToast(`Order status updated to: ${order.status}`, 'info');
           loadUserProfile();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'orders',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, (payload) => {
           console.log('Order deleted:', payload);
           loadUserProfile();
-        }
-      )
-      .subscribe((status, err) => {
-        console.log('Order subscription status:', status);
-        if (err) {
-          console.error('Order subscription error:', err);
-        }
-      });
-  };
-
-  setupRealtimeSubscription();
-
-  return () => {
-    if (orderChannelRef.current) {
-      console.log('Cleaning up order subscription');
-      supabase.removeChannel(orderChannelRef.current);
-      orderChannelRef.current = null;
-    }
-  };
-}, [isAuthenticated, user, loadUserProfile]);
-
-  // Get current colors based on theme settings
-  const getCurrentColors = () => {
-    const colorSchemes = {
-      default: {
-        light: {
-          background: '#1A1A1A',
-          text: '#FFFFFF',
-          textSecondary: '#AAAAAA',
-          primary: '#E26F5B',
-          secondary: '#3A3A3A',
-          accent: '#00BC7D',
-          card: '#2A2A2A',
-          highlight: '#3A3A3A',
-          border: '#E26F5B',
-        },
-        dark: {
-          background: '#0A0A0A',
-          text: '#FFFFFF',
-          textSecondary: '#AAAAAA',
-          primary: '#E26F5B',
-          secondary: '#3A3A3A',
-          accent: '#00BC7D',
-          card: '#2A2A2A',
-          highlight: '#3A3A3A',
-          border: '#00BC7D',
-        },
-      },
-      warm: {
-        light: {
-          background: '#1A1A1A',
-          text: '#FFFFFF',
-          textSecondary: '#AAAAAA',
-          primary: '#E26F5B',
-          secondary: '#3A3A3A',
-          accent: '#00BC7D',
-          card: '#2A2A2A',
-          highlight: '#3A3A3A',
-          border: '#E26F5B',
-        },
-        dark: {
-          background: '#0A0A0A',
-          text: '#FFFFFF',
-          textSecondary: '#AAAAAA',
-          primary: '#E26F5B',
-          secondary: '#3A3A3A',
-          accent: '#00BC7D',
-          card: '#2A2A2A',
-          highlight: '#3A3A3A',
-          border: '#E26F5B',
-        },
-      },
-      cool: {
-        light: {
-          background: '#1A1A1A',
-          text: '#FFFFFF',
-          textSecondary: '#AAAAAA',
-          primary: '#E26F5B',
-          secondary: '#3A3A3A',
-          accent: '#00BC7D',
-          card: '#2A2A2A',
-          highlight: '#3A3A3A',
-          border: '#00BC7D',
-        },
-        dark: {
-          background: '#0A0A0A',
-          text: '#FFFFFF',
-          textSecondary: '#AAAAAA',
-          primary: '#E26F5B',
-          secondary: '#3A3A3A',
-          accent: '#00BC7D',
-          card: '#2A2A2A',
-          highlight: '#3A3A3A',
-          border: '#00BC7D',
-        },
-      },
-      vibrant: {
-        light: {
-          background: '#1A1A1A',
-          text: '#FFFFFF',
-          textSecondary: '#AAAAAA',
-          primary: '#E26F5B',
-          secondary: '#3A3A3A',
-          accent: '#00BC7D',
-          card: '#2A2A2A',
-          highlight: '#3A3A3A',
-          border: '#E26F5B',
-        },
-        dark: {
-          background: '#0A0A0A',
-          text: '#FFFFFF',
-          textSecondary: '#AAAAAA',
-          primary: '#E26F5B',
-          secondary: '#3A3A3A',
-          accent: '#00BC7D',
-          card: '#2A2A2A',
-          highlight: '#3A3A3A',
-          border: '#00BC7D',
-        },
-      },
-      minimal: {
-        light: {
-          background: '#1A1A1A',
-          text: '#FFFFFF',
-          textSecondary: '#AAAAAA',
-          primary: '#E26F5B',
-          secondary: '#3A3A3A',
-          accent: '#00BC7D',
-          card: '#2A2A2A',
-          highlight: '#3A3A3A',
-          border: '#E26F5B',
-        },
-        dark: {
-          background: '#0A0A0A',
-          text: '#FFFFFF',
-          textSecondary: '#AAAAAA',
-          primary: '#E26F5B',
-          secondary: '#3A3A3A',
-          accent: '#00BC7D',
-          card: '#2A2A2A',
-          highlight: '#3A3A3A',
-          border: '#00BC7D',
-        },
-      },
+        })
+        .subscribe((status, err) => {
+          console.log('Order subscription status:', status);
+          if (err) console.error('Order subscription error:', err);
+        });
     };
 
-    const effectiveMode = themeSettings.mode === 'auto' ? (systemColorScheme || 'light') : themeSettings.mode;
-    return colorSchemes[themeSettings.colorScheme][effectiveMode];
+    setupRealtimeSubscription();
+    return () => {
+      if (orderChannelRef.current) {
+        console.log('Cleaning up order subscription');
+        supabase.removeChannel(orderChannelRef.current);
+        orderChannelRef.current = null;
+      }
+    };
+  }, [isAuthenticated, user, loadUserProfile]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // THEME — light body with dark header, black/white palette
+  // ─────────────────────────────────────────────────────────────────────────
+  const getCurrentColors = () => {
+    // Black · Gold · Silver — unified scheme across all screens.
+    // Dark near-black header / warm parchment body / burnished gold accents.
+    return {
+      // ── Page / body ──────────────────────────────────────────────────────
+      background:        '#F8F6F1',        // warm parchment page background
+      card:              '#FFFFFF',        // card / modal surfaces
+      cardGradientStart: '#FFFFFF',
+      cardGradientEnd:   '#FAFAF7',        // faintly warm card footer tint
+
+      // ── Header (dark strip at top) ───────────────────────────────────────
+      headerBackground:    '#0A0A0A',      // near-black base
+      headerBorder:        'rgba(184,146,42,0.2)',   // gold hairline
+      headerGradientStart: '#0A0A0A',
+      headerGradientEnd:   '#111108',      // very dark warm black
+
+      // ── Typography ───────────────────────────────────────────────────────
+      text:            '#1A1612',                    // warm dark ink on light bg
+      textSecondary:   '#6B6055',                    // warm mid-tone muted text
+      textOnDark:      '#F5F5F0',                    // off-white on dark header
+      textMutedOnDark: '#A8A8B0',                    // cool silver muted on dark
+
+      // ── Interactive / accent ─────────────────────────────────────────────
+      primary:   '#B8922A',   // burnished gold — CTAs, active states, badges
+      secondary: '#1A1612',   // dark ink — secondary actions, ghost borders
+      accent:    '#D4A83A',   // bright gold — highlights, gradient top stop
+
+      // ── Borders & separators ─────────────────────────────────────────────
+      border:       'rgba(184,146,42,0.22)',  // gold hairline — cards, inputs
+      borderStrong: 'rgba(184,146,42,0.40)',  // stronger gold — active borders
+
+      // ── Gradients (for screens that use LinearGradient on background) ────
+      gradientStart: '#F8F6F1',   // warm parchment — flat body, all same
+      gradientMid:   '#F8F6F1',
+      gradientEnd:   '#F5F0E8',   // very slightly deeper warm at bottom
+
+      // ── Misc ─────────────────────────────────────────────────────────────
+      highlight: 'rgba(184,146,42,0.12)',   // subtle gold tint for active fills
+    };
   };
 
   const currentColors = getCurrentColors();
@@ -509,20 +307,11 @@ useEffect(() => {
   };
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
-    console.log('Showing toast:', message, type);
-    setToast({
-      visible: true,
-      message,
-      type,
-    });
+    setToast({ visible: true, message, type });
   };
 
   const hideToast = () => {
-    console.log('Hiding toast');
-    setToast((prev) => ({
-      ...prev,
-      visible: false,
-    }));
+    setToast((prev) => ({ ...prev, visible: false }));
   };
 
   const addToCart = (item: CartItem) => {
@@ -543,49 +332,23 @@ useEffect(() => {
   };
 
   const removeFromCart = (itemId: string) => {
-    console.log('Removing from cart:', itemId);
     setCart((prevCart) => prevCart.filter((item) => item.id !== itemId));
   };
 
   const updateCartQuantity = (itemId: string, quantity: number) => {
-    console.log('Updating cart quantity:', itemId, quantity);
-    if (quantity <= 0) {
-      removeFromCart(itemId);
-      return;
-    }
+    if (quantity <= 0) { removeFromCart(itemId); return; }
     setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === itemId ? { ...item, quantity } : item
-      )
+      prevCart.map((item) => item.id === itemId ? { ...item, quantity } : item)
     );
   };
 
-  const clearCart = () => {
-    console.log('Clearing cart');
-    setCart([]);
-  };
+  const clearCart = () => { setCart([]); };
 
   const placeOrder = async (deliveryAddress?: string, pickupNotes?: string) => {
-    if (!user || !userProfile) {
-      showToast('Please sign in to place an order', 'error');
-      return;
-    }
-
+    if (!user || !userProfile) { showToast('Please sign in to place an order', 'error'); return; }
     try {
-      console.log('Placing order');
-      const { data, error } = await orderService.placeOrder(
-        user.id,
-        cart,
-        deliveryAddress,
-        pickupNotes
-      );
-
-      if (error) {
-        showToast('Failed to place order', 'error');
-        return;
-      }
-
-      // Points are updated by the edge function, just reload profile
+      const { data, error } = await orderService.placeOrder(user.id, cart, deliveryAddress, pickupNotes);
+      if (error) { showToast('Failed to place order', 'error'); return; }
       showToast('Order placed successfully!', 'success');
       clearCart();
       await loadUserProfile();
@@ -595,102 +358,11 @@ useEffect(() => {
     }
   };
 
-  // const purchaseGiftCard = (giftCard: GiftCard) => {
-  //   console.log('Purchasing gift card:', giftCard);
-  //   // This is for money-based gift cards (not implemented in backend yet)
-  //   showToast('Gift card feature coming soon!', 'info');
-  // };
-
-  // const sendPointsGiftCard = async (recipientId: string, recipientName: string, points: number, message?: string) => {
-  //   if (!user || !userProfile) {
-  //     showToast('Please sign in to send gift cards', 'error');
-  //     return;
-  //   }
-
-  //   if (userProfile.points < points) {
-  //     showToast('Insufficient points', 'error');
-  //     return;
-  //   }
-
-  //   try {
-  //     console.log('Sending points gift card:', recipientId, points);
-  //     const { error } = await giftCardService.sendGiftCard(
-  //       user.id,
-  //       recipientId,
-  //       recipientName,
-  //       points,
-  //       message
-  //     );
-
-  //     if (error) {
-  //       showToast('Failed to send gift card', 'error');
-  //       return;
-  //     }
-
-  //     showToast(`Sent ${points} points to ${recipientName}!`, 'success');
-  //     await loadUserProfile();
-  //   } catch (error) {
-  //     console.error('Error sending gift card:', error);
-  //     showToast('Failed to send gift card', 'error');
-  //   }
-  // };
-
-  // const receivePointsGiftCard = (senderId: string, senderName: string, points: number, message?: string) => {
-  //   console.log('Receiving points gift card:', senderId, points);
-  //   showToast(`Received ${points} points from ${senderName}!`, 'success');
-  //   loadUserProfile();
-  // };
-
-  // const redeemMerch = async (merchId: string, merchName: string, pointsCost: number, deliveryAddress: string, pickupNotes?: string) => {
-  //   if (!user || !userProfile) {
-  //     showToast('Please sign in to redeem merch', 'error');
-  //     return;
-  //   }
-
-  //   if (userProfile.points < pointsCost) {
-  //     showToast('Insufficient points', 'error');
-  //     return;
-  //   }
-
-  //   try {
-  //     console.log('Redeeming merch:', merchId, pointsCost);
-  //     const { error } = await merchService.redeemMerch(
-  //       user.id,
-  //       merchId,
-  //       merchName,
-  //       pointsCost,
-  //       deliveryAddress,
-  //       pickupNotes
-  //     );
-
-  //     if (error) {
-  //       showToast('Failed to redeem merch', 'error');
-  //       return;
-  //     }
-
-  //     showToast(`Redeemed ${merchName} for ${pointsCost} points!`, 'success');
-  //     await loadUserProfile();
-  //   } catch (error) {
-  //     console.error('Error redeeming merch:', error);
-  //     showToast('Failed to redeem merch', 'error');
-  //   }
-  // };
-
   const addPaymentMethod = async (paymentMethod: PaymentMethod) => {
-    if (!user) {
-      showToast('Please sign in to add payment methods', 'error');
-      return;
-    }
-
+    if (!user) { showToast('Please sign in to add payment methods', 'error'); return; }
     try {
-      console.log('Adding payment method');
       const { error } = await paymentMethodService.addPaymentMethod(user.id, paymentMethod);
-
-      if (error) {
-        showToast('Failed to add payment method', 'error');
-        return;
-      }
-
+      if (error) { showToast('Failed to add payment method', 'error'); return; }
       showToast('Payment method added successfully!', 'success');
       await loadUserProfile();
     } catch (error) {
@@ -701,14 +373,8 @@ useEffect(() => {
 
   const removePaymentMethod = async (paymentMethodId: string) => {
     try {
-      console.log('Removing payment method:', paymentMethodId);
       const { error } = await paymentMethodService.removePaymentMethod(paymentMethodId);
-
-      if (error) {
-        showToast('Failed to remove payment method', 'error');
-        return;
-      }
-
+      if (error) { showToast('Failed to remove payment method', 'error'); return; }
       showToast('Payment method removed successfully!', 'success');
       await loadUserProfile();
     } catch (error) {
@@ -719,16 +385,9 @@ useEffect(() => {
 
   const setDefaultPaymentMethod = async (paymentMethodId: string) => {
     if (!user) return;
-
     try {
-      console.log('Setting default payment method:', paymentMethodId);
       const { error } = await paymentMethodService.setDefaultPaymentMethod(user.id, paymentMethodId);
-
-      if (error) {
-        showToast('Failed to set default payment method', 'error');
-        return;
-      }
-
+      if (error) { showToast('Failed to set default payment method', 'error'); return; }
       showToast('Default payment method updated!', 'success');
       await loadUserProfile();
     } catch (error) {
@@ -738,25 +397,13 @@ useEffect(() => {
   };
 
   const updateProfileImage = (imageUri: string) => {
-    console.log('Updating profile image');
-    if (userProfile) {
-      setUserProfile({
-        ...userProfile,
-        profileImage: imageUri,
-      });
-    }
+    if (userProfile) setUserProfile({ ...userProfile, profileImage: imageUri });
   };
 
   const markNotificationAsRead = async (notificationId: string) => {
     try {
-      console.log('Marking notification as read:', notificationId);
       const { error } = await notificationService.markAsRead(notificationId);
-
-      if (error) {
-        console.error('Error marking notification as read:', error);
-        return;
-      }
-
+      if (error) { console.error('Error marking notification as read:', error); return; }
       await loadUserProfile();
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -764,69 +411,26 @@ useEffect(() => {
   };
 
   const addNotification = (notification: AppNotification) => {
-    console.log('Adding notification:', notification.title);
     if (userProfile) {
-      setUserProfile({
-        ...userProfile,
-        notifications: [notification, ...userProfile.notifications],
-      });
+      setUserProfile({ ...userProfile, notifications: [notification, ...userProfile.notifications] });
     }
   };
 
-  // const updateThemeMode = async (mode: ThemeMode) => {
-  //   console.log('Updating theme mode:', mode);
-    
-  //   // Update local state first for immediate UI response
-  //   setThemeSettings((prev) => ({ ...prev, mode }));
-    
-  //   // Save to Supabase if user is authenticated
-  //   if (!user?.id) return; // Early return if no user
-    
-  //   try {
-  //     const { error } = await themeService.updateThemeSettings(user.id, {
-  //       mode,
-  //       colorScheme: themeSettings.colorScheme, // Use current colorScheme
-  //     });
+  const updateThemeMode = async (mode: ThemeMode) => {
+    setThemeSettings((prev) => ({ ...prev, mode }));
+  };
 
-  //     if (error) {
-  //       console.error('Error updating theme mode:', error);
-  //       showToast('Failed to save theme settings', 'error');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error updating theme mode:', error);
-  //     showToast('Failed to save theme settings', 'error');
-  //   }
-  // };
+  const updateColorScheme = async (scheme: ColorScheme) => {
+    setThemeSettings((prev) => ({ ...prev, colorScheme: scheme }));
+  };
 
-  // const updateColorScheme = async (scheme: ColorScheme) => {
-  //   console.log('Updating color scheme:', scheme);
-    
-  //   // Update local state first for immediate UI response
-  //   setThemeSettings((prev) => ({ ...prev, colorScheme: scheme }));
-    
-  //   // Save to Supabase if user is authenticated
-  //   if (!user?.id) return; // Early return if no user
-    
-  //   try {
-  //     const { error } = await themeService.updateThemeSettings(user.id, {
-  //       mode: themeSettings.mode, // Use current mode
-  //       colorScheme: scheme,
-  //     });
-
-  //     if (error) {
-  //       console.error('Error updating color scheme:', error);
-  //       showToast('Failed to save theme settings', 'error');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error updating color scheme:', error);
-  //     showToast('Failed to save theme settings', 'error');
-  //   }
-  // };
+  const receivePointsGiftCard = (senderId: string, senderName: string, points: number, message?: string) => {
+    showToast(`Received ${points} points from ${senderName}!`, 'success');
+    loadUserProfile();
+  };
 
   const getUnreadNotificationCount = () => {
-    if (!userProfile || !userProfile.notifications) {
-      return 0;
-    }
+    if (!userProfile?.notifications) return 0;
     return userProfile.notifications.filter(n => !n.read).length;
   };
 
@@ -847,10 +451,12 @@ useEffect(() => {
         updateProfileImage,
         markNotificationAsRead,
         addNotification,
-        themeSettings,
+        updateThemeMode,
+        updateColorScheme,
         currentColors,
         isTabBarVisible,
         setTabBarVisible,
+        receivePointsGiftCard,
         toast,
         showToast,
         hideToast,
@@ -869,9 +475,7 @@ useEffect(() => {
 
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useApp must be used within AppProvider');
-  }
+  if (!context) throw new Error('useApp must be used within AppProvider');
   return context;
 };
 

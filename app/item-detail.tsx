@@ -322,7 +322,7 @@ export default function ItemDetailScreen() {
             {item.description}
           </Text>
 
-          <View
+          {/* <View
             style={[styles.infoCard, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}
           >
             <IconSymbol
@@ -333,7 +333,7 @@ export default function ItemDetailScreen() {
             <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
               Earn {Math.floor(item.price * quantity)} points with this order!
             </Text>
-          </View>
+          </View> */}
 
           <View
             style={[
@@ -404,8 +404,8 @@ export default function ItemDetailScreen() {
           style={[styles.addButton, { backgroundColor: currentColors.primary }]}
           onPress={handleAddToCart}
         >
-          <IconSymbol name="cart.fill" size={20} color={currentColors.textSecondary} />
-          <Text style={[styles.addButtonText, { color: currentColors.textSecondary}]}>
+          <IconSymbol name="cart.fill" size={20} color={currentColors.text} />
+          <Text style={[styles.addButtonText, { color: currentColors.text}]}>
             Add to Cart
           </Text>
         </Pressable>
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderRadius: 0,
+    borderRadius: 12,
     gap: 12,
     marginBottom: 24,
     borderWidth: 0.2,
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
   },
   quantitySection: {
     padding: 20,
-    borderRadius: 0,
+    borderRadius: 24,
     borderWidth: 0.2,
     boxShadow: "0px 2px 8px rgba(212, 175, 55, 0.15)",
     elevation: 2,
@@ -631,7 +631,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 16,
-    borderRadius: 0,
+    borderRadius: 36,
     gap: 8,
     // boxShadow: "0px 4px 12px rgba(212, 175, 55, 0.3)",
     elevation: 4,

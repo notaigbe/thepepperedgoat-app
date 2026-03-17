@@ -1,229 +1,229 @@
-import { StyleSheet, ViewStyle, TextStyle, useColorScheme } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { ColorScheme, ThemeMode } from '@/types';
 
-// The Peppered Goat Website-inspired color scheme - Nigerian Spice & Fire
-// Sourced from thepepperedgoat.com: deep charcoal backgrounds, fiery amber-orange accents,
-// warm cream text, and rich earthy tones evoking Nigerian spices and pepper.
+// ─── The Peppered Goat — Black · Gold · Silver ────────────────────────
+// Primary palette: near-black base / burnished gold accent / cool silver
+// Light body (warm parchment) / Dark header (near-black with gold blooms)
+
+// ─── Raw tokens — imported by screens that need direct access ─────────
+export const blackGoldLight = {
+  GOLD:          "#B8922A",                    // burnished gold — legible on light bg
+  GOLD_BRIGHT:   "#D4A83A",                    // highlight / gradient top stop
+  GOLD_DIM:      "rgba(184,146,42,0.12)",      // tinted fill for active states
+  SILVER:        "#C0C0C8",                    // cool silver — header + muted accents
+  SILVER_DIM:    "rgba(192,192,200,0.18)",     // silver pill backgrounds
+  SILVER_SOFT:   "rgba(192,192,200,0.5)",      // silver borders mid-opacity
+
+  // Header — near-black dark background
+  HEADER_TOP:    "#0A0A0A",
+  HEADER_MID:    "#111108",
+  HEADER_BOT:    "#0D0D09",
+
+  // Body — warm parchment
+  BODY_BG:       "#F8F6F1",
+  CARD_BG:       "#FFFFFF",
+  CARD_FOOTER:   "#FAFAF7",
+
+  // Text — dark ink on light surface
+  INK:           "#1A1612",
+  INK_MID:       "#6B6055",
+  INK_SOFT:      "rgba(26,22,18,0.72)",
+  // Header-only text
+  INK_WHITE:     "#F5F5F0",
+  INK_SILVER:    "#A8A8B0",
+
+  BORDER_GOLD:   "rgba(184,146,42,0.22)",
+  BORDER_SILVER: "rgba(192,192,200,0.15)",
+  BORDER_LIGHT:  "rgba(26,22,18,0.08)",
+};
+
+// ─── Shared base — all schemes inherit these tokens ───────────────────
+const base = {
+  // ── Core ─────────────────────────────────────────────────────────────
+  // primary / secondary / accent map to gold so every component that
+  // calls currentColors.primary automatically picks up the brand accent.
+  text:             blackGoldLight.INK,
+  textSecondary:    blackGoldLight.INK_MID,
+  primary:          blackGoldLight.GOLD,          // gold — CTAs, active states
+  secondary:        blackGoldLight.INK,           // dark ink — secondary actions
+  accent:           blackGoldLight.GOLD_BRIGHT,   // bright gold — highlights
+  highlight:        blackGoldLight.GOLD_DIM,      // subtle gold tint
+  card:             blackGoldLight.CARD_BG,
+  border:           blackGoldLight.BORDER_LIGHT,
+
+  // ── Header ────────────────────────────────────────────────────────────
+  headerBackground: blackGoldLight.HEADER_TOP,
+  headerText:       blackGoldLight.INK_WHITE,
+  headerSubtext:    blackGoldLight.INK_SILVER,
+  headerBorder:     "rgba(184,146,42,0.2)",       // gold hairline
+
+  // ── Gradient fallbacks ────────────────────────────────────────────────
+  // Body — flat parchment (no body gradient needed)
+  gradientStart:    blackGoldLight.BODY_BG,
+  gradientMid:      blackGoldLight.BODY_BG,
+  gradientEnd:      blackGoldLight.BODY_BG,
+
+  // Header — near-black bloom
+  headerGradientStart: blackGoldLight.HEADER_TOP,
+  headerGradientEnd:   blackGoldLight.HEADER_MID,
+
+  // Card — white to faintly warm footer
+  cardGradientStart: blackGoldLight.CARD_BG,
+  cardGradientEnd:   blackGoldLight.CARD_FOOTER,
+};
+
+// ─── Color scheme variants ────────────────────────────────────────────
 const colorSchemes = {
+
+  // ── default — standard warm parchment ────────────────────────────────
   default: {
     light: {
-      background: '#0E0C0A', // Near-black charcoal (site background)
-      text: '#F5F0E8', // Warm cream/off-white (site text)
-      textSecondary: '#C4A882', // Warm tan for descriptions
-      primary: '#E07B2A', // Fiery amber-orange (primary CTA/accent)
-      secondary: '#B84C1E', // Deep red-orange (secondary accent)
-      accent: '#F0A500', // Bright amber highlight
-      card: '#1A1612', // Dark charcoal card surface
-      highlight: '#F5631A', // Vivid pepper-red highlight
-      border: '#E07B2A', // Amber border
-      // Gradient colors
-      gradientStart: '#0E0C0A',
-      gradientMid: '#1A1612',
-      gradientEnd: '#2E1E10',
-      headerGradientStart: '#0E0C0A',
-      headerGradientEnd: '#2A1508',
-      cardGradientStart: '#1A1612',
-      cardGradientEnd: '#2E1E10',
+      ...base,
+      background: blackGoldLight.BODY_BG,         // #F8F6F1
     },
     dark: {
-      background: '#0E0C0A', // Near-black charcoal (site background)
-      text: '#F5F0E8', // Warm cream/off-white (site text)
-      textSecondary: '#C4A882', // Warm tan for descriptions
-      primary: '#E07B2A', // Fiery amber-orange (primary CTA/accent)
-      secondary: '#B84C1E', // Deep red-orange (secondary accent)
-      accent: '#F0A500', // Bright amber highlight
-      card: '#1A1612', // Dark charcoal card surface
-      highlight: '#F5631A', // Vivid pepper-red highlight
-      border: '#E07B2A', // Amber border
-      // Gradient colors
-      gradientStart: '#0E0C0A',
-      gradientMid: '#1A1612',
-      gradientEnd: '#2E1E10',
-      headerGradientStart: '#0E0C0A',
-      headerGradientEnd: '#2A1508',
-      cardGradientStart: '#1A1612',
-      cardGradientEnd: '#2E1E10',
+      ...base,
+      background: blackGoldLight.BODY_BG,
     },
   },
+
+  // ── warm — deeper parchment, border leans into gold ──────────────────
   warm: {
     light: {
-      background: '#130D08',
-      text: '#F5F0E8',
-      textSecondary: '#D4B896',
-      primary: '#E8832E',
-      secondary: '#C25520',
-      accent: '#F5A623',
-      card: '#1E1510',
-      highlight: '#FF6B2B',
-      border: '#E8832E',
-      gradientStart: '#130D08',
-      gradientMid: '#1E1510',
-      gradientEnd: '#332010',
-      headerGradientStart: '#130D08',
-      headerGradientEnd: '#2E180A',
-      cardGradientStart: '#1E1510',
-      cardGradientEnd: '#332010',
+      ...base,
+      background:      "#F5F0E8",
+      gradientStart:   "#F5F0E8",
+      gradientMid:     "#F5F0E8",
+      gradientEnd:     "#F5F0E8",
+      cardGradientEnd: "#F7F3EC",
+      border:          "rgba(184,146,42,0.16)",
     },
     dark: {
-      background: '#130D08',
-      text: '#F5F0E8',
-      textSecondary: '#D4B896',
-      primary: '#E8832E',
-      secondary: '#C25520',
-      accent: '#F5A623',
-      card: '#1E1510',
-      highlight: '#FF6B2B',
-      border: '#E8832E',
-      gradientStart: '#130D08',
-      gradientMid: '#1E1510',
-      gradientEnd: '#332010',
-      headerGradientStart: '#130D08',
-      headerGradientEnd: '#2E180A',
-      cardGradientStart: '#1E1510',
-      cardGradientEnd: '#332010',
+      ...base,
+      background:      "#F5F0E8",
+      gradientStart:   "#F5F0E8",
+      gradientMid:     "#F5F0E8",
+      gradientEnd:     "#F5F0E8",
+      cardGradientEnd: "#F7F3EC",
+      border:          "rgba(184,146,42,0.16)",
     },
   },
+
+  // ── cool — grey-white, silver accents breathe more ───────────────────
   cool: {
     light: {
-      background: '#0A0C0E',
-      text: '#F0EDE8',
-      textSecondary: '#A89880',
-      primary: '#D4732A',
-      secondary: '#8B3A18',
-      accent: '#E09030',
-      card: '#141618',
-      highlight: '#E05820',
-      border: '#D4732A',
-      gradientStart: '#0A0C0E',
-      gradientMid: '#141618',
-      gradientEnd: '#221A14',
-      headerGradientStart: '#0A0C0E',
-      headerGradientEnd: '#1E1410',
-      cardGradientStart: '#141618',
-      cardGradientEnd: '#221A14',
+      ...base,
+      background:      "#F4F3F0",
+      gradientStart:   "#F4F3F0",
+      gradientMid:     "#F4F3F0",
+      gradientEnd:     "#F4F3F0",
+      cardGradientEnd: "#F9F8F6",
+      border:          blackGoldLight.BORDER_SILVER,
+      accent:          blackGoldLight.SILVER,
     },
     dark: {
-      background: '#0A0C0E',
-      text: '#F0EDE8',
-      textSecondary: '#A89880',
-      primary: '#D4732A',
-      secondary: '#8B3A18',
-      accent: '#E09030',
-      card: '#141618',
-      highlight: '#E05820',
-      border: '#D4732A',
-      gradientStart: '#0A0C0E',
-      gradientMid: '#141618',
-      gradientEnd: '#221A14',
-      headerGradientStart: '#0A0C0E',
-      headerGradientEnd: '#1E1410',
-      cardGradientStart: '#141618',
-      cardGradientEnd: '#221A14',
+      ...base,
+      background:      "#F4F3F0",
+      gradientStart:   "#F4F3F0",
+      gradientMid:     "#F4F3F0",
+      gradientEnd:     "#F4F3F0",
+      cardGradientEnd: "#F9F8F6",
+      border:          blackGoldLight.BORDER_SILVER,
+      accent:          blackGoldLight.SILVER,
     },
   },
+
+  // ── vibrant — richer gold, stronger borders ───────────────────────────
   vibrant: {
     light: {
-      background: '#0C0A08',
-      text: '#FFF8EE',
-      textSecondary: '#D4AA78',
-      primary: '#FF7A1A',
-      secondary: '#CC3D10',
-      accent: '#FFB020',
-      card: '#181410',
-      highlight: '#FF4500',
-      border: '#FF7A1A',
-      gradientStart: '#0C0A08',
-      gradientMid: '#181410',
-      gradientEnd: '#301808',
-      headerGradientStart: '#0C0A08',
-      headerGradientEnd: '#281208',
-      cardGradientStart: '#181410',
-      cardGradientEnd: '#301808',
+      ...base,
+      background: blackGoldLight.BODY_BG,
+      primary:    blackGoldLight.GOLD_BRIGHT,
+      accent:     blackGoldLight.GOLD_BRIGHT,
+      highlight:  "rgba(212,168,58,0.18)",
+      border:     "rgba(184,146,42,0.28)",
     },
     dark: {
-      background: '#0C0A08',
-      text: '#FFF8EE',
-      textSecondary: '#D4AA78',
-      primary: '#FF7A1A',
-      secondary: '#CC3D10',
-      accent: '#FFB020',
-      card: '#181410',
-      highlight: '#FF4500',
-      border: '#FF7A1A',
-      gradientStart: '#0C0A08',
-      gradientMid: '#181410',
-      gradientEnd: '#301808',
-      headerGradientStart: '#0C0A08',
-      headerGradientEnd: '#281208',
-      cardGradientStart: '#181410',
-      cardGradientEnd: '#301808',
+      ...base,
+      background: blackGoldLight.BODY_BG,
+      primary:    blackGoldLight.GOLD_BRIGHT,
+      accent:     blackGoldLight.GOLD_BRIGHT,
+      highlight:  "rgba(212,168,58,0.18)",
+      border:     "rgba(184,146,42,0.28)",
     },
   },
+
+  // ── minimal — silver-led, gold pulled back ────────────────────────────
   minimal: {
     light: {
-      background: '#111010',
-      text: '#EDE8E0',
-      textSecondary: '#AA9070',
-      primary: '#C86820',
-      secondary: '#8C3815',
-      accent: '#D48818',
-      card: '#1C1A18',
-      highlight: '#D85010',
-      border: '#C86820',
-      gradientStart: '#111010',
-      gradientMid: '#1C1A18',
-      gradientEnd: '#281E14',
-      headerGradientStart: '#111010',
-      headerGradientEnd: '#221810',
-      cardGradientStart: '#1C1A18',
-      cardGradientEnd: '#281E14',
+      ...base,
+      background: "#F6F6F4",
+      primary:    blackGoldLight.INK,              // ink replaces gold on minimal
+      accent:     blackGoldLight.SILVER,
+      highlight:  blackGoldLight.SILVER_DIM,
+      border:     "rgba(26,22,18,0.06)",
+      gradientStart: "#F6F6F4",
+      gradientMid:   "#F6F6F4",
+      gradientEnd:   "#F6F6F4",
     },
     dark: {
-      background: '#111010',
-      text: '#EDE8E0',
-      textSecondary: '#AA9070',
-      primary: '#C86820',
-      secondary: '#8C3815',
-      accent: '#D48818',
-      card: '#1C1A18',
-      highlight: '#D85010',
-      border: '#C86820',
-      gradientStart: '#111010',
-      gradientMid: '#1C1A18',
-      gradientEnd: '#281E14',
-      headerGradientStart: '#111010',
-      headerGradientEnd: '#221810',
-      cardGradientStart: '#1C1A18',
-      cardGradientEnd: '#281E14',
+      ...base,
+      background: "#F6F6F4",
+      primary:    blackGoldLight.INK,
+      accent:     blackGoldLight.SILVER,
+      highlight:  blackGoldLight.SILVER_DIM,
+      border:     "rgba(26,22,18,0.06)",
+      gradientStart: "#F6F6F4",
+      gradientMid:   "#F6F6F4",
+      gradientEnd:   "#F6F6F4",
     },
   },
 };
 
-export const getColors = (mode: ThemeMode, colorScheme: ColorScheme, systemColorScheme: 'light' | 'dark' | null) => {
-  const effectiveMode = mode === 'auto' ? (systemColorScheme || 'dark') : mode;
+export const getColors = (
+  mode: ThemeMode,
+  colorScheme: ColorScheme,
+  systemColorScheme: 'light' | 'dark' | null
+) => {
+  const effectiveMode =
+    mode === 'auto' ? (systemColorScheme || 'light') : mode;
   return colorSchemes[colorScheme][effectiveMode];
 };
 
-// Default colors for backward compatibility
-export const colors = colorSchemes.default.dark;
+// Default export — used directly by components that import `colors`
+export const colors = colorSchemes.default.light;
 
+// ─── Button styles ────────────────────────────────────────────────────
 export const buttonStyles = StyleSheet.create({
   primaryButton: {
-    backgroundColor: colors.primary,
+    // Solid gold fallback; wrap in LinearGradient in component for the
+    // GOLD_BRIGHT → GOLD metallic sheen used across the HomeScreen.
+    backgroundColor: blackGoldLight.GOLD,
     alignSelf: 'center',
     width: '100%',
-    boxShadow: '0px 8px 24px rgba(224, 123, 42, 0.40)',
-    elevation: 8,
+    borderRadius: 50,
+    elevation: 3,
+    shadowColor: blackGoldLight.GOLD,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
   },
   secondaryButton: {
-    backgroundColor: colors.secondary,
+    backgroundColor: blackGoldLight.CARD_BG,
+    borderWidth: 1,
+    borderColor: blackGoldLight.BORDER_GOLD,
     alignSelf: 'center',
     width: '100%',
-    boxShadow: '0px 8px 24px rgba(184, 76, 30, 0.35)',
-    elevation: 8,
+    borderRadius: 50,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
 });
 
+// ─── Common layout styles ─────────────────────────────────────────────
 export const commonStyles = StyleSheet.create({
   wrapper: {
     backgroundColor: colors.background,
@@ -245,17 +245,14 @@ export const commonStyles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '800',
+    fontFamily: 'LibertinusSans_700Bold',
     textAlign: 'center',
     color: colors.text,
     marginBottom: 10,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
   },
   text: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: 'LibertinusSans_400Regular',
     color: colors.text,
     marginBottom: 8,
     lineHeight: 24,
@@ -273,16 +270,21 @@ export const commonStyles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 0,
+    borderRadius: 16,
     padding: 16,
     marginVertical: 8,
     width: '100%',
-    boxShadow: '0px 8px 24px rgba(224, 123, 42, 0.20)',
-    elevation: 8,
+    borderWidth: 1,
+    borderColor: blackGoldLight.BORDER_GOLD,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   icon: {
     width: 60,
     height: 60,
-    tintColor: colors.primary,
+    tintColor: blackGoldLight.GOLD,
   },
 });

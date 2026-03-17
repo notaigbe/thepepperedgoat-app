@@ -3,6 +3,7 @@ import type { CartItem } from '@/contexts/AppContext';
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
   View,
@@ -12,10 +13,11 @@ import {
   Image,
   Pressable,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
 import Dialog from '@/components/Dialog';
-import { LinearGradient } from 'expo-linear-gradient';
+import { blackGoldLight } from "@/styles/commonStyles";
 
 export default function CartScreen() {
   const { cart, updateCartQuantity, removeFromCart, currentColors } = useApp();
@@ -29,18 +31,15 @@ export default function CartScreen() {
   const total = subtotal + tax;
 
   const handleQuantityChange = (itemId: string, change: number) => {
-    console.log('Quantity change:', itemId, change);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const item = cart.find((i) => i.id === itemId);
-    if (item) {
-      updateCartQuantity(itemId, item.quantity + change);
-    }
+    if (item) updateCartQuantity(itemId, item.quantity + change);
   };
 
   const handleRemoveItem = (itemId: string) => {
-    console.log('Removing item:', itemId);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setItemToRemove(itemId);
+    setDialogType('remove');
     setDialogVisible(true);
   };
 
@@ -53,7 +52,6 @@ export default function CartScreen() {
   };
 
   const handleCheckout = () => {
-    console.log('Proceeding to checkout');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (cart.length === 0) {
       setDialogType('empty');
@@ -64,218 +62,153 @@ export default function CartScreen() {
   };
 
   return (
-    <View
-      style={[styles.gradientContainer, { backgroundColor: currentColors.background }]}
-    >
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <View style={styles.container}>
-          {/* Header */}
-          <View
-            style={[styles.header, { backgroundColor: currentColors.card, borderBottomColor: currentColors.border }]}
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0A0A0A" />
+
+      {/* Dark header — matches HomeScreen */}
+      <LinearGradient
+        colors={[blackGoldLight.GOLD, blackGoldLight.HEADER_MID, blackGoldLight.HEADER_BOT]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerContainer}
+      >
+      <SafeAreaView style={{ backgroundColor: 'transparent' }} edges={['top']}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Shopping Cart</Text>
+          <Text style={styles.itemCount}>
+            {cart.length} {cart.length === 1 ? 'item' : 'items'}
+          </Text>
+        </View>
+      </SafeAreaView>
+      </LinearGradient>
+
+      {cart.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <IconSymbol name="cart.fill" size={72} color="rgba(0,0,0,0.15)" />
+          <Text style={styles.emptyText}>Your cart is empty</Text>
+          <Text style={styles.emptySubtext}>Add some delicious items to get started!</Text>
+          <Pressable style={styles.browseButton} onPress={() => router.push('/')}>
+            <Text style={styles.browseButtonText}>Browse Menu</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <>
+          <ScrollView
+            style={styles.cartList}
+            contentContainerStyle={styles.cartListContent}
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>Shopping Cart</Text>
-            <Text style={[styles.itemCount, { color: currentColors.textSecondary }]}>
-              {cart.length} {cart.length === 1 ? 'item' : 'items'}
-            </Text>
-          </View>
+            {cart.map((item) => (
+              <View key={item.id} style={styles.cartItem}>
+                <View style={styles.imageContainer}>
+                  <Image source={{ uri: item.image_url }} style={styles.itemImage} />
+                </View>
 
-          {cart.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <IconSymbol name="cart.fill" size={80} color={currentColors.textSecondary} />
-              <Text style={[styles.emptyText, { color: currentColors.textSecondary }]}>
-                Your cart is empty
-              </Text>
-              <Text style={[styles.emptySubtext, { color: currentColors.textSecondary }]}>
-                Add some delicious items to get started!
-              </Text>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.browseButton,
-                  { 
-                    backgroundColor: currentColors.primary,
-                    opacity: pressed ? 0.9 : 1,
-                  }
-                ]}
-                onPress={() => router.push('/')}
-              >
-                <Text style={styles.browseButtonText}>
-                  Browse Menu
-                </Text>
-              </Pressable>
-            </View>
-          ) : (
-            <>
-              <ScrollView
-                style={styles.cartList}
-                contentContainerStyle={styles.cartListContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {cart.map((item) => (
-                  <LinearGradient
-                    key={item.id}
-                    colors={[currentColors.cardGradientStart || currentColors.card, currentColors.cardGradientEnd || currentColors.card]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[styles.cartItem, { borderColor: currentColors.border }]}
-                  >
-                    <View style={styles.imageContainer}>
-                      <Image
-                        source={{ uri: item.image_url }}
-                        style={styles.itemImage}
-                      />
-                    </View>
-                    <View style={styles.itemDetails}>
-                      <Text style={[styles.itemName, { color: currentColors.textSecondary }]}>
-                        {item.name}
-                      </Text>
-                      <Text style={[styles.itemPrice, { color: currentColors.textSecondary }]}>
-                        ${item.price.toFixed(2)}
-                      </Text>
-                      <View style={styles.quantityContainer}>
-                        <Pressable
-                          style={({ pressed }) => [
-                            styles.quantityButton,
-                            { 
-                              backgroundColor: currentColors.background,
-                              borderColor: currentColors.border,
-                              opacity: pressed ? 0.6 : 1,
-                            }
-                          ]}
-                          onPress={() => handleQuantityChange(item.id, -1)}
-                        >
-                          <IconSymbol name="minus" size={14} color={currentColors.textSecondary} />
-                        </Pressable>
-                        <Text style={[styles.quantity, { color: currentColors.textSecondary }]}>{item.quantity}</Text>
-                        <Pressable
-                          style={({ pressed }) => [
-                            styles.quantityButton,
-                            { 
-                              backgroundColor: currentColors.background,
-                              borderColor: currentColors.border,
-                              opacity: pressed ? 0.6 : 1,
-                            }
-                          ]}
-                          onPress={() => handleQuantityChange(item.id, 1)}
-                        >
-                          <IconSymbol name="plus" size={14} color={currentColors.textSecondary} />
-                        </Pressable>
-                      </View>
-                    </View>
+                <View style={styles.itemDetails}>
+                  <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+                  <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+                  <View style={styles.quantityContainer}>
                     <Pressable
-                      style={({ pressed }) => [
-                        styles.removeButton,
-                        { opacity: pressed ? 0.5 : 1 }
-                      ]}
-                      onPress={() => handleRemoveItem(item.id)}
+                      style={styles.quantityButton}
+                      onPress={() => handleQuantityChange(item.id, -1)}
                     >
-                      <IconSymbol name="trash" size={20} color={currentColors.textSecondary} />
+                      <IconSymbol name="minus" size={14} color="#000000" />
                     </Pressable>
-                  </LinearGradient>
-                ))}
-              </ScrollView>
+                    <Text style={styles.quantity}>{item.quantity}</Text>
+                    <Pressable
+                      style={styles.quantityButton}
+                      onPress={() => handleQuantityChange(item.id, 1)}
+                    >
+                      <IconSymbol name="plus" size={14} color="#000000" />
+                    </Pressable>
+                  </View>
+                </View>
 
-              {/* Summary */}
-              <View
-                style={[styles.summary, { backgroundColor: currentColors.card, borderTopColor: currentColors.border }]}
-              >
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>Subtotal</Text>
-                  <Text style={[styles.summaryValue, { color: currentColors.textSecondary }]}>${subtotal.toFixed(2)}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: currentColors.textSecondary }]}>Tax (9.75%)</Text>
-                  <Text style={[styles.summaryValue, { color: currentColors.textSecondary }]}>${tax.toFixed(2)}</Text>
-                </View>
-                <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: currentColors.border }]}>
-                  <Text style={[styles.totalLabel, { color: currentColors.textSecondary }]}>Total</Text>
-                  <Text style={[styles.totalValue, { color: currentColors.primary }]}>${total.toFixed(2)}</Text>
-                </View>
                 <Pressable
-                  style={({ pressed }) => [
-                    styles.checkoutButton,
-                    { 
-                      backgroundColor: currentColors.primary,
-                      opacity: pressed ? 0.9 : 1,
-                    }
-                  ]}
-                  onPress={handleCheckout}
+                  style={({ pressed }) => [styles.removeButton, { opacity: pressed ? 0.4 : 1 }]}
+                  onPress={() => handleRemoveItem(item.id)}
                 >
-                  <Text style={styles.checkoutButtonText}>
-                    Proceed to Checkout
-                  </Text>
-                  <IconSymbol name="arrow.right" size={18} color="#FFFFFF" />
+                  <IconSymbol name="trash" size={20} color="rgba(0,0,0,0.35)" />
                 </Pressable>
               </View>
-            </>
-          )}
-        </View>
-        <Dialog
-          visible={dialogVisible}
-          title={dialogType === 'remove' ? 'Remove Item' : 'Empty Cart'}
-          message={
-            dialogType === 'remove'
-              ? 'Are you sure you want to remove this item from your cart?'
-              : 'Please add items to your cart before checking out.'
-          }
-          buttons={
-            dialogType === 'remove'
-              ? [
-                  {
-                    text: 'Cancel',
-                    onPress: () => setItemToRemove(null),
-                    style: 'cancel',
-                  },
-                  {
-                    text: 'Remove',
-                    onPress: handleConfirmRemove,
-                    style: 'destructive',
-                  },
-                ]
-              : [
-                  {
-                    text: 'OK',
-                    onPress: () => {},
-                    style: 'default',
-                  },
-                ]
-          }
-          onHide={() => {
-            setDialogVisible(false);
-            setItemToRemove(null);
-          }}
-          currentColors={currentColors}
-        />
-      </SafeAreaView>
+            ))}
+          </ScrollView>
+
+          {/* Summary */}
+          <View style={styles.summary}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Tax (9.75%)</Text>
+              <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
+            </View>
+            <View style={[styles.summaryRow, styles.totalRow]}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.checkoutButton, { opacity: pressed ? 0.85 : 1 }]}
+              onPress={handleCheckout}
+            >
+              <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
+              <IconSymbol name="arrow.right" size={18} color="#FFFFFF" />
+            </Pressable>
+          </View>
+        </>
+      )}
+
+      <Dialog
+        visible={dialogVisible}
+        title={dialogType === 'remove' ? 'Remove Item' : 'Empty Cart'}
+        message={
+          dialogType === 'remove'
+            ? 'Are you sure you want to remove this item from your cart?'
+            : 'Please add items to your cart before checking out.'
+        }
+        buttons={
+          dialogType === 'remove'
+            ? [
+                { text: 'Cancel', onPress: () => setItemToRemove(null), style: 'cancel' },
+                { text: 'Remove', onPress: handleConfirmRemove, style: 'destructive' },
+              ]
+            : [{ text: 'OK', onPress: () => {}, style: 'default' }]
+        }
+        onHide={() => { setDialogVisible(false); setItemToRemove(null); }}
+        currentColors={currentColors}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradientContainer: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
   container: {
     flex: 1,
+    backgroundColor: blackGoldLight.BODY_BG,
+  },
+  // ── Dark header ──────────────────────────────────────────────────────────
+  headerContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: blackGoldLight.BORDER_GOLD,
   },
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 24,
-    borderBottomWidth: 0.2,
-    elevation: 8,
+    paddingVertical: 20,
   },
   headerTitle: {
     fontSize: 32,
     fontFamily: 'LibertinusSans_700Bold',
-    marginBottom: 4,
+    color: '#FFFFFF',
     letterSpacing: 0.5,
+    marginBottom: 4,
   },
   itemCount: {
     fontSize: 14,
-    fontFamily: 'Cormorant_400Regular',
+    fontFamily: 'LibertinusSans_400Regular',
+    color: 'rgba(255,255,255,0.4)',
   },
+  // ── Empty state ──────────────────────────────────────────────────────────
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -283,40 +216,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyText: {
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: 'LibertinusSans_700Bold',
+    color: '#000000',
     marginTop: 20,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    fontFamily: 'Cormorant_400Regular',
+    fontFamily: 'Inter_400Regular',
+    color: 'rgba(0,0,0,0.45)',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
   },
   browseButton: {
-    paddingHorizontal: 40,
+    paddingHorizontal: 36,
     paddingVertical: 14,
-    borderRadius: 2,
-    elevation: 2,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-    }),
+    borderRadius: 36,
+    backgroundColor: blackGoldLight.GOLD,
   },
   browseButtonText: {
     fontSize: 15,
-    fontFamily: 'Cormorant_600SemiBold',
+    fontFamily: 'LibertinusSans_700Bold',
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
-  cartList: {
-    flex: 1,
-  },
+  // ── Cart list ────────────────────────────────────────────────────────────
+  cartList: { flex: 1 },
   cartListContent: {
     paddingHorizontal: 20,
     paddingTop: 16,
@@ -324,37 +250,45 @@ const styles = StyleSheet.create({
   },
   cartItem: {
     flexDirection: 'row',
-    borderRadius: 0,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 0.2,
-    elevation: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.07)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+    alignItems: 'center',
   },
   imageContainer: {
-    borderRadius: 0,
+    borderRadius: 100,
     overflow: 'hidden',
-    borderWidth: 0.2,
-    elevation: 4,
   },
   itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 0,
+    width: 76,
+    height: 76,
+    borderRadius: 14,
   },
   itemDetails: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 14,
     justifyContent: 'space-between',
   },
   itemName: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK,
     marginBottom: 4,
+    lineHeight: 19,
   },
   itemPrice: {
-    fontSize: 16,
-    fontFamily: 'Cormorant_700Bold',
-    marginBottom: 8,
+    fontSize: 15,
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK_MID,
+    marginBottom: 10,
   },
   quantityContainer: {
     flexDirection: 'row',
@@ -364,36 +298,38 @@ const styles = StyleSheet.create({
   quantityButton: {
     width: 32,
     height: 32,
-    borderRadius: 2,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: blackGoldLight.GOLD_DIM,
     borderWidth: 1,
-    elevation: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.08,
-        shadowRadius: 2,
-      },
-    }),
+    borderColor: blackGoldLight.BORDER_GOLD,
   },
   quantity: {
     fontSize: 16,
-    fontFamily: 'Cormorant_600SemiBold',
-    minWidth: 28,
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK,
+    minWidth: 24,
     textAlign: 'center',
   },
   removeButton: {
     padding: 8,
     justifyContent: 'flex-start',
+    alignSelf: 'flex-start',
   },
+  // ── Summary ──────────────────────────────────────────────────────────────
   summary: {
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 120,
-    borderTopWidth: 0.2,
-    elevation: 10,
+    borderTopWidth: 1,
+    borderTopColor: blackGoldLight.BORDER_GOLD,
+    shadowColor: blackGoldLight.INK,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 6,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -402,24 +338,29 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
-    fontFamily: 'Cormorant_400Regular',
+    fontFamily: 'Inter_400Regular',
+    color: 'rgba(0,0,0,0.5)',
   },
   summaryValue: {
     fontSize: 14,
-    fontFamily: 'Cormorant_600SemiBold',
+    fontFamily: 'Inter_400Regular',
+    color: blackGoldLight.INK,
   },
   totalRow: {
     marginTop: 8,
-    paddingTop: 12,
-    borderTopWidth: 0.2,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.07)',
   },
   totalLabel: {
     fontSize: 18,
     fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK,
   },
   totalValue: {
     fontSize: 20,
-    fontFamily: 'Cormorant_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK,
   },
   checkoutButton: {
     flexDirection: 'row',
@@ -427,21 +368,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     gap: 8,
-    borderRadius: 2,
+    borderRadius: 36,
     marginTop: 20,
-    elevation: 3,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-      },
-    }),
+    backgroundColor: blackGoldLight.GOLD,
+    shadowColor: blackGoldLight.INK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
   checkoutButtonText: {
     fontSize: 15,
-    fontFamily: 'Cormorant_700Bold',
+    fontFamily: 'LibertinusSans_700Bold',
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },

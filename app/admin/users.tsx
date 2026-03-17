@@ -374,7 +374,7 @@ export default function AdminUserManagement() {
               setBannedEvents(new Set());
             }}
           >
-            <IconSymbol name="arrow.left" size={24} color={colors.text} />
+            <IconSymbol name="chevron.left" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.title}>{selectedUser.name}</Text>
           <View style={{ width: 40 }} />
@@ -498,7 +498,7 @@ export default function AdminUserManagement() {
             }
           }}
         >
-          <IconSymbol name="arrow-back" size={24} color={colors.text} />
+          <IconSymbol name="chevron.left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>User Management</Text>
         <View style={{ width: 40 }} />

@@ -22,6 +22,7 @@ import { imageService, userService } from '@/services/supabaseService';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from './integrations/supabase/client';
+import { blackGoldLight } from '@/styles/commonStyles';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -247,7 +248,7 @@ export default function EditProfileScreen() {
 
   return (
     <LinearGradient
-      colors={[currentColors.gradientStart || currentColors.background, currentColors.gradientMid || currentColors.background, currentColors.gradientEnd || currentColors.background]}
+      colors={[blackGoldLight.BODY_BG|| blackGoldLight.HEADER_TOP, blackGoldLight.BODY_BG || blackGoldLight.HEADER_MID, blackGoldLight.BODY_BG || blackGoldLight.HEADER_BOT]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       style={styles.gradientContainer}
@@ -256,10 +257,10 @@ export default function EditProfileScreen() {
         <View style={styles.container}>
           {/* Header with Gradient */}
           <LinearGradient
-            colors={[currentColors.headerGradientStart || currentColors.card, currentColors.headerGradientEnd || currentColors.card]}
+            colors={[blackGoldLight.GOLD, blackGoldLight.HEADER_MID, blackGoldLight.HEADER_BOT]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={[styles.header, { borderBottomColor: currentColors.border }]}
+            style={[styles.header, { borderBottomColor: blackGoldLight.BORDER_GOLD }]}
           >
             <Pressable
               onPress={() => {
@@ -272,7 +273,7 @@ export default function EditProfileScreen() {
             >
               <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
             </Pressable>
-            <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>Edit Profile</Text>
+            <Text style={[styles.headerTitle, { color: currentColors.primary }]}>Edit Profile</Text>
             <Pressable 
               onPress={handleSave}
               disabled={saving}
@@ -472,7 +473,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 0,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 0.5,
@@ -508,7 +509,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    borderRadius: 0,
+    borderRadius: 36,
     padding: 16,
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
@@ -532,7 +533,7 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: 120,
     height: 120,
-    borderRadius: 0,
+    borderRadius: 36,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -541,7 +542,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   imageButton: {
-    borderRadius: 0,
+    borderRadius: 24,
     // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
     elevation: 8,
   },
@@ -560,7 +561,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 0,
+    borderRadius: 24,
     gap: 12,
     marginTop: 8,
     borderWidth: 0.2,

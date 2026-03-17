@@ -278,7 +278,7 @@ export default function AdminAnalytics() {
             router.back();
           }}
         >
-          <IconSymbol name="arrow.left" size={24} color={colors.text} />
+          <IconSymbol name="chevron.left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Analytics</Text>
         <Pressable style={styles.refreshButton} onPress={fetchAnalyticsData}>

@@ -1,10 +1,9 @@
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   Image,
   Pressable,
   Platform,
@@ -12,6 +11,8 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
+  StatusBar,
+  RefreshControl,
   Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,430 +23,570 @@ import * as Haptics from "expo-haptics";
 import { imageService } from "@/services/supabaseService";
 import Toast from "@/components/Toast";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
+import { blackGoldLight } from "@/styles/commonStyles";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// Responsive font size calculation
-const getResponsiveFontSize = (baseSize: number) => {
-  const scale = SCREEN_WIDTH / 375;
-  const newSize = baseSize * scale;
-  return Math.round(newSize);
-};
+// ─── Card geometry ────────────────────────────────────────────────────
+const { width: SCREEN_W } = Dimensions.get("window");
+const H_PAD    = 20;
+const CARD_W   = SCREEN_W - H_PAD * 2;
+const IMG_SIZE = 114;   // image panel width & height
+const R        = 16;    // card corner radius
+const IMG_R    = 12;    // image inner corner radius (bottom-right only)
 
-// Responsive padding calculation
-const getResponsivePadding = (basePadding: number) => {
-  const scale = SCREEN_WIDTH / 375;
-  const newPadding = basePadding * scale;
-  return Math.max(Math.round(newPadding), basePadding * 0.8);
-};
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  if (h < 21) return "Good evening";
+  return "Good night";
+}
 
+// ─────────────────────────────────────────────────────────────────────
+// WELCOME HEADER — Black & Gold
+// ─────────────────────────────────────────────────────────────────────
+interface WelcomeHeaderProps {
+  headerImage: string | null;
+  unreadCount: number;
+  onNotificationPress: () => void;
+  fadeAnim: Animated.Value;
+}
+
+function WelcomeHeader({
+  headerImage,
+  unreadCount,
+  onNotificationPress,
+  fadeAnim,
+}: WelcomeHeaderProps) {
+  const greeting = getGreeting();
+
+  return (
+    // ── Base: near-black flat fill ──────────────────────────────────
+    <View style={hStyles.headerRoot}>
+
+      {/* Layer 1 — gold radial bloom from top-right (logo/bell corner) */}
+      <LinearGradient
+        colors={["rgba(212,168,58,0.28)", "rgba(184,146,42,0.10)", "transparent"]}
+        start={{ x: 1, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={hStyles.radialTopRight}
+        pointerEvents="none"
+      />
+
+      {/* Layer 2 — warm amber glow from centre-bottom bleeding up */}
+      <LinearGradient
+        colors={["transparent", "transparent", "rgba(201,155,40,0.12)"]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={hStyles.radialBottomCentre}
+        pointerEvents="none"
+      />
+
+      {/* Layer 3 — cool silver whisper from bottom-left */}
+      <LinearGradient
+        colors={["transparent", "rgba(192,192,200,0.07)"]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={hStyles.radialBottomLeft}
+        pointerEvents="none"
+      />
+
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: "transparent" }}>
+        {/* Top bar */}
+        <View style={hStyles.topBar}>
+          {/* Logo — gold-bordered pill */}
+          <View style={hStyles.logoPill}>
+            {headerImage ? (
+              <Image source={{ uri: headerImage }} style={hStyles.logoImg} />
+            ) : (
+              <View style={hStyles.logoMark}>
+                <Text style={hStyles.logoMarkText}>◈</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Brand */}
+          <View style={hStyles.brandBlock}>
+            <Text style={hStyles.brandName}>The Peppered Goat</Text>
+            <Text style={hStyles.brandTagline}>STUBBORNLY SPICY</Text>
+          </View>
+
+          {/* Bell — silver-bordered pill */}
+          <Pressable onPress={onNotificationPress} hitSlop={12} style={hStyles.bellPill}>
+            <IconSymbol
+              name={Platform.OS === "ios" ? "bell.fill" : "notifications"}
+              size={20}
+              color={blackGoldLight.SILVER}
+            />
+            {unreadCount > 0 && (
+              <View style={hStyles.bellBadge}>
+                <Text style={hStyles.bellBadgeText}>
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
+
+        {/* Fading gold/silver rule */}
+        <LinearGradient
+          colors={["transparent", blackGoldLight.GOLD, blackGoldLight.GOLD, "transparent"]}
+          locations={[0, 0.5, 0.5, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={hStyles.rule}
+        />
+
+        {/* Greeting */}
+        <Animated.View style={[hStyles.greetingBlock, { opacity: fadeAnim }]}>
+          <Text style={hStyles.greetingTime}>{greeting}</Text>
+          <Text style={hStyles.greetingLine1}>What shall we</Text>
+          <Text style={hStyles.greetingLine2}>tempt you with?</Text>
+        </Animated.View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+const hStyles = StyleSheet.create({
+  headerRoot: {
+    backgroundColor: blackGoldLight.HEADER_TOP,   // solid near-black base
+    position: "relative",
+    overflow: "hidden",
+  },
+  // Gold bloom — top-right corner, spreads diagonally inward
+  radialTopRight: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: "100%",
+    height: "100%",
+    zIndex: 0,
+  },
+  // Warm amber — rises from the bottom centre (where the greeting lives)
+  radialBottomCentre: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "60%",
+    zIndex: 0,
+  },
+  // Cool silver — bottom-left corner, very subtle
+  radialBottomLeft: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    width: "50%",
+    height: "50%",
+    zIndex: 0,
+  },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 12,
+    gap: 12,
+  },
+  logoPill: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: blackGoldLight.GOLD_DIM,
+    borderWidth: 1,
+    borderColor: blackGoldLight.BORDER_GOLD,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoImg: {
+    width: 52,
+    height: 52,
+    resizeMode: "cover",
+  },
+  logoMark: {
+    width: 52,
+    height: 52,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoMarkText: {
+    fontSize: 24,
+    color: blackGoldLight.GOLD,
+  },
+  brandBlock: {
+    flex: 1,
+  },
+  brandName: {
+    fontSize: 19,
+    fontFamily: "PlaylistScript",
+    color: blackGoldLight.INK_WHITE,
+    letterSpacing: 0.4,
+  },
+  brandTagline: {
+    fontSize: 8,
+    fontFamily: "LibertinusSans_400Regular",
+    letterSpacing: 3.5,
+    color: blackGoldLight.GOLD,
+    marginTop: 3,
+    textTransform: "uppercase",
+    opacity: 0.7,
+  },
+  bellPill: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: blackGoldLight.SILVER_DIM,
+    borderWidth: 1,
+    borderColor: blackGoldLight.BORDER_SILVER,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  bellBadge: {
+    position: "absolute",
+    top: 7,
+    right: 7,
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: blackGoldLight.GOLD,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 2,
+  },
+  bellBadgeText: {
+    fontSize: 8,
+    fontWeight: "700",
+    color: "#000000",
+  },
+  rule: {
+    height: 1.5,
+  },
+  greetingBlock: {
+    paddingHorizontal: 18,
+    paddingTop: 26,
+    paddingBottom: 32,
+  },
+  greetingTime: {
+    fontSize: 13,
+    fontFamily: "LibertinusSans_400Regular",
+    color: blackGoldLight.INK_SILVER,
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  greetingLine1: {
+    fontSize: 36,
+    fontFamily: "LibertinusSans_400Regular",
+    color: blackGoldLight.INK_WHITE,
+    lineHeight: 42,
+  },
+  greetingLine2: {
+    fontSize: 36,
+    fontFamily: "LibertinusSans_700Bold",
+    color: blackGoldLight.GOLD,
+    lineHeight: 44,
+  },
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// HOME SCREEN
+// ─────────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
-  const { currentColors, menuItems, menuCategories, loadMenuItems, loadMenuCategories, addToCart, getUnreadNotificationCount } = useApp();
+  const {
+    currentColors,
+    menuItems,
+    menuCategories,
+    loadMenuItems,
+    loadMenuCategories,
+    addToCart,
+    getUnreadNotificationCount,
+    refreshMenuItems,
+  } = useApp();
+
+  const [loading, setLoading]           = useState(false);
+  const [refreshing, setRefreshing]     = useState(false);
+  const [headerImage, setHeaderImage]   = useState<string | null>(null);
+  const [searchQuery, setSearchQuery]   = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [loading, setLoading] = useState(false);
-  const [headerImage, setHeaderImage] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [categoriesCollapsed, setCategoriesCollapsed] = useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
-  const categoryScrollY = useRef(0);
-  
-  // Toast state
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<"success" | "error" | "info">(
-    "success"
-  );
+  const [toastType, setToastType]       = useState<"success" | "error" | "info">("success");
 
   const unreadCount = getUnreadNotificationCount();
 
-  const showToast = (type: "success" | "error" | "info", message: string) => {
-    setToastType(type);
-    setToastMessage(message);
-    setToastVisible(true);
-  };
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1, duration: 750, delay: 120, useNativeDriver: true,
+    }).start();
+  }, []);
 
   useEffect(() => {
     async function fetchHeaderImage() {
       try {
-        const imageUrl = imageService.getPublicUrl(
-          "assets",
-          "/logos/peppered-goat-logo.jpg"
-        );
+        const imageUrl = imageService.getPublicUrl("assets", "/logos/peppered-goat-logo.jpg");
         setHeaderImage(imageUrl);
-      } catch (error) {
-        console.error("Failed to load header image:", error);
-      }
+      } catch (error) { console.error("Failed to load header image:", error); }
     }
-
     fetchHeaderImage();
   }, []);
 
   useEffect(() => {
-    // Only load if menuItems or menuCategories are empty
-    if (menuItems.length === 0) {
-      setLoading(true);
-      loadMenuItems().finally(() => setLoading(false));
-    }
-    if (menuCategories.length === 0) {
-      loadMenuCategories();
-    }
+    if (menuItems.length === 0) { setLoading(true); loadMenuItems().finally(() => setLoading(false)); }
+    if (menuCategories.length === 0) loadMenuCategories();
   }, [menuItems.length, menuCategories.length, loadMenuItems, loadMenuCategories]);
 
-  const filteredItems = menuItems.filter((item) => {
-    // Filter by search query
-    const matchesSearch = searchQuery.trim() === "" || 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Find the category by key to get its ID
-    const selectedCategoryObj = menuCategories.find(cat => cat.key === selectedCategory);
-    const selectedCategoryId = selectedCategoryObj?.id;
-    
-    // Filter by category
-    const matchesCategory = selectedCategory === "all" || item.category_id === selectedCategoryId;
-    
-    return matchesSearch && matchesCategory;
-  });
+  const filteredItems = useMemo(() => {
+    return menuItems.filter((item) => {
+      const matchesSearch = searchQuery.trim() === "" ||
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const selectedCategoryObj = menuCategories.find((cat) => cat.key === selectedCategory);
+      const matchesCategory = selectedCategory === "all" || item.category_id === selectedCategoryObj?.id;
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, selectedCategory, menuItems, menuCategories]);
 
-  const handleCategoryPress = (category: string) => {
-    console.log("Category selected:", category);
+  const showToast = useCallback((type: "success" | "error" | "info", message: string) => {
+    setToastType(type); setToastMessage(message); setToastVisible(true);
+  }, []);
+
+  const handleCategoryPress = useCallback((category: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedCategory(category);
-    setShowCategoryDropdown(false);
-  };
+    setSelectedCategory(category); setShowCategoryModal(false);
+  }, []);
 
-  const handleItemPress = (itemId: string) => {
-    console.log("Item pressed:", itemId);
+  const handleItemPress = useCallback((itemId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push(`/item-detail?id=${itemId}`);
-  };
+  }, [router]);
 
-  const handleAddToCart = (item: any) => {
-    console.log("Adding to cart:", item.name, 1);
-
+  const handleAddToCart = useCallback((item: any) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     addToCart({ ...item, quantity: 1 });
-    showToast("success", `1 ${item.name} Added to cart`);
-  };
+    showToast("success", `${item.name} added to cart`);
+  }, [addToCart, showToast]);
 
-  const handleClearSearch = () => {
-    console.log("Clearing search");
-    setSearchQuery("");
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery(""); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
+
+  const handleNotificationPress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
+    router.push("/notifications");
+  }, [router]);
 
-  const handleScroll = (event: any) => {
-    const currentScrollY = event.nativeEvent.contentOffset.y;
-    
-    // Collapse categories when scrolled past them (approximately 80px)
-    if (currentScrollY > 80 && !categoriesCollapsed) {
-      setCategoriesCollapsed(true);
-    } else if (currentScrollY <= 80 && categoriesCollapsed) {
-      setCategoriesCollapsed(false);
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      if (Platform.OS === "ios") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await Promise.all([typeof refreshMenuItems === "function" ? refreshMenuItems() : Promise.resolve()]);
+      if (Platform.OS === "ios") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.warn("Refresh failed:", error);
+      showToast("error", "Failed to refresh. Please try again.");
+    } finally {
+      setRefreshing(false);
     }
-  };
+  }, [refreshMenuItems, showToast]);
 
-  const toggleCategoryDropdown = () => {
-    console.log("Toggle category dropdown");
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setShowCategoryDropdown(!showCategoryDropdown);
-  };
-
-  return (
-    <View
-      style={styles.container}
+  // ─── Card ─────────────────────────────────────────────────────────
+  const renderMenuItemCard = useCallback(({ item }: { item: any }) => (
+    <Pressable
+      onPress={() => handleItemPress(item.id)}
+      android_ripple={{ color: "rgba(184,146,42,0.06)" }}
+      style={styles.card}
     >
-      {/* Header with Gradient and 3% Translucency - Background Only */}
-      <View style={styles.headerContainer}>
-        {/* Translucent Background Layer */}
-        <View
-          style={styles.headerBackground}
-        />
-        
-        {/* Content Layer (Logo and Notification Bell) - Fully Opaque */}
-        <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
-          <View style={styles.header}>
-            <View style={styles.headerContent}>
-  {headerImage && (
-    <Image 
-      source={{ uri: headerImage }} 
-      style={styles.logo}
-      // tintColor="#000000"
-    />
-  )}
-  <View style={styles.logoPlaceholder}>
-    <Text style={styles.logoText}>
-      The Peppered Goat
-    </Text>
-    <Text style={styles.logoSubtext}>
-      STUBBORNLY SPICY
-    </Text>
-  </View>
-</View>
-            <Pressable 
-              onPress={() => router.push("/notifications")}
-              style={styles.notificationButton}
-            >
-              <IconSymbol
-                name={Platform.OS === 'ios' ? "bell.fill" : "notifications"}
-                size={28}
-                color="#ffffffb2"
-              />
-              {unreadCount > 0 && (
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationBadgeText}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-          </View>
-        </SafeAreaView>
+      {/*
+        Standard row card — no SVG.
+        Left column: image panel, flush top-left, rounded only on
+        bottom-right corner so it sits naturally inside the card.
+        Right column: title + description.
+        Bottom: full-width footer with price + add button.
+      */}
+
+      {/* Top section: image + text side by side */}
+      <View style={styles.cardTop}>
+        {/* Image — flush top-left of card */}
+        <View style={styles.cardImageWrap}>
+          {item.image_url ? (
+            <Image
+              source={{ uri: item.image_url }}
+              style={styles.cardImage}
+            />
+          ) : (
+            <View style={[styles.cardImage, styles.cardImageFallback]} />
+          )}
+        </View>
+
+        {/* Text */}
+        <View style={styles.cardText}>
+          <Text style={styles.cardTitle} numberOfLines={2}>
+            {item.name}
+          </Text>
+          <Text style={styles.cardDescription} numberOfLines={4}>
+            {item.description}
+          </Text>
+        </View>
       </View>
 
-      {/* Search Bar with Category Dropdown */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBarWrapper}>
+      {/* Footer: gold top border, price left, add button right */}
+      <View style={styles.cardFooter}>
+        <Text style={styles.cardPrice}>${item.price.toFixed(2)}</Text>
+        <Pressable
+          style={styles.addButton}
+          onPress={(e) => { e.stopPropagation(); handleAddToCart(item); }}
+          hitSlop={8}
+          android_ripple={{ color: "rgba(0,0,0,0.15)", radius: 20, borderless: true }}
+        >
+          <LinearGradient
+            colors={[blackGoldLight.GOLD, blackGoldLight.HEADER_BOT]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.addButtonGradient}
+          >
+            <IconSymbol
+              name={Platform.OS === "ios" ? "plus" : "add"}
+              size={18}
+              color="#FFFFFF"
+            />
+          </LinearGradient>
+        </Pressable>
+      </View>
+    </Pressable>
+  ), [handleItemPress, handleAddToCart]);
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={blackGoldLight.HEADER_TOP} />
+
+      {/* Welcome header */}
+      <WelcomeHeader
+        headerImage={headerImage}
+        unreadCount={unreadCount}
+        onNotificationPress={handleNotificationPress}
+        fadeAnim={fadeAnim}
+      />
+
+      {/* Search & Filter */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchBar}>
           <IconSymbol
-            name={Platform.OS === 'ios' ? "magnifyingglass" : "search"}
-            size={20}
-            color="#999999"
-            style={styles.searchIcon}
+            name={Platform.OS === "ios" ? "magnifyingglass" : "search"}
+            size={16}
+            color={blackGoldLight.INK_MID}
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search menu..."
-            placeholderTextColor="#999999"
+            placeholder="Find your favourite..."
+            placeholderTextColor="rgba(26,22,18,0.3)"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            returnKeyType="search"
           />
           {searchQuery.length > 0 && (
-            <Pressable onPress={handleClearSearch} style={styles.clearButton}>
+            <Pressable onPress={handleClearSearch} hitSlop={8}>
               <IconSymbol
-                name={Platform.OS === 'ios' ? "xmark.circle.fill" : "cancel"}
-                size={20}
-                color="#999999"
-              />
-            </Pressable>
-          )}
-          
-          {/* Category Dropdown Button (visible when collapsed) */}
-          {categoriesCollapsed && (
-            <Pressable 
-              onPress={toggleCategoryDropdown}
-              style={styles.categoryDropdownButton}
-            >
-              <IconSymbol
-                name={Platform.OS === 'ios' ? "line.3.horizontal.decrease.circle.fill" : "filter-list"}
-                size={28}
-                color="#E26F5B"
+                name={Platform.OS === "ios" ? "xmark.circle.fill" : "cancel"}
+                size={18}
+                color={blackGoldLight.INK_MID}
               />
             </Pressable>
           )}
         </View>
+
+        <Pressable
+          style={[styles.filterButton, selectedCategory !== "all" && styles.filterButtonActive]}
+          onPress={() => setShowCategoryModal(true)}
+          hitSlop={8}
+        >
+          <IconSymbol
+            name={Platform.OS === "ios" ? "line.3.horizontal.decrease.circle.fill" : "filter-list"}
+            size={20}
+            color={selectedCategory !== "all" ? "#FFFFFF" : blackGoldLight.GOLD}
+          />
+        </Pressable>
       </View>
 
-      {/* Category Dropdown Modal */}
+      {/* Category Modal */}
       <Modal
-        visible={showCategoryDropdown}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowCategoryDropdown(false)}
+        visible={showCategoryModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCategoryModal(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay}
-          onPress={() => setShowCategoryDropdown(false)}
-        >
-          <View style={styles.dropdownContainer}>
-            <View style={styles.dropdownHeader}>
-              <Text style={styles.dropdownTitle}>Categories</Text>
-              <Pressable onPress={() => setShowCategoryDropdown(false)}>
-                <IconSymbol
-                  name={Platform.OS === 'ios' ? "xmark.circle.fill" : "cancel"}
-                  size={24}
-                  color="#999999"
-                />
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowCategoryModal(false)}>
+          <View style={styles.categoryModal}>
+            <LinearGradient
+              colors={["transparent", blackGoldLight.BORDER_GOLD, "transparent"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.modalHandleRule}
+            />
+            <Text style={styles.modalTitle}>Categories</Text>
+            {[...menuCategories].map((category) => (
+              <Pressable
+                key={category.id ?? category.key}
+                style={[styles.categoryOption, selectedCategory === category.key && styles.categoryOptionActive]}
+                onPress={() => handleCategoryPress(category.key)}
+              >
+                <Text style={[styles.categoryOptionText, selectedCategory === category.key && styles.categoryOptionTextActive]}>
+                  {category.title}
+                </Text>
+                {selectedCategory === category.key && (
+                  <LinearGradient
+                    colors={[blackGoldLight.GOLD_BRIGHT, blackGoldLight.GOLD]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.checkmark}
+                  />
+                )}
               </Pressable>
-            </View>
-            <ScrollView style={styles.dropdownScroll}>
-              {menuCategories.map((category) => (
-                <Pressable
-                  key={category.id}
-                  style={[
-                    styles.dropdownItem,
-                    selectedCategory === category.key && styles.dropdownItemSelected
-                  ]}
-                  onPress={() => handleCategoryPress(category.key)}
-                >
-                  <Text
-                    style={[
-                      styles.dropdownItemText,
-                      selectedCategory === category.key && styles.dropdownItemTextSelected
-                    ]}
-                  >
-                    {category.title}
-                  </Text>
-                  {selectedCategory === category.key && (
-                    <IconSymbol
-                      name={Platform.OS === 'ios' ? "checkmark.circle.fill" : "check-circle"}
-                      size={20}
-                      color="#000000"
-                    />
-                  )}
-                </Pressable>
-              ))}
-            </ScrollView>
+            ))}
           </View>
         </Pressable>
       </Modal>
 
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-      >
-        {/* Categories - Hidden when collapsed */}
-        {!categoriesCollapsed && (
-          <View style={styles.categoriesWrapper}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.categoriesContainer}
-              contentContainerStyle={styles.categoriesContent}
-            >
-            {menuCategories.map((category) => (
-              <Pressable
-                key={category.id}
-                style={[
-                  styles.categoryButton,
-                  {
-                    backgroundColor: selectedCategory === category.key ? '#000000' : '#2A2A2A',
-                    borderColor: selectedCategory === category.key ? '#E26F5B' : '#3A3A3A',
-                    paddingHorizontal: getResponsivePadding(16),
-                    paddingVertical: getResponsivePadding(10),
-                  },
-                ]}
-                onPress={() => handleCategoryPress(category.key)}
-              >
-                <Text
-                  style={[
-                    styles.categoryText,
-                    {
-                      color: selectedCategory === category.key ? '#FFFFFF' : '#AAAAAA',
-                      fontSize: getResponsiveFontSize(13),
-                    },
-                  ]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
-                >
-                  {category.title}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-    
-    {/* Left fade overlay */}
-    <View
-      pointerEvents="none"
-      style={styles.categoryFadeLeft}
-    />
-    
-    {/* Right fade overlay */}
-    <View
-      pointerEvents="none"
-      style={styles.categoryFadeRight}
-    />
-  </View>
-)}
+      {/* Menu List */}
+      {loading ? (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color={blackGoldLight.GOLD} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredItems}
+          renderItem={renderMenuItemCard}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          maxToRenderPerBatch={10}
+          updateCellsBatchingPeriod={50}
+          initialNumToRender={8}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={blackGoldLight.GOLD}
+              colors={[blackGoldLight.GOLD]}
+              progressBackgroundColor={blackGoldLight.CARD_BG}
+              title="Refreshing menu…"
+              titleColor={blackGoldLight.INK_SOFT}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                {searchQuery ? "No items found" : "No items available"}
+              </Text>
+            </View>
+          }
+        />
+      )}
 
-        {/* Menu Items */}
-        {loading || menuItems.length === 0 ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#000000" />
-            <Text style={styles.loadingText}>
-              Loading menu...
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.menuContainer}>
-            {filteredItems.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <IconSymbol
-                  name={Platform.OS === 'ios' ? "magnifyingglass" : "search"}
-                  size={64}
-                  color={currentColors.textSecondary}
-                />
-                <Text
-                  style={[
-                    styles.emptyText,
-                    { color: currentColors.textSecondary },
-                  ]}
-                >
-                  {searchQuery ? 'No items match your search' : 'No items in this category'}
-                </Text>
-              </View>
-            ) : (
-              filteredItems.map((item) => (
-                <Pressable
-                  key={item.id}
-                  style={styles.menuItem}
-                  onPress={() => handleItemPress(item.id)}
-                >
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={{ uri: item.image_url }}
-                      style={styles.menuItemImage}
-                    />
-                  </View>
-                  <View style={styles.menuItemInfoWrapper}>
-                    {/* Texture overlay */}
-                    <View style={styles.textureOverlay} />
-                    <View
-                      style={styles.menuItemInfo}
-                    >
-                      <Text style={styles.menuItemName}>
-                        {item.name}
-                      </Text>
-                      <Text
-                        style={styles.menuItemDescription}
-                        numberOfLines={3}
-                      >
-                        {item.description}
-                      </Text>
-                      <View style={styles.menuItemFooter}>
-                        <Text style={styles.menuItemPrice}>
-                          ${item.price.toFixed(2)}
-                        </Text>
-                        <Pressable
-                          style={styles.addButton}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            handleAddToCart(item);
-                          }}
-                        >
-                          <IconSymbol
-                            name={Platform.OS === 'ios' ? "plus" : "add"}
-                            size={20}
-                            color="#000000"
-                          />
-                        </Pressable>
-                      </View>
-                    </View>
-                  </View>
-                </Pressable>
-              ))
-            )}
-          </View>
-        )}
-      </ScrollView>
       <Toast
         visible={toastVisible}
         message={toastMessage}
@@ -460,343 +601,248 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: blackGoldLight.BODY_BG,
   },
-  headerContainer: {
-    position: 'relative',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.3)',
-    elevation: 4,
-    backgroundColor: '#1A1A1A',
-  },
-  headerBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#1A1A1A',
-  },
-  headerSafeArea: {
-    width: '100%',
-  },
-  header: {
+
+  // ─── Search ───────────────────────────────────────────────────────
+  searchSection: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingBottom: 8,
-    paddingTop: Platform.OS === 'ios' ? 0 : 0,
+    paddingVertical: 14,
+    gap: 10,
+    backgroundColor: blackGoldLight.BODY_BG,
+    borderBottomWidth: 1,
+    borderBottomColor: blackGoldLight.BORDER_LIGHT,
   },
-  headerContent: {
+  searchBar: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-  },
-  logo: {
-    width: 70,
-    height: 70,
-    resizeMode: "contain",
-  },
-  logoPlaceholder: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  logoText: {
-    fontSize: 14,
-    fontFamily: 'MrDeHaviland_400Regular',
-    letterSpacing: 3,
-    fontStyle: 'italic',
-    color: '#FFFFFF',
-  },
-  logoSubtext: {
-    fontSize: 10,
-    fontFamily: 'LibertinusSans_400Regular',
-    letterSpacing: 5,
-    marginTop: -2,
-    color: '#E26F5B',
-  },
-  notificationButton: {
-    position: 'relative',
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-    backgroundColor: '#E26F5B',
-  },
-  notificationBadgeText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    fontFamily: 'LibertinusSans_700Bold',
-    color: '#FFFFFF',
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-    backgroundColor: 'transparent',
-  },
-  searchBarWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2A2A2A',
+    backgroundColor: blackGoldLight.CARD_BG,
     borderRadius: 12,
-    borderWidth: 0.2,
-    borderColor: '#00BC7D',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 12,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.3)',
+    borderWidth: 1,
+    borderColor: blackGoldLight.BORDER_GOLD,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
     elevation: 2,
-  },
-  searchIcon: {
-    marginRight: 12,
-    color: '#888888',
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    fontFamily: 'LibertinusSans_400Regular',
-    color: '#FFFFFF',
+    color: blackGoldLight.INK,
+    fontSize: 15,
+    fontFamily: "LibertinusSans_400Regular",
     padding: 0,
   },
-  clearButton: {
-    padding: 4,
-    marginLeft: 8,
+  filterButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: blackGoldLight.CARD_BG,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: blackGoldLight.BORDER_GOLD,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  categoryDropdownButton: {
-    padding: 4,
-    marginLeft: 8,
+  filterButtonActive: {
+    backgroundColor: blackGoldLight.GOLD,
+    borderColor: blackGoldLight.GOLD,
   },
-  modalOverlay: {
+
+  // ─── Modal ────────────────────────────────────────────────────────
+  modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-start',
-    paddingTop: 120,
-    paddingHorizontal: 20,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
   },
-  dropdownContainer: {
-    backgroundColor: '#2A2A2A',
+  categoryModal: {
+    backgroundColor: blackGoldLight.CARD_BG,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    maxHeight: "70%",
+    borderTopWidth: 1,
+    borderTopColor: blackGoldLight.BORDER_GOLD,
+  },
+  modalHandleRule: {
+    height: 3,
+    borderRadius: 2,
+    width: 48,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: "LibertinusSans_700Bold",
+    color: blackGoldLight.INK,
+    marginBottom: 16,
+  },
+  categoryOption: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: blackGoldLight.BORDER_LIGHT,
+  },
+  categoryOptionActive: {
+    backgroundColor: blackGoldLight.GOLD_DIM,
     borderRadius: 8,
-    borderWidth: 0.2,
-    borderColor: '#00BC7D',
-    maxHeight: 400,
-    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.3)',
+    marginBottom: 4,
+    paddingHorizontal: 14,
+  },
+  categoryOptionText: {
+    fontSize: 15,
+    fontFamily: "LibertinusSans_400Regular",
+    color: blackGoldLight.INK_MID,
+  },
+  categoryOptionTextActive: {
+    fontFamily: "LibertinusSans_700Bold",
+    color: blackGoldLight.GOLD,
+  },
+  checkmark: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+  },
+
+  // ─── List ─────────────────────────────────────────────────────────
+  listContent: {
+    paddingHorizontal: H_PAD,
+    paddingTop: 16,
+    paddingBottom: 110,
+  },
+
+  // ─── Card ─────────────────────────────────────────────────────────
+  // Standard white rounded card — no SVG, no clip path.
+  // Image sits flush in the top-left corner, rounded only where it
+  // meets card interior (bottom-right corner). Card itself has full
+  // border-radius on all four outer corners.
+  card: {
+    backgroundColor: blackGoldLight.CARD_BG,
+    borderRadius: R,
+    marginVertical: 8,
+    overflow: "hidden",   // clips image to card corners cleanly
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: blackGoldLight.BORDER_LIGHT,
+  },
+
+  // Top section: image left, text right
+  cardTop: {
+    flexDirection: "row",
+    minHeight: IMG_SIZE,
+  },
+
+  // Image container — flush top-left, fixed square size
+  cardImageWrap: {
+    width: IMG_SIZE,
+    height: IMG_SIZE,
+    flexShrink: 0,
+    // No borderRadius here — overflow:hidden on card handles top-left,
+    // and we add a bottom-right radius below on the image itself
+  },
+  cardImage: {
+    width: IMG_SIZE,
+    height: IMG_SIZE,
+    resizeMode: "cover",
+    // Only round the bottom-right corner — the card clips the others
+    // borderBottomRightRadius: IMG_R,
+  },
+  cardImageFallback: {
+    backgroundColor: blackGoldLight.GOLD_DIM,
+  },
+
+  // Text block to the right of the image
+  cardText: {
+    flex: 1,
+    paddingTop: 14,
+    paddingRight: 14,
+    paddingLeft: 12,
+    paddingBottom: 10,
+    justifyContent: "flex-start",
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontFamily: "LibertinusSans_700Bold",
+    color: blackGoldLight.INK,
+    marginBottom: 6,
+    lineHeight: 20,
+  },
+  cardDescription: {
+    fontSize: 12,
+    fontFamily: "LibertinusSans_400Regular",
+    color: blackGoldLight.INK_SOFT,
+    lineHeight: 17,
+  },
+
+  // Footer — sits below the top section, full card width
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: blackGoldLight.BORDER_GOLD,
+    backgroundColor: blackGoldLight.CARD_FOOTER,
+  },
+  cardPrice: {
+    fontSize: 18,
+    fontFamily: "LibertinusSans_700Bold",
+    color: blackGoldLight.INK,
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
+    shadowColor: blackGoldLight.GOLD,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     elevation: 4,
   },
-  dropdownHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3A3A3A',
-  },
-  dropdownTitle: {
-    fontSize: 20,
-    fontFamily: 'LibertinusSans_700Bold',
-    color: '#FFFFFF',
-  },
-  dropdownScroll: {
-    maxHeight: 320,
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3A3A3A',
-  },
-  dropdownItemSelected: {
-    backgroundColor: '#3A3A3A',
-  },
-  dropdownItemText: {
-    fontSize: 16,
-    fontFamily: 'LibertinusSans_700Bold',
-    color: '#AAAAAA',
-  },
-  dropdownItemTextSelected: {
-    color: '#FFFFFF',
-    fontFamily: 'LibertinusSans_700Bold',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 120,
-  },
-  categoriesContainer: {
-    maxHeight: 60,
-    // borderTopColor: '#00BC7D',
-    // borderTopWidth: 0.2,
-    borderBottomColor: '#00BC7D',
-    borderBottomWidth: 0.2,
-  },
-  categoriesContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    gap: 6,
-  },
-  categoryButton: {
-    borderRadius: 8,
-    marginRight: 6,
-    minWidth: 80,
+  addButtonGradient: {
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 0.5,
-    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
-    elevation: 2,
-    borderColor: '#00BC7D',
-    backgroundColor: '#F5F5F5',
   },
-  categoryGradient: {
-    borderRadius: 8,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
-    backgroundColor: '#000000',
-  },
-  categoryText: {
-    fontWeight: "600",
-    textAlign: "center",
-    fontFamily: 'LibertinusSans_700Bold',
-  },
-  loadingContainer: {
+
+  // ─── States ───────────────────────────────────────────────────────
+  loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    gap: 16,
-    paddingVertical: 60,
-  },
-  loadingText: {
-    fontSize: 16,
-    fontFamily: 'LibertinusSans_400Regular',
-    color: '#AAAAAA',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 60,
-    gap: 16,
   },
   emptyText: {
     fontSize: 16,
-    fontFamily: 'LibertinusSans_400Regular',
-  },
-  menuContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  menuItem: {
-    borderRadius: 0,
-    marginBottom: 28,
-    overflow: "hidden",
-    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.3)",
-    elevation: 4,
-    backgroundColor: '#2A2A2A',
-    borderWidth: 0.2,
-    borderColor: '#00BC7D',
-  },
-  imageContainer: {
-    width: "100%",
-    height: 260,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  menuItemImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: 'cover',
-  },
-  menuItemInfoWrapper: {
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  textureOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'transparent',
-    opacity: 0.15,
-    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,.05) 2px, rgba(255,255,255,.05) 4px)',
-  },
-  menuItemInfo: {
-    padding: 24,
-  },
-  menuItemName: {
-    fontSize: 22,
-    fontFamily: 'LibertinusSans_700Bold',
-    marginBottom: 10,
-    letterSpacing: 0.5,
-    color: '#ffffffb2',
-  },
-  menuItemDescription: {
-    fontSize: 14,
-    fontFamily: 'Inter_400Regular',
-    marginBottom: 18,
-    lineHeight: 24,
-    color: '#AAAAAA',
-    // letterSpacing: 0.01,
-  },
-  menuItemFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  menuItemPrice: {
-    fontSize: 32,
-    fontFamily: 'Cormorant_700Bold',
-    color: '#FFFFFFb2',
-  },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 32,
-    justifyContent: "center",
-    alignItems: "center",
-    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
-    backgroundColor: '#ffffff5d',
-    borderWidth: 0.5,
-    borderColor: '#E26F5B',
-  },
-  categoriesWrapper: {
-    position: 'relative',
-    marginBottom: 12,
-    marginTop: 12,
-  },
-  categoryFadeLeft: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 40,
-    zIndex: 10,
-    backgroundColor: 'transparent',
-    backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.9), transparent)',
-  },
-  categoryFadeRight: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 40,
-    zIndex: 10,
-    backgroundColor: 'transparent',
-    backgroundImage: 'linear-gradient(to left, rgba(255,255,255,0.9), transparent)',
+    fontFamily: "LibertinusSans_400Regular",
+    fontStyle: "italic",
+    color: blackGoldLight.INK_SOFT,
   },
 });

@@ -2,7 +2,7 @@
   "expo": {
     "name": "The Peppered Goat",
     "slug": "the-peppered-goat",
-    "version": "1.0.2",
+    "version": "1.2.2",
     "orientation": "portrait",
     "icon": "./assets/images/peppered-goat-logo.jpg",
     "userInterfaceStyle": "automatic",
@@ -16,7 +16,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.ooosumfoods.thepepperedgoat",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Your camera is used to take a photo for your profile picture.",
+        "NSPhotoLibraryUsageDescription": "Your photo library is used to choose an existing photo for your profile picture."
       }
     },
     "android": {

@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   contactSection: {
-    borderRadius: 0,
+    borderRadius: 24,
     padding: 24,
     marginBottom: 24,
     // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   contactButton: {
-    borderRadius: 0,
+    borderRadius: 24,
     // boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.4)',
     elevation: 6,
   },
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   topicCard: {
-    borderRadius: 0,
+    borderRadius: 24,
     marginBottom: 12,
     overflow: 'hidden',
     // boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   legalCard: {
-    borderRadius: 0,
+    borderRadius: 24,
     overflow: 'hidden',
     // boxShadow: '0px 6px 20px rgba(212, 175, 55, 0.25)',
     elevation: 6,

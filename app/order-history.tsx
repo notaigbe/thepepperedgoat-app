@@ -159,7 +159,7 @@ export default function OrderHistoryScreen() {
               }}
               style={[styles.backButton, { backgroundColor: currentColors.background, borderColor: currentColors.border }]}
             >
-              <IconSymbol name="arrow-back" size={24} color={currentColors.secondary} />
+              <IconSymbol name="chevron.left" size={24} color={currentColors.secondary} />
             </Pressable>
             <Text style={[styles.headerTitle, { color: currentColors.textSecondary }]}>Order History</Text>
             <View style={{ width: 40 }} />
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 0,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 0.5,
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   statsCard: {
-    borderRadius: 0,
+    borderRadius: 12,
     padding: 20,
     flexDirection: 'row',
     marginBottom: 24,
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   orderCard: {
-    borderRadius: 0,
+    borderRadius: 12,
     padding: 20,
     marginBottom: 16,
     borderWidth: 0.2,
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    borderRadius: 0,
+    borderRadius: 36,
     // boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
     elevation: 8,
   },

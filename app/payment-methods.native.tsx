@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 0,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 0.5,
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   cardItem: {
-    borderRadius: 0,
+    borderRadius: 12,
     padding: 20,
     marginBottom: 16,
     borderWidth: 0.2,
@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   iconContainer: {
-    borderRadius: 0,
+    borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 0.2,
     padding: 8,
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
   defaultBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 0,
+    borderRadius: 24,
     // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
     elevation: 4,
   },
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   addNewButton: {
-    borderRadius: 0,
+    borderRadius: 36,
     marginBottom: 20,
     // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
     elevation: 8,
@@ -727,7 +727,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
   },
   addCardForm: {
-    borderRadius: 0,
+    borderRadius: 12,
     padding: 20,
     marginBottom: 20,
     borderWidth: 0.2,
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     padding: 16,
-    borderRadius: 0,
+    borderRadius: 36,
     alignItems: 'center',
     borderWidth: 0.2,
     // boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.25)',
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1,
-    borderRadius: 0,
+    borderRadius: 36,
     // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.4)',
     elevation: 8,
   },
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
   infoCard: {
     flexDirection: 'row',
     padding: 16,
-    borderRadius: 0,
+    borderRadius: 24,
     gap: 12,
     marginBottom: 20,
     borderWidth: 0.2,

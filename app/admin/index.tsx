@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { IconSymbol } from "@/components/IconSymbol";
-import { colors } from "@/styles/commonStyles";
+import { blackGoldLight } from "@/styles/commonStyles";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/AuthContext";
 import { orderService } from "@/services/supabaseService";
@@ -23,10 +23,10 @@ import { useApp } from "@/contexts/AppContext";
 import Dialog from "@/components/Dialog";
 import Toast from "@/components/Toast";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from "expo-linear-gradient";
 
-// Constants for AsyncStorage keys
 const ADMIN_STORAGE_KEYS = {
-  REMEMBER_ME: '@admin_remember_me',
+  REMEMBER_ME:    '@admin_remember_me',
   SAVED_USERNAME: '@admin_saved_username',
   SAVED_PASSWORD: '@admin_saved_password',
 };
@@ -35,394 +35,176 @@ export default function AdminDashboard() {
   const router = useRouter();
   const { signIn, isAuthenticated, signOut } = useAuth();
   const { userProfile } = useApp();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername]         = useState("");
+  const [password, setPassword]         = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]           = useState(false);
   const [statsLoading, setStatsLoading] = useState(true);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [stats, setStats] = useState({
-    totalOrders: 0,
-    activeUsers: 0,
-    revenue: 0,
-  });
-  const [viewAsAdmin, setViewAsAdmin] = useState(false);
+  const [rememberMe, setRememberMe]     = useState(false);
+  const [stats, setStats] = useState({ totalOrders: 0, activeUsers: 0, revenue: 0 });
+  const [viewAsAdmin, setViewAsAdmin]   = useState(false);
 
-  // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({
-    title: '',
-    message: '',
+  const [dialogConfig, setDialogConfig]   = useState({
+    title: '', message: '',
     buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
   });
-
-  // Toast state
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+  const [toastType, setToastType]       = useState<'success' | 'error' | 'info'>('success');
 
-  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
-    setDialogConfig({ title, message, buttons });
-    setDialogVisible(true);
+  const showDialog = (title: string, message: string, buttons: typeof dialogConfig.buttons) => {
+    setDialogConfig({ title, message, buttons }); setDialogVisible(true);
   };
-
   const showToast = (type: 'success' | 'error' | 'info', message: string) => {
-    setToastType(type);
-    setToastMessage(message);
-    setToastVisible(true);
+    setToastType(type); setToastMessage(message); setToastVisible(true);
   };
 
-  // Load saved credentials on mount
-  useEffect(() => {
-    loadSavedCredentials();
-  }, []);
+  useEffect(() => { loadSavedCredentials(); }, []);
 
   const loadSavedCredentials = async () => {
     try {
-      const [savedRememberMe, savedUsername, savedPassword] = await Promise.all([
+      const [rem, usr, pwd] = await Promise.all([
         AsyncStorage.getItem(ADMIN_STORAGE_KEYS.REMEMBER_ME),
         AsyncStorage.getItem(ADMIN_STORAGE_KEYS.SAVED_USERNAME),
         AsyncStorage.getItem(ADMIN_STORAGE_KEYS.SAVED_PASSWORD),
       ]);
-
-      if (savedRememberMe === 'true' && savedUsername) {
-        setRememberMe(true);
-        setUsername(savedUsername);
-        if (savedPassword) {
-          setPassword(savedPassword);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading saved admin credentials:', error);
-    }
+      if (rem === 'true' && usr) { setRememberMe(true); setUsername(usr); if (pwd) setPassword(pwd); }
+    } catch (e) { console.error('Error loading saved admin credentials:', e); }
   };
 
-  const saveCredentials = async (usernameToSave: string, passwordToSave: string, shouldRemember: boolean) => {
+  const saveCredentials = async (u: string, p: string, remember: boolean) => {
     try {
-      if (shouldRemember) {
+      if (remember) {
         await AsyncStorage.setItem(ADMIN_STORAGE_KEYS.REMEMBER_ME, 'true');
-        await AsyncStorage.setItem(ADMIN_STORAGE_KEYS.SAVED_USERNAME, usernameToSave);
-        await AsyncStorage.setItem(ADMIN_STORAGE_KEYS.SAVED_PASSWORD, passwordToSave);
+        await AsyncStorage.setItem(ADMIN_STORAGE_KEYS.SAVED_USERNAME, u);
+        await AsyncStorage.setItem(ADMIN_STORAGE_KEYS.SAVED_PASSWORD, p);
       } else {
         await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.REMEMBER_ME);
         await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.SAVED_USERNAME);
         await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.SAVED_PASSWORD);
       }
-    } catch (error) {
-      console.error('Error saving admin credentials:', error);
-    }
+    } catch (e) { console.error('Error saving admin credentials:', e); }
   };
 
   const clearSavedCredentials = async () => {
     try {
-      await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.REMEMBER_ME);
-      await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.SAVED_USERNAME);
-      await AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.SAVED_PASSWORD);
-    } catch (error) {
-      console.error('Error clearing saved admin credentials:', error);
-    }
+      await Promise.all([
+        AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.REMEMBER_ME),
+        AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.SAVED_USERNAME),
+        AsyncStorage.removeItem(ADMIN_STORAGE_KEYS.SAVED_PASSWORD),
+      ]);
+    } catch (e) { console.error('Error clearing saved admin credentials:', e); }
   };
 
-  const isAdmin = userProfile?.userRole === 'admin' || userProfile?.userRole === 'super_admin';
-  const isSuperAdmin = userProfile?.userRole === 'super_admin';
-  
-  // Effective role based on the toggle
+  const isAdmin       = userProfile?.userRole === 'admin' || userProfile?.userRole === 'super_admin';
+  const isSuperAdmin  = userProfile?.userRole === 'super_admin';
   const effectiveRole = isSuperAdmin && viewAsAdmin ? 'admin' : userProfile?.userRole;
-  const isEffectivelyAdmin = effectiveRole === 'admin';
-  
-  // Show analytics only for super_admin (when not viewing as admin)
-  const shouldShowAnalytics = isSuperAdmin && !viewAsAdmin;
+  const isEffectivelyAdmin   = effectiveRole === 'admin';
+  const shouldShowAnalytics  = isSuperAdmin && !viewAsAdmin;
 
   const handleLogin = async () => {
-    console.log("Admin login attempt");
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    if (!username || !password) {
-      showToast('error', 'Please enter both email and password');
-      return;
-    }
-
-    // Basic email validation
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (!username || !password) { showToast('error', 'Please enter both email and password'); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const email = username.includes("@") ? username : `${username}@thepepperedgoat.com`;
-    
-    if (!emailRegex.test(email)) {
-      showToast('error', 'Please enter a valid email address');
-      return;
-    }
-
-    // Password length validation
-    if (password.length < 6) {
-      showToast('error', 'Password must be at least 6 characters');
-      return;
-    }
-
+    if (!emailRegex.test(email)) { showToast('error', 'Please enter a valid email address'); return; }
+    if (password.length < 6) { showToast('error', 'Password must be at least 6 characters'); return; }
     setLoading(true);
     const { error } = await signIn(email, password);
     setLoading(false);
-
     if (error) {
-      console.error('Admin login error:', error);
-      // Handle specific error messages
-      if (error.message?.includes('Invalid login credentials')) {
-        showToast('error', 'Invalid email or password. Please check your credentials and try again.');
-      } else if (error.message?.includes('Email not confirmed')) {
-        showToast('error', 'Please verify your email before signing in. Check your inbox for the verification link.');
-      } else if (error.message?.includes('Email')) {
-        showToast('error', 'Please enter a valid email address');
-      } else {
-        showToast('error', error.message || 'Login failed. Please try again.');
-      }
+      if (error.message?.includes('Invalid login credentials')) showToast('error', 'Invalid email or password. Please check your credentials and try again.');
+      else if (error.message?.includes('Email not confirmed')) showToast('error', 'Please verify your email before signing in.');
+      else showToast('error', error.message || 'Login failed. Please try again.');
     } else {
       showToast('success', 'Welcome to Admin Dashboard!');
-      
-      // Save credentials if remember me is checked
       await saveCredentials(username, password, rememberMe);
-      
-      // Clear password after successful login (keep username if remember me is checked)
-      setPassword("");
-      setShowPassword(false);
+      setPassword(""); setShowPassword(false);
     }
   };
 
   const handleLogout = async () => {
-    console.log("Logging out");
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await signOut();
-      
-      // Don't clear username and password if remember me is enabled
-      if (!rememberMe) {
-        setUsername("");
-        setPassword("");
-      }
-      
+      if (!rememberMe) { setUsername(""); setPassword(""); }
       showToast('success', 'Logged out successfully');
-    } catch (error) {
-      console.error('Logout error:', error);
-      showToast('error', 'Failed to log out. Please try again.');
-    }
+    } catch (e) { showToast('error', 'Failed to log out. Please try again.'); }
   };
 
   const togglePasswordVisibility = () => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowPassword(!showPassword);
   };
 
   const toggleRememberMe = async () => {
     const newValue = !rememberMe;
     setRememberMe(newValue);
-    
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    
-    // If unchecking, clear saved credentials immediately
-    if (!newValue) {
-      await clearSavedCredentials();
-    }
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!newValue) await clearSavedCredentials();
   };
 
   const fetchStats = useCallback(async () => {
     try {
       setStatsLoading(true);
-      
-      // Fetch orders
       const ordersResponse = await orderService.getAllOrders();
       const orders = ordersResponse.data || [];
-
-      // Fetch users based on effective role
       let usersQuery = (supabase as any).from("user_profiles").select("*");
-      
-      // If viewing as admin (or is regular admin), only count users with user_role = 'user'
-      if (isEffectivelyAdmin) {
-        usersQuery = usersQuery.eq('user_role', 'user');
-      }
-      // If super_admin (and not viewing as admin), count all users (no filter)
-
+      if (isEffectivelyAdmin) usersQuery = usersQuery.eq('user_role', 'user');
       const usersResponse = await usersQuery;
       const users = usersResponse.data || [];
-
-      const totalOrders = orders.length;
-      const activeUsers = users.length;
-      const revenue = orders.reduce(
-        (sum: number, order: any) => sum + (order.total || 0),
-        0
-      );
-
       setStats({
-        totalOrders,
-        activeUsers,
-        revenue,
+        totalOrders: orders.length,
+        activeUsers: users.length,
+        revenue: orders.reduce((sum: number, o: any) => sum + (o.total || 0), 0),
       });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-      setStats({
-        totalOrders: 0,
-        activeUsers: 0,
-        revenue: 0,
-      });
+    } catch (e) {
+      console.error("Error fetching stats:", e);
+      setStats({ totalOrders: 0, activeUsers: 0, revenue: 0 });
     } finally {
       setStatsLoading(false);
     }
   }, [isEffectivelyAdmin]);
 
   useEffect(() => {
-    if (isAuthenticated && isAdmin && shouldShowAnalytics) {
-      fetchStats();
-    }
+    if (isAuthenticated && isAdmin && shouldShowAnalytics) fetchStats();
   }, [isAuthenticated, isAdmin, viewAsAdmin, fetchStats, shouldShowAnalytics]);
 
   const allAdminSections = [
-  {
-    id: "menu",
-    title: "Menu Management",
-    description: "Add, edit, and remove menu items",
-    icon: "fork.knife" as const, // SF Symbol for iOS
-    route: "/admin/menu",
-    color: colors.primary,
-    superAdminOnly: false,
-  },
-  {
-    id: "orders",
-    title: "Order Management",
-    description: "View and update order statuses",
-    icon: "receipt" as const, // SF Symbol for iOS
-    route: "/admin/orders",
-    color: "#FF6B35",
-    superAdminOnly: false,
-  },
-  // {
-  //   id: "reservations",
-  //   title: "Reservations",
-  //   description: "Manage table bookings",
-  //   icon: "calendar.badge.clock" as const, // SF Symbol for iOS
-  //   route: "/admin/reservations",
-  //   color: "#9B59B6",
-  //   superAdminOnly: false,
-  // },
-  {
-    id: "users",
-    title: "User Management",
-    description: "Manage user accounts and profiles",
-    icon: "person.3" as const, // SF Symbol for iOS
-    route: "/admin/users",
-    color: "#4ECDC4",
-    superAdminOnly: false,
-  },
-  {
-    id: "admins",
-    title: "Admin Management",
-    description: "Manage admin roles and permissions",
-    icon: "shield.lefthalf.filled" as const, // SF Symbol for iOS
-    route: "/admin/admins",
-    color: "#E74C3C",
-    superAdminOnly: true,
-  },
-  // {
-  //   id: "events",
-  //   title: "Event Management",
-  //   description: "Create and manage events",
-  //   icon: "calendar" as const, // SF Symbol for iOS
-  //   route: "/admin/events",
-  //   color: "#95E1D3",
-  //   superAdminOnly: false,
-  // },
-  // {
-  //   id: "merch",
-  //   title: "Merchandise",
-  //   description: "Manage merch inventory",
-  //   icon: "bag" as const, // SF Symbol for iOS
-  //   route: "/admin/merch",
-  //   color: "#F38181",
-  //   superAdminOnly: false,
-  // },
-  // {
-  //   id: "giftcards",
-  //   title: "Gift Cards",
-  //   description: "View and manage gift cards",
-  //   icon: "giftcard" as const, // SF Symbol for iOS
-  //   route: "/admin/giftcards",
-  //   color: "#AA96DA",
-  //   superAdminOnly: false,
-  // },
-  {
-    id: "notifications",
-    title: "Notifications",
-    description: "Send push notifications",
-    icon: "bell.fill" as const, // SF Symbol for iOS
-    route: "/admin/notifications",
-    color: "#FCBAD3",
-    superAdminOnly: false,
-  },
-  {
-    id: "analytics",
-    title: "Analytics",
-    description: "View sales and engagement metrics",
-    icon: "chart.bar" as const, // SF Symbol for iOS
-    route: "/admin/analytics",
-    color: "#A8D8EA",
-    superAdminOnly: true,
-  },
-  {
-    id: "delivery",
-    title: "Delivery Settings",
-    description: "Configure Uber Direct delivery",
-    icon: "truck.box" as const, // SF Symbol for iOS
-    route: "/admin/delivery-settings",
-    color: "#FF9F43",
-    superAdminOnly: false,
-  },
-  {
-    id: "notification-emails",
-    title: "Notification Emails",
-    description: "Manage admin email recipients",
-    icon: "envelope.badge" as const, // SF Symbol for iOS
-    route: "/admin/notification-emails",
-    color: "#6366F1",
-    superAdminOnly: true,
-  },
-];
+    { id: "menu",       title: "Menu Management",    description: "Add, edit, and remove menu items",      icon: "fork.knife" as const,                         route: "/admin/menu",                color: blackGoldLight.GOLD,       superAdminOnly: false },
+    { id: "orders",     title: "Order Management",   description: "View and update order statuses",         icon: "receipt" as const,                             route: "/admin/orders",              color: "#C07A10",                  superAdminOnly: false },
+    { id: "users",      title: "User Management",    description: "Manage user accounts and profiles",      icon: "person.3" as const,                            route: "/admin/users",               color: blackGoldLight.SILVER,     superAdminOnly: false },
+    { id: "admins",     title: "Admin Management",   description: "Manage admin roles and permissions",     icon: "shield.lefthalf.filled" as const,              route: "/admin/admins",              color: "#C0392B",                  superAdminOnly: true  },
+    { id: "notifications", title: "Notifications",   description: "Send push notifications",                icon: "bell.fill" as const,                           route: "/admin/notifications",       color: blackGoldLight.GOLD_BRIGHT, superAdminOnly: false },
+    { id: "analytics",  title: "Analytics",          description: "View sales and engagement metrics",      icon: "chart.bar" as const,                           route: "/admin/analytics",           color: blackGoldLight.SILVER,     superAdminOnly: true  },
+    { id: "delivery",   title: "Delivery Settings",  description: "Configure Uber Direct delivery",         icon: "truck.box" as const,                           route: "/admin/delivery-settings",   color: "#C07A10",                  superAdminOnly: false },
+    { id: "notification-emails", title: "Notification Emails", description: "Manage admin email recipients", icon: "envelope.badge" as const,                   route: "/admin/notification-emails", color: blackGoldLight.GOLD,       superAdminOnly: true  },
+  ];
 
-  // Filter sections based on effective role
   const adminSections = allAdminSections.filter(
-    (section) => !section.superAdminOnly || (isSuperAdmin && !viewAsAdmin)
+    (s) => !s.superAdminOnly || (isSuperAdmin && !viewAsAdmin)
   );
 
   const handleSectionPress = (route: string) => {
-    console.log("Navigating to:", route);
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(route as any);
   };
-
   const handleUserProfilePress = () => {
-    console.log("Navigating to user profile");
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push("/(tabs)/profile" as any);
   };
-
   const handleToggleViewMode = () => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setViewAsAdmin(!viewAsAdmin);
   };
 
+  // ─── Login screen ─────────────────────────────────────────────────
   if (!isAuthenticated || !isAdmin) {
     return (
       <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView
-          style={styles.keyboardAvoidingView}
+          style={styles.flex}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
@@ -432,642 +214,319 @@ export default function AdminDashboard() {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.loginContainer}>
-              <View style={styles.loginHeader}>
-              <IconSymbol
-                name="shield.lefthalf.filled" // SF Symbol for iOS
-                size={64}
-                color={colors.primary}
-              />
-              <Text style={styles.loginTitle}>Admin Dashboard</Text>
-              <Text style={styles.loginSubtitle}>The Peppered Goat</Text>
-            </View>
+              {/* Login header — dark with gold bloom */}
+              <LinearGradient
+                colors={[blackGoldLight.HEADER_TOP, blackGoldLight.HEADER_MID, blackGoldLight.HEADER_BOT]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={styles.loginHeaderGradient}
+              >
+                <LinearGradient
+                  colors={["rgba(212,168,58,0.18)", "rgba(184,146,42,0.06)", "transparent"]}
+                  start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                  pointerEvents="none"
+                />
+                <View style={styles.loginHeader}>
+                  <View style={styles.loginIconWrap}>
+                    <IconSymbol name="shield.lefthalf.filled" size={36} color={blackGoldLight.GOLD} />
+                  </View>
+                  <Text style={styles.loginTitle}>Admin Dashboard</Text>
+                  <Text style={styles.loginSubtitle}>The Peppered Goat</Text>
+                </View>
+              </LinearGradient>
 
               <View style={styles.loginForm}>
                 <View style={styles.inputContainer}>
-                  <IconSymbol
-                    name="person"
-                    size={20}
-                    color={colors.textSecondary}
-                  />
+                  <IconSymbol name="person" size={20} color={blackGoldLight.INK_MID} />
                   <TextInput
-                    style={styles.input}
-                    placeholder="Email or Username"
-                    placeholderTextColor={colors.textSecondary}
-                    value={username}
-                    onChangeText={setUsername}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    editable={!loading}
+                    style={styles.input} placeholder="Email or Username"
+                    placeholderTextColor={blackGoldLight.INK_SOFT}
+                    value={username} onChangeText={setUsername}
+                    autoCapitalize="none" keyboardType="email-address" editable={!loading}
                   />
                 </View>
-
                 <View style={styles.inputContainer}>
-                  <IconSymbol name="lock.fill" size={20} color={colors.textSecondary} />
+                  <IconSymbol name="lock.fill" size={20} color={blackGoldLight.INK_MID} />
                   <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    placeholderTextColor={colors.textSecondary}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    editable={!loading}
+                    style={styles.input} placeholder="Password"
+                    placeholderTextColor={blackGoldLight.INK_SOFT}
+                    value={password} onChangeText={setPassword}
+                    secureTextEntry={!showPassword} autoCapitalize="none" editable={!loading}
                   />
-                  <Pressable onPress={togglePasswordVisibility} style={styles.eyeIconButton} disabled={loading}>
-                    <IconSymbol 
-                      name={showPassword ? "eye.slash" : "eye"} 
-                      size={20} 
-                      color={colors.textSecondary} 
-                    />
+                  <Pressable onPress={togglePasswordVisibility} style={styles.eyeBtn} disabled={loading}>
+                    <IconSymbol name={showPassword ? "eye.slash" : "eye"} size={20} color={blackGoldLight.INK_MID} />
                   </Pressable>
                 </View>
 
-                {/* Remember Me Checkbox */}
-                <Pressable
-                  style={styles.rememberMeContainer}
-                  onPress={toggleRememberMe}
-                  disabled={loading}
-                >
-                  <View
-                    style={[
-                      styles.checkbox,
-                      { borderColor: colors.border },
-                      rememberMe && { backgroundColor: colors.primary },
-                    ]}
-                  >
-                    {rememberMe && (
-                      <IconSymbol
-                        name="checkmark"
-                        size={16}
-                        color="#FFFFFF"
-                      />
-                    )}
+                <Pressable style={styles.rememberMeContainer} onPress={toggleRememberMe} disabled={loading}>
+                  <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
+                    {rememberMe && <IconSymbol name="checkmark" size={14} color={blackGoldLight.INK_WHITE} />}
                   </View>
-                  <Text
-                    style={[
-                      styles.rememberMeText,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    Remember me
-                  </Text>
+                  <Text style={styles.rememberMeText}>Remember me</Text>
                 </Pressable>
 
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.loginButton,
-                    pressed && !loading && styles.loginButtonPressed,
-                    loading && styles.loginButtonDisabled,
-                  ]}
-                  onPress={handleLogin}
-                  disabled={loading}
+                <LinearGradient
+                  colors={loading
+                    ? [blackGoldLight.INK_MID, blackGoldLight.INK_MID]
+                    : [blackGoldLight.GOLD_BRIGHT, blackGoldLight.GOLD]
+                  }
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={[styles.loginButton, loading && { opacity: 0.65 }]}
                 >
-                  {loading ? (
-                    <View style={styles.loginButtonContent}>
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                      <Text style={styles.loginButtonText}>Signing In...</Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.loginButtonText}>Sign In</Text>
-                  )}
-                </Pressable>
+                  <Pressable style={styles.loginButtonInner} onPress={handleLogin} disabled={loading}>
+                    {loading ? (
+                      <View style={styles.loginButtonContent}>
+                        <ActivityIndicator size="small" color={blackGoldLight.INK_WHITE} />
+                        <Text style={styles.loginButtonText}>Signing In...</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.loginButtonText}>Sign In</Text>
+                    )}
+                  </Pressable>
+                </LinearGradient>
 
-                <Pressable
-                  style={styles.userProfileButton}
-                  onPress={handleUserProfilePress}
-                  disabled={loading}
-                >
-                  <IconSymbol
-                    name="person.badge.shield.checkmark" // SF Symbol for iOS
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.userProfileButtonText,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    Switch to User Profile
-                  </Text>
+                <Pressable style={styles.userProfileButton} onPress={handleUserProfilePress} disabled={loading}>
+                  <IconSymbol name="person.badge.shield.checkmark" size={16} color={blackGoldLight.INK_MID} />
+                  <Text style={styles.userProfileButtonText}>Switch to User Profile</Text>
                 </Pressable>
               </View>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-        <Toast
-          visible={toastVisible}
-          message={toastMessage}
-          type={toastType}
-          onHide={() => setToastVisible(false)}
-          currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
-        />
-        <Dialog
-          visible={dialogVisible}
-          title={dialogConfig.title}
-          message={dialogConfig.message}
-          buttons={dialogConfig.buttons}
-          onHide={() => setDialogVisible(false)}
-          currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
-        />
+        <Toast visible={toastVisible} message={toastMessage} type={toastType} onHide={() => setToastVisible(false)} currentColors={{}} />
+        <Dialog visible={dialogVisible} title={dialogConfig.title} message={dialogConfig.message} buttons={dialogConfig.buttons} onHide={() => setDialogVisible(false)} currentColors={{}} />
       </SafeAreaView>
     );
   }
 
+  // ─── Authenticated admin dashboard ───────────────────────────────
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.title}>Admin Dashboard</Text>
+    <SafeAreaView style={styles.container} edges={['top'] as any}>
+      <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+        {/* ── Dashboard header ── */}
+        <LinearGradient
+          colors={[blackGoldLight.HEADER_TOP, blackGoldLight.HEADER_MID]}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={styles.dashHeader}
+        >
+          <LinearGradient
+            colors={["rgba(212,168,58,0.18)", "transparent"]}
+            start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFillObject} pointerEvents="none"
+          />
+          <View style={styles.dashHeaderLeft}>
+            <Text style={styles.dashTitle}>Admin Dashboard</Text>
             <View style={styles.subtitleRow}>
-              <Text style={styles.subtitle}>The Peppered Goat Management</Text>
+              <Text style={styles.dashSubtitle}>The Peppered Goat Management</Text>
               {isSuperAdmin && !viewAsAdmin && (
-                <View style={styles.superAdminBadge}>
-                      <IconSymbol 
-                        name="shield.checkered" // SF Symbol for iOS
-                        size={12} 
-                        color="#FFFFFF" 
-                      />
-                  <Text style={styles.superAdminBadgeText}>Super Admin</Text>
+                <View style={[styles.badge, { backgroundColor: blackGoldLight.GOLD }]}>
+                  <IconSymbol name="shield.checkered" size={10} color={blackGoldLight.INK_WHITE} />
+                  <Text style={styles.badgeText}>Super Admin</Text>
                 </View>
               )}
-              {(isAdmin && !isSuperAdmin) || (isSuperAdmin && viewAsAdmin) ? (
-                <View style={styles.adminBadge}>
-                      <IconSymbol 
-                        name="shield.lefthalf.filled" // SF Symbol for iOS
-                        size={12} 
-                        color="#FFFFFF" 
-                      />
-                  <Text style={styles.adminBadgeText}>Admin</Text>
+              {((isAdmin && !isSuperAdmin) || (isSuperAdmin && viewAsAdmin)) && (
+                <View style={[styles.badge, { backgroundColor: blackGoldLight.INK_MID }]}>
+                  <IconSymbol name="shield.lefthalf.filled" size={10} color={blackGoldLight.INK_WHITE} />
+                  <Text style={styles.badgeText}>Admin</Text>
                 </View>
-              ) : null}
+              )}
             </View>
           </View>
           <View style={styles.headerButtons}>
-            <Pressable
-              style={styles.userProfileIconButton}
-              onPress={handleUserProfilePress}
-            >
-                  <IconSymbol 
-                    name="person.circle.fill" // SF Symbol for iOS
-                    size={24} 
-                    color={colors.primary} 
-                  />
+            <Pressable style={styles.headerIconBtn} onPress={handleUserProfilePress}>
+              <IconSymbol name="person.circle.fill" size={22} color={blackGoldLight.GOLD} />
             </Pressable>
-            <Pressable style={styles.logoutButton} onPress={handleLogout}>
-                  <IconSymbol 
-                    name="rectangle.and.arrow.up.right.and.arrow.down.left" // SF Symbol for iOS
-                    size={24} 
-                    color={colors.primary} 
-                  />
+            <Pressable style={styles.headerIconBtn} onPress={handleLogout}>
+              <IconSymbol name="rectangle.portrait.and.arrow.forward" size={22} color={blackGoldLight.GOLD} />
             </Pressable>
           </View>
-        </View>
+        </LinearGradient>
 
+        {/* ── Role switcher ── */}
         {isSuperAdmin && (
           <View style={styles.roleSwitcherContainer}>
             <View style={styles.roleSwitcher}>
               <View style={styles.roleSwitcherLeft}>
-                  <IconSymbol 
-                    name={viewAsAdmin ? "shield.lefthalf.filled" : "shield.checkered"} 
-                    size={20} 
-                    color={colors.primary} 
-                  />
+                <IconSymbol name={viewAsAdmin ? "shield.lefthalf.filled" : "shield.checkered"} size={20} color={blackGoldLight.GOLD} />
                 <Text style={styles.roleSwitcherLabel}>
                   {viewAsAdmin ? "Viewing as Admin" : "Viewing as Super Admin"}
                 </Text>
               </View>
               <Switch
-                value={viewAsAdmin}
-                onValueChange={handleToggleViewMode}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor="#FFFFFF"
-                ios_backgroundColor={colors.border}
+                value={viewAsAdmin} onValueChange={handleToggleViewMode}
+                trackColor={{ false: blackGoldLight.BORDER_LIGHT, true: blackGoldLight.GOLD }}
+                thumbColor={blackGoldLight.INK_WHITE}
+                ios_backgroundColor={blackGoldLight.BORDER_LIGHT}
               />
             </View>
             <Text style={styles.roleSwitcherHint}>
-              {viewAsAdmin 
-                ? "Toggle to view super admin features" 
-                : "Toggle to preview admin view"}
+              {viewAsAdmin ? "Toggle to view super admin features" : "Toggle to preview admin view"}
             </Text>
           </View>
         )}
 
+        {/* ── Stats ── */}
         {shouldShowAnalytics && (
           <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
-                <IconSymbol 
-                  name="cart.fill" // SF Symbol for iOS
-                  size={32} 
-                  color={colors.primary} 
-                />
-              {statsLoading ? (
-                <ActivityIndicator
-                  color={colors.primary}
-                  style={{ marginVertical: 8 }}
-                />
-              ) : (
-                <Text style={styles.statValue}>{stats.totalOrders}</Text>
-              )}
-              <Text style={styles.statLabel}>Total Orders</Text>
-            </View>
-            <View style={styles.statCard}>
-                <IconSymbol 
-                  name="person.3" // SF Symbol for iOS
-                  size={32} 
-                  color="#4ECDC4" 
-                />
-              {statsLoading ? (
-                <ActivityIndicator
-                  color="#4ECDC4"
-                  style={{ marginVertical: 8 }}
-                />
-              ) : (
-                <Text style={styles.statValue}>{stats.activeUsers}</Text>
-              )}
-              <Text style={styles.statLabel}>Total Users</Text>
-            </View>
-            <View style={styles.statCard}>
-              <IconSymbol 
-                name="dollarsign.circle" // SF Symbol for iOS
-                size={32} 
-                color="#95E1D3" 
-              />
-              {statsLoading ? (
-                <ActivityIndicator
-                  color="#95E1D3"
-                  style={{ marginVertical: 8 }}
-                />
-              ) : (
-                <Text style={styles.statValue}>
-                  ${(stats.revenue / 1000).toFixed(1)}K
-                </Text>
-              )}
-              <Text style={styles.statLabel}>Revenue</Text>
-            </View>
+            {[
+              { icon: "cart.fill",        label: "Total Orders", value: stats.totalOrders,                        color: blackGoldLight.GOLD,       loading: statsLoading },
+              { icon: "person.3",         label: "Total Users",  value: stats.activeUsers,                        color: blackGoldLight.SILVER,     loading: statsLoading },
+              { icon: "dollarsign.circle",label: "Revenue",      value: `$${(stats.revenue / 1000).toFixed(1)}K`, color: blackGoldLight.GOLD_BRIGHT, loading: statsLoading },
+            ].map((stat) => (
+              <LinearGradient
+                key={stat.label}
+                colors={[blackGoldLight.CARD_BG, blackGoldLight.CARD_FOOTER]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={styles.statCard}
+              >
+                <IconSymbol name={stat.icon as any} size={28} color={stat.color} />
+                {stat.loading
+                  ? <ActivityIndicator color={stat.color} style={{ marginVertical: 6 }} />
+                  : <Text style={styles.statValue}>{stat.value}</Text>
+                }
+                <Text style={styles.statLabel}>{stat.label}</Text>
+              </LinearGradient>
+            ))}
           </View>
         )}
 
+        {/* ── Section cards ── */}
         <View style={styles.sectionsContainer}>
           {adminSections.map((section) => (
             <Pressable
               key={section.id}
-              style={({ pressed }) => [
-                styles.sectionCard,
-                pressed && styles.sectionCardPressed,
-              ]}
+              style={({ pressed }) => [styles.sectionCard, pressed && { opacity: 0.75 }]}
               onPress={() => handleSectionPress(section.route)}
             >
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: section.color + "20" },
-                ]}
-              >
-                <IconSymbol
-                  name={section.icon}
-                  size={32}
-                  color={section.color}
-                />
+              <View style={[styles.sectionIcon, { backgroundColor: section.color + "22" }]}>
+                <IconSymbol name={section.icon} size={28} color={section.color} />
               </View>
               <View style={styles.sectionContent}>
                 <Text style={styles.sectionTitle}>{section.title}</Text>
-                <Text style={styles.sectionDescription}>
-                  {section.description}
-                </Text>
+                <Text style={styles.sectionDescription}>{section.description}</Text>
               </View>
-              <IconSymbol
-                name="chevron.right"
-                size={24}
-                color={colors.textSecondary}
-              />
+              <IconSymbol name="chevron.right" size={20} color={blackGoldLight.INK_MID} />
             </Pressable>
           ))}
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            ✅ Connected to Supabase for real-time syncing
-          </Text>
+          <Text style={styles.footerText}>✅ Connected to Supabase for real-time syncing</Text>
         </View>
       </ScrollView>
-      <Toast
-        visible={toastVisible}
-        message={toastMessage}
-        type={toastType}
-        onHide={() => setToastVisible(false)}
-        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
-      />
-      <Dialog
-        visible={dialogVisible}
-        title={dialogConfig.title}
-        message={dialogConfig.message}
-        buttons={dialogConfig.buttons}
-        onHide={() => setDialogVisible(false)}
-        currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
-      />
+
+      <Toast visible={toastVisible} message={toastMessage} type={toastType} onHide={() => setToastVisible(false)} currentColors={{}} />
+      <Dialog visible={dialogVisible} title={dialogConfig.title} message={dialogConfig.message} buttons={dialogConfig.buttons} onHide={() => setDialogVisible(false)} currentColors={{}} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  container:         { flex: 1, backgroundColor: blackGoldLight.BODY_BG },
+  flex:              { flex: 1 },
+  scrollContent:     { paddingBottom: 40 },
+  loginScrollContent:{ flexGrow: 1 },
+
+  // Login
+  loginContainer: { flex: 1, justifyContent: 'center', minHeight: 600 },
+  loginHeaderGradient: {
+    borderBottomWidth: 1, borderBottomColor: blackGoldLight.BORDER_GOLD,
+    overflow: 'hidden', position: 'relative',
   },
-  keyboardAvoidingView: {
-    flex: 1,
+  loginHeader: { alignItems: 'center', paddingHorizontal: 24, paddingVertical: 28, gap: 6, zIndex: 1 },
+  loginIconWrap: {
+    width: 72, height: 72, borderRadius: 20,
+    backgroundColor: blackGoldLight.GOLD_DIM,
+    borderWidth: 1, borderColor: blackGoldLight.BORDER_GOLD,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 8,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    paddingBottom: 40,
-  },
-  loginScrollContent: {
-    flexGrow: 1,
-  },
-  loginContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-    minHeight: 600,
-  },
-  loginHeader: {
-    alignItems: "center",
-    marginBottom: 48,
-  },
-  loginTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: colors.text,
-    marginTop: 16,
-  },
-  loginSubtitle: {
-    fontSize: 18,
-    color: colors.textSecondary,
-    marginTop: 8,
-  },
-  loginForm: {
-    width: "100%",
-    maxWidth: 400,
-  },
+  loginTitle:    { fontSize: 26, fontFamily: 'LibertinusSans_700Bold', color: blackGoldLight.INK_WHITE },
+  loginSubtitle: { fontSize: 14, fontFamily: 'LibertinusSans_400Regular', color: blackGoldLight.INK_SILVER },
+  loginForm:     { padding: 24 },
   inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: blackGoldLight.CARD_BG,
+    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13,
+    marginBottom: 14, borderWidth: 1, borderColor: blackGoldLight.BORDER_GOLD,
+    gap: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
   },
-  input: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-    color: colors.text,
-  },
-  eyeIconButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  rememberMeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    marginTop: -8,
-  },
+  input: { flex: 1, fontSize: 15, fontFamily: 'LibertinusSans_400Regular', color: blackGoldLight.INK },
+  eyeBtn: { padding: 4 },
+  rememberMeContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, marginTop: -4, gap: 8 },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 0.2,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
+    width: 20, height: 20, borderRadius: 10,
+    borderWidth: 1, borderColor: blackGoldLight.BORDER_GOLD,
+    justifyContent: 'center', alignItems: 'center',
   },
-  rememberMeText: {
-    fontSize: 14,
-  },
+  checkboxActive: { backgroundColor: blackGoldLight.GOLD, borderColor: blackGoldLight.GOLD },
+  rememberMeText: { fontSize: 14, fontFamily: 'LibertinusSans_400Regular', color: blackGoldLight.INK_MID },
   loginButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 8,
+    borderRadius: 36, overflow: 'hidden', marginTop: 4,
+    shadowColor: blackGoldLight.GOLD, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 5,
   },
-  loginButtonPressed: {
-    opacity: 0.8,
+  loginButtonInner: { paddingVertical: 16, alignItems: 'center' },
+  loginButtonContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  loginButtonText: { fontSize: 16, fontFamily: 'LibertinusSans_700Bold', color: blackGoldLight.INK_WHITE },
+  userProfileButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, paddingVertical: 10, gap: 6, opacity: 0.7 },
+  userProfileButtonText: { fontSize: 13, fontFamily: 'LibertinusSans_400Regular', color: blackGoldLight.INK_MID },
+
+  // Dashboard header
+  dashHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 18,
+    borderBottomWidth: 1, borderBottomColor: blackGoldLight.BORDER_GOLD,
+    overflow: 'hidden', position: 'relative',
   },
-  loginButtonDisabled: {
-    opacity: 0.7,
+  dashHeaderLeft: { flex: 1 },
+  dashTitle: { fontSize: 24, fontFamily: 'LibertinusSans_700Bold', color: blackGoldLight.INK_WHITE },
+  subtitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' },
+  dashSubtitle: { fontSize: 13, fontFamily: 'LibertinusSans_400Regular', color: blackGoldLight.INK_SILVER },
+  badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, gap: 4 },
+  badgeText: { fontSize: 10, fontFamily: 'LibertinusSans_700Bold', color: blackGoldLight.INK_WHITE },
+  headerButtons: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerIconBtn: {
+    padding: 8, backgroundColor: 'rgba(184,146,42,0.15)',
+    borderRadius: 10, borderWidth: 1, borderColor: blackGoldLight.BORDER_GOLD,
   },
-  loginButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  loginButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  userProfileButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 24,
-    paddingVertical: 12,
-    gap: 8,
-    opacity: 0.7,
-  },
-  userProfileButtonText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: colors.text,
-  },
-  subtitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
-    flexWrap: 'wrap',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  superAdminBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FF6B35',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  superAdminBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  adminBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  adminBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  headerButtons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  userProfileIconButton: {
-    padding: 8,
-    backgroundColor: colors.card,
-    borderRadius: 8,
-    borderWidth: 0.2,
-    borderColor: colors.border,
-  },
-  logoutButton: {
-    padding: 8,
-    backgroundColor: colors.card,
-    borderRadius: 8,
-    borderWidth: 0.2,
-    borderColor: colors.border,
-  },
+
+  // Role switcher
   roleSwitcherContainer: {
-    marginHorizontal: 24,
-    marginBottom: 16,
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    margin: 16, marginBottom: 8,
+    backgroundColor: blackGoldLight.CARD_BG, borderRadius: 14,
+    padding: 16, borderWidth: 1, borderColor: blackGoldLight.BORDER_GOLD,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
   },
-  roleSwitcher: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  roleSwitcherLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  roleSwitcherLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  roleSwitcherHint: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 8,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 24,
-    gap: 12,
-    marginBottom: 24,
-  },
+  roleSwitcher:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  roleSwitcherLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  roleSwitcherLabel: { fontSize: 15, fontFamily: 'LibertinusSans_700Bold', color: blackGoldLight.INK },
+  roleSwitcherHint:  { fontSize: 12, fontFamily: 'LibertinusSans_400Regular', color: blackGoldLight.INK_MID, marginTop: 6 },
+
+  // Stats
+  statsContainer: { flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginVertical: 16 },
   statCard: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    flex: 1, borderRadius: 16, padding: 14, alignItems: 'center',
+    borderWidth: 1, borderColor: blackGoldLight.BORDER_GOLD,
+    shadowColor: blackGoldLight.GOLD, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 2,
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.text,
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  sectionsContainer: {
-    paddingHorizontal: 24,
-    gap: 12,
-  },
+  statValue: { fontSize: 22, fontFamily: 'LibertinusSans_700Bold', color: blackGoldLight.INK, marginTop: 6 },
+  statLabel: { fontSize: 11, fontFamily: 'LibertinusSans_400Regular', color: blackGoldLight.INK_MID, marginTop: 3, textAlign: 'center' },
+
+  // Sections
+  sectionsContainer: { paddingHorizontal: 16, gap: 10 },
   sectionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: blackGoldLight.CARD_BG, borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: blackGoldLight.BORDER_LIGHT,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
   },
-  sectionCardPressed: {
-    opacity: 0.7,
-  },
-  sectionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  sectionContent: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  sectionDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  footer: {
-    padding: 24,
-    alignItems: "center",
-  },
-  footerText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: "center",
-  },
+  sectionIcon: { width: 52, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  sectionContent: { flex: 1 },
+  sectionTitle: { fontSize: 15, fontFamily: 'LibertinusSans_700Bold', color: blackGoldLight.INK },
+  sectionDescription: { fontSize: 13, fontFamily: 'LibertinusSans_400Regular', color: blackGoldLight.INK_MID, marginTop: 2 },
+
+  // Footer
+  footer:     { padding: 24, alignItems: 'center' },
+  footerText: { fontSize: 13, fontFamily: 'LibertinusSans_400Regular', color: blackGoldLight.INK_MID, textAlign: 'center' },
 });

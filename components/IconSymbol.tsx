@@ -85,6 +85,7 @@ const MAPPING = ({
   "minus.circle.fill": "remove-circle",
   "minus.circle": "remove-circle-outline",
   "xmark.circle.fill": "remove-circle",
+  "scooter": "delivery-dining",
 
   // Editing & Creation
   "pencil": "edit",
@@ -207,7 +208,7 @@ const MAPPING = ({
   "clock.badge.checkmark": "schedule",
 
   // Authentication & Security
-  "rectangle.and.arrow.up.right.and.arrow.down.left": "logout",
+  "arrow.right.square": "logout",
 
   // Fallback mappings (keep existing MaterialIcons names working)
   "receipt-long": "receipt-long",

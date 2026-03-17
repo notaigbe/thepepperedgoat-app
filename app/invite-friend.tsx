@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 0,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 0.5,
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   signInButton: {
-    borderRadius: 0,
+    borderRadius: 24,
     marginTop: 32,
     // boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
     elevation: 8,
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
   },
   codeCard: {
-    borderRadius: 0,
+    borderRadius: 12,
     padding: 24,
     marginBottom: 16,
     borderWidth: 0.2,
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   },
   codeDisplay: {
     padding: 20,
-    borderRadius: 0,
+    borderRadius: 12,
     alignItems: 'center',
     marginBottom: 16,
     borderWidth: 0.2,
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    borderRadius: 0,
+    borderRadius: 36,
     // boxShadow: '0px 8px 24px rgba(74, 215, 194, 0.4)',
     elevation: 8,
   },
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
   },
   infoCard: {
-    borderRadius: 0,
+    borderRadius: 12,
     padding: 24,
     marginBottom: 16,
     borderWidth: 0.2,
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   statsCard: {
-    borderRadius: 0,
+    borderRadius: 12,
     padding: 24,
     borderWidth: 0.2,
     // boxShadow: '0px 8px 24px rgba(212, 175, 55, 0.3)',
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
   referralStatus: {
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 0,
+    borderRadius: 12,
   },
   referralStatusText: {
     color: '#FFFFFF',
