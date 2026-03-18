@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -8,636 +7,657 @@ import {
   Pressable,
   ScrollView,
   Animated,
+  StatusBar,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/contexts/AppContext";
 import { IconSymbol } from "@/components/IconSymbol";
 import * as Haptics from "expo-haptics";
 import { MenuItem } from "@/types";
+import { LinearGradient } from "expo-linear-gradient";
 
+// ─── Spice helpers ────────────────────────────────────────────────────────────
+const SPICE_LABELS: Record<number, string> = {
+  1: "Mild",
+  2: "Medium",
+  3: "Hot",
+  4: "Extra Hot",
+  5: "Inferno",
+};
+const spiceLabel = (level: number) =>
+  SPICE_LABELS[level] ?? (level > 5 ? "Inferno" : "Mild");
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const HERO_HEIGHT = 420;
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function ItemDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { addToCart, currentColors, menuItems } = useApp();
+  const insets = useSafeAreaInsets();
+  const { addToCart, currentColors, menuItems, menuCategories } = useApp();
+
   const [quantity, setQuantity] = useState(1);
   const [item, setItem] = useState<MenuItem | null>(null);
   const [lastAddedQuantity, setLastAddedQuantity] = useState(1);
-
-  // Notification state
   const [showNotification, setShowNotification] = useState(false);
-  // Use useRef to maintain the same Animated.Value instances
-  const notificationOpacity = useRef(new Animated.Value(0)).current;
-  const notificationTranslateY = useRef(new Animated.Value(-100)).current;
 
-  // Convert name to string for comparison
+  const notificationOpacity = useRef(new Animated.Value(0)).current;
+  const notificationTranslateY = useRef(new Animated.Value(-80)).current;
+  const addButtonScale = useRef(new Animated.Value(1)).current;
+
   const itemId = Array.isArray(id) ? id[0] : id;
 
-  // Find item when menuItems changes or component mounts
   useEffect(() => {
-    if (menuItems && menuItems.length > 0 && itemId) {
-      console.log("Looking for item id:", itemId);
-      console.log(
-        "Available item ids:",
-        menuItems.map((i) => i.id)
-      );
-
+    if (menuItems?.length && itemId) {
       const foundItem = menuItems.find((i) => String(i.id) === String(itemId));
-      console.log("Item found:", !!foundItem);
       setItem(foundItem || null);
     }
   }, [menuItems, itemId]);
 
-  const showNotificationToast = (addedQuantity: number) => {
-    setShowNotification(true);
+  const category = menuCategories?.find((c) => c.id === item?.category_id);
 
-    // Animate in
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  const showNotificationToast = (qty: number) => {
+    setLastAddedQuantity(qty);
+    setShowNotification(true);
+    notificationTranslateY.setValue(-80);
+    notificationOpacity.setValue(0);
+
     Animated.parallel([
       Animated.timing(notificationOpacity, {
         toValue: 1,
-        duration: 300,
+        duration: 280,
         useNativeDriver: true,
       }),
       Animated.spring(notificationTranslateY, {
         toValue: 0,
-        tension: 50,
-        friction: 7,
+        tension: 60,
+        friction: 8,
         useNativeDriver: true,
       }),
     ]).start();
 
-    // Animate out after 3 seconds
     setTimeout(() => {
       Animated.parallel([
         Animated.timing(notificationOpacity, {
           toValue: 0,
-          duration: 300,
+          duration: 260,
           useNativeDriver: true,
         }),
         Animated.timing(notificationTranslateY, {
-          toValue: -100,
-          duration: 300,
+          toValue: -80,
+          duration: 260,
           useNativeDriver: true,
         }),
-      ]).start(() => {
-        setShowNotification(false);
-        notificationTranslateY.setValue(-100);
-      });
-    }, 3000);
-
-    // Save the last added quantity to display correctly
-    setLastAddedQuantity(addedQuantity);
+      ]).start(() => setShowNotification(false));
+    }, 2800);
   };
 
-  // Show loading state while menu items are being fetched
-  if (!menuItems || menuItems.length === 0) {
-    return (
-      <SafeAreaView
-        style={[styles.safeArea, { backgroundColor: currentColors.background }]}
-      >
-        <View style={styles.header}>
-          <Pressable
-            style={styles.backButton}
-            onPress={() => {
-              console.log("Back button pressed");
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.back();
-            }}
-          >
-            <IconSymbol
-              name="chevron.left"
-              size={24}
-              color={currentColors.primary}
-            />
-            <Text
-              style={[styles.backButtonText, { color: currentColors.textSecondary }]}
-            >
-              Back
-            </Text>
-          </Pressable>
-        </View>
-        <View style={styles.errorContainer}>
-          <Text
-            style={[styles.errorText, { color: currentColors.textSecondary }]}
-          >
-            Loading menu items...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!item) {
-    return (
-      <SafeAreaView
-        style={[styles.safeArea, { backgroundColor: currentColors.background }]}
-      >
-        <View style={styles.header}>
-          <Pressable
-            style={styles.backButton}
-            onPress={() => {
-              console.log("Back button pressed");
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.back();
-            }}
-          >
-            <IconSymbol
-              name="chevron.left"
-              size={24}
-              color={currentColors.primary}
-            />
-            <Text
-              style={[styles.backButtonText, { color: currentColors.primary }]}
-            >
-              Back
-            </Text>
-          </Pressable>
-        </View>
-        <View style={styles.errorContainer}>
-          <Text
-            style={[styles.errorText, { color: currentColors.textSecondary }]}
-          >
-            Item not found
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const handleQuantityChange = (change: number) => {
-    console.log("Quantity change:", change);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const newQuantity = quantity + change;
-    if (newQuantity >= 1) {
-      setQuantity(newQuantity);
-    }
-  };
-
+  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleAddToCart = () => {
-    const addedQuantity = quantity; // capture current quantity
-    console.log("Adding to cart:", item.name, addedQuantity);
-
+    const qty = quantity;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    addToCart({ ...item, quantity: addedQuantity });
 
-    // Pass the correct quantity to toast
-    showNotificationToast(addedQuantity);
+    Animated.sequence([
+      Animated.timing(addButtonScale, {
+        toValue: 0.95,
+        duration: 80,
+        useNativeDriver: true,
+      }),
+      Animated.spring(addButtonScale, {
+        toValue: 1,
+        tension: 200,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
+    addToCart({ ...item!, quantity: qty });
+    showNotificationToast(qty);
     setQuantity(1);
   };
 
+  const handleQuantityChange = (delta: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setQuantity((q) => Math.max(1, q + delta));
+  };
+
   const handleBackPress = () => {
-    console.log("Back button pressed");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
 
+  // ── Loading / error shells ─────────────────────────────────────────────────
+  const StateShell = ({ children }: { children: React.ReactNode }) => (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]}>
+      <View style={[styles.backRow, { paddingTop: insets.top + 8 }]}>
+        <Pressable style={styles.backBtn} onPress={handleBackPress}>
+          <IconSymbol name="chevron.left" size={20} color={currentColors.primary} />
+        </Pressable>
+      </View>
+      <View style={styles.centred}>{children}</View>
+    </SafeAreaView>
+  );
+
+  if (!menuItems?.length) {
+    return (
+      <StateShell>
+        <Text style={[styles.stateText, { color: currentColors.textSecondary }]}>
+          Loading…
+        </Text>
+      </StateShell>
+    );
+  }
+  if (!item) {
+    return (
+      <StateShell>
+        <Text style={[styles.stateText, { color: currentColors.textSecondary }]}>
+          Item not found
+        </Text>
+      </StateShell>
+    );
+  }
+
+  const totalPrice = (item.price * quantity).toFixed(2);
+
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: currentColors.background }]}
-      edges={["bottom"]}
-    >
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: currentColors.background,
-            borderBottomColor: currentColors.border,
-          },
-        ]}
-      >
-        <Pressable style={styles.backButton} onPress={handleBackPress}>
-          <IconSymbol
-            name="chevron.left"
-            size={24}
-            color={currentColors.primary}
-          />
-          <Text style={[styles.backButtonText, { color: currentColors.textSecondary }]}>
-            Back
-          </Text>
+    <View style={[styles.root, { backgroundColor: currentColors.background }]}>
+      <StatusBar barStyle="light-content" />
+
+      {/* ── Hero image — edge-to-edge, behind everything ── */}
+      <View style={styles.heroContainer}>
+        <Image source={{ uri: item.image_url ?? undefined }} style={styles.heroImage} />
+        <LinearGradient
+          colors={["rgba(0,0,0,0.52)", "transparent", "rgba(0,0,0,0.78)"]}
+          locations={[0, 0.42, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+
+        {/* Popular badge */}
+        {(item as any).popular && (
+          <View style={[styles.popularBadge, { bottom: 108 }]}>
+            <IconSymbol name="star.fill" size={10} color="#0A0A0A" />
+            <Text style={styles.popularText}>Popular</Text>
+          </View>
+        )}
+      </View>
+
+      {/* ── Back button — above ScrollView in root stacking context ── */}
+      <View style={[styles.backRow, { top: insets.top + 12 }]} pointerEvents="box-none">
+        <Pressable style={styles.backBtn} onPress={handleBackPress} hitSlop={12}>
+          <IconSymbol name="chevron.left" size={20} color="#FFFFFF" />
         </Pressable>
       </View>
 
-      {/* Notification Toast */}
+      {/* ── Toast ── */}
       {showNotification && (
         <Animated.View
           style={[
-            styles.notification,
+            styles.toast,
             {
-              backgroundColor: currentColors.secondary,
+              top: insets.top + 14,
               opacity: notificationOpacity,
               transform: [{ translateY: notificationTranslateY }],
             },
           ]}
         >
-          <View style={styles.notificationContent}>
-            <View
-              style={[
-                styles.notificationIcon,
-                { backgroundColor: currentColors.background },
-              ]}
-            >
-              <IconSymbol
-                name="checkmark.circle.fill"
-                size={24}
-                color={currentColors.secondary}
-              />
+          <LinearGradient
+            colors={["#2A2009", "#181100"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.toastGradient}
+          >
+            <View style={styles.toastIcon}>
+              <IconSymbol name="checkmark.circle.fill" size={22} color="#C9A84C" />
             </View>
-            <View style={styles.notificationText}>
-              <Text
-                style={[
-                  styles.notificationTitle,
-                  { color: currentColors.background },
-                ]}
-              >
-                Added to Cart!
-              </Text>
-              <Text
-                style={[
-                  styles.notificationSubtitle,
-                  { color: currentColors.background },
-                ]}
-              >
-                {lastAddedQuantity} {item.name}
+            <View>
+              <Text style={styles.toastTitle}>Added to Cart</Text>
+              <Text style={styles.toastSub}>
+                {lastAddedQuantity}× {item.name}
               </Text>
             </View>
-          </View>
+          </LinearGradient>
         </Animated.View>
       )}
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={[styles.imageWrapper, { borderColor: currentColors.border }]}>
-          <Image
-            source={{ uri: item.image_url }}
-            style={styles.image}
-          />
-          <View style={styles.imageOverlay} />
-        </View>
+      {/* ── Scrollable content ── */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: 160 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Spacer so card overlaps hero */}
+        <View style={{ height: HERO_HEIGHT - 36 }} />
 
-        <View style={styles.content}>
-          <View style={styles.headerInfo}>
-            <View style={styles.headerLeft}>
-              <Text style={[styles.name, { color: currentColors.textSecondary }]}>
-                {item.name}
-              </Text>
-              {item.popular && (
-                <View
-                  style={[
-                    styles.popularBadge,
-                    { backgroundColor: currentColors.secondary },
-                  ]}
-                >
-                  <IconSymbol
-                    name="star.fill"
-                    size={14}
-                    color={currentColors.background}
-                  />
-                  <Text
-                    style={[styles.popularText, { color: currentColors.background }]}
-                  >
-                    Popular
-                  </Text>
-                </View>
-              )}
-            </View>
-            <Text style={[styles.price, { color: currentColors.textSecondary }]}>
-              ${item.price.toFixed(2)}
-            </Text>
-          </View>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: currentColors.card ?? currentColors.background,
+              borderColor: "rgba(201,168,76,0.18)",
+            },
+          ]}
+        >
+          {/* Thin gold accent rule */}
+          <View style={styles.cardRule} />
 
-          <View style={styles.categoryContainer}>
-            <IconSymbol
-              name="label"
-              size={16}
-              color={currentColors.textSecondary}
-            />
+          {/* Name + Price */}
+          <View style={styles.namePriceRow}>
             <Text
-              style={[styles.category, { color: currentColors.textSecondary }]}
+              style={[styles.itemName, { color: currentColors.textSecondary }]}
+              numberOfLines={2}
             >
-              {item.category_id}
+              {item.name}
             </Text>
+            <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
           </View>
 
-          <Text style={[styles.description, { color: currentColors.textSecondary }]}>
-            {item.description}
-          </Text>
+          {/* Meta pills */}
+          <View style={styles.pillRow}>
+            {category?.title && (
+              <View style={[styles.pill, { borderColor: "rgba(201,168,76,0.32)" }]}>
+                <IconSymbol name="tag" size={11} color="#C9A84C" />
+                <Text style={styles.pillText}>{category.title}</Text>
+              </View>
+            )}
+            {item.spicy_level != null && item.spicy_level > 0 && (
+              <View style={[styles.pill, { borderColor: "rgba(220,80,50,0.38)" }]}>
+                <Text style={styles.chiliEmoji}>
+                  {"🌶️".repeat(Math.min(item.spicy_level, 5))}
+                </Text>
+                <Text style={[styles.pillText, { color: "#E05840" }]}>
+                  {spiceLabel(item.spicy_level)}
+                </Text>
+              </View>
+            )}
+            {item.tag && (
+              <View style={[styles.pill, { borderColor: "rgba(201,168,76,0.16)" }]}>
+                <Text style={[styles.pillText, { color: currentColors.textSecondary, opacity: 0.55 }]}>
+                  {item.tag}
+                </Text>
+              </View>
+            )}
+          </View>
 
-          {/* <View
-            style={[styles.infoCard, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}
-          >
-            <IconSymbol
-              name="star.fill"
-              size={20}
-              color={currentColors.secondary}
-            />
-            <Text style={[styles.infoText, { color: currentColors.textSecondary }]}>
-              Earn {Math.floor(item.price * quantity)} points with this order!
-            </Text>
-          </View> */}
+          {/* Hairline divider */}
+          <View style={[styles.divider, { backgroundColor: "rgba(201,168,76,0.12)" }]} />
 
-          <View
-            style={[
-              styles.quantitySection,
-              { backgroundColor: currentColors.card, borderColor: currentColors.border },
-            ]}
-          >
-            <Text style={[styles.quantityLabel, { color: currentColors.textSecondary }]}>
-              Quantity
+          {/* Description */}
+          {!!item.description && (
+            <Text style={[styles.description, { color: currentColors.textSecondary }]}>
+              {item.description}
             </Text>
-            <View style={styles.quantityControls}>
+          )}
+
+          {/* Quantity selector */}
+          <View style={[styles.qtyCard, { borderColor: "rgba(201,168,76,0.16)" }]}>
+            <Text
+              style={[styles.qtyLabel, { color: currentColors.textSecondary }]}
+            >
+              QTY
+            </Text>
+            <View style={styles.qtyControls}>
               <Pressable
-                style={[
-                  styles.quantityButton,
-                  { backgroundColor: currentColors.background, borderColor: currentColors.border },
+                style={({ pressed }) => [
+                  styles.qtyBtn,
+                  {
+                    borderColor: "rgba(201,168,76,0.32)",
+                    backgroundColor: pressed
+                      ? "rgba(201,168,76,0.09)"
+                      : "transparent",
+                  },
                 ]}
                 onPress={() => handleQuantityChange(-1)}
               >
-                <IconSymbol
-                  name="minus"
-                  size={20}
-                  color={currentColors.primary}
-                />
+                <IconSymbol name="minus" size={16} color="#C9A84C" />
               </Pressable>
-              <Text
-                style={[styles.quantityValue, { color: currentColors.textSecondary }]}
-              >
+
+              <Text style={[styles.qtyValue, { color: currentColors.textSecondary }]}>
                 {quantity}
               </Text>
+
               <Pressable
-                style={[
-                  styles.quantityButton,
-                  { backgroundColor: currentColors.background, borderColor: currentColors.border },
+                style={({ pressed }) => [
+                  styles.qtyBtn,
+                  {
+                    borderColor: "rgba(201,168,76,0.32)",
+                    backgroundColor: pressed
+                      ? "rgba(201,168,76,0.09)"
+                      : "transparent",
+                  },
                 ]}
                 onPress={() => handleQuantityChange(1)}
               >
-                <IconSymbol
-                  name="plus"
-                  size={20}
-                  color={currentColors.primary}
-                />
+                <IconSymbol name="plus" size={16} color="#C9A84C" />
               </Pressable>
             </View>
           </View>
         </View>
       </ScrollView>
 
+      {/* ── Sticky footer ── */}
       <View
         style={[
           styles.footer,
           {
-            backgroundColor: currentColors.card,
-            borderTopColor: currentColors.border,
+            paddingBottom: insets.bottom + 12,
+            borderTopColor: "rgba(201,168,76,0.14)",
+            backgroundColor: currentColors.background,
           },
         ]}
       >
-        <View style={styles.totalContainer}>
-          <Text
-            style={[styles.totalLabel, { color: currentColors.textSecondary }]}
-          >
-            Total
-          </Text>
-          <Text style={[styles.totalValue, { color: currentColors.textSecondary }]}>
-            ${(item.price * quantity).toFixed(2)}
-          </Text>
+        {/* Upward fade above footer */}
+        <LinearGradient
+          colors={["transparent", currentColors.background]}
+          style={styles.footerFade}
+          pointerEvents="none"
+        />
+
+        <View style={styles.footerInner}>
+          {/* Total */}
+          <View style={styles.totalBlock}>
+            <Text
+              style={[styles.totalCaption, { color: currentColors.textSecondary }]}
+            >
+              TOTAL
+            </Text>
+            <Text style={[styles.totalAmount, { color: currentColors.textSecondary }]}>
+              ${totalPrice}
+            </Text>
+          </View>
+
+          {/* CTA button */}
+          <Animated.View style={[styles.ctaFlex, { transform: [{ scale: addButtonScale }] }]}>
+            <Pressable onPress={handleAddToCart} style={styles.ctaWrapper}>
+              <LinearGradient
+                colors={["#C9A84C", "#A07828", "#C9A84C"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.ctaGradient}
+              >
+                <IconSymbol name="cart.fill" size={18} color="#0A0A0A" />
+                <Text style={styles.ctaText}>Add to Cart</Text>
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
         </View>
-        <Pressable
-          style={[styles.addButton, { backgroundColor: currentColors.primary }]}
-          onPress={handleAddToCart}
-        >
-          <IconSymbol name="cart.fill" size={20} color={currentColors.text} />
-          <Text style={[styles.addButtonText, { color: currentColors.text}]}>
-            Add to Cart
-          </Text>
-        </Pressable>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 0.2,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    marginLeft: -8,
-  },
-  backButtonText: {
-    fontSize: 17,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  container: {
-    flex: 1,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 18,
-    fontFamily: 'Inter_400Regular',
-    textAlign: "center",
-  },
-  // Notification styles
-  notification: {
+  root: { flex: 1 },
+  safeArea: { flex: 1 },
+  centred: { flex: 1, justifyContent: "center", alignItems: "center" },
+  stateText: { fontSize: 16, fontFamily: "Inter_400Regular", opacity: 0.6 },
+
+  // Hero
+  heroContainer: {
     position: "absolute",
-    top: 20,
-    left: 20,
-    right: 20,
-    zIndex: 1000,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  notificationContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  notificationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  notificationText: {
-    flex: 1,
-  },
-  notificationTitle: {
-    fontSize: 16,
-    fontFamily: 'Inter_700Bold',
-    marginBottom: 2,
-  },
-  notificationSubtitle: {
-    fontSize: 14,
-    fontFamily: 'Inter_400Regular',
-    opacity: 0.9,
-  },
-  imageWrapper: {
-    width: "100%",
-    height: 320,
-    borderBottomWidth: 0.2,
-    position: 'relative',
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    resizeMode: 'cover',
-  },
-  imageOverlay: {
-    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    height: HERO_HEIGHT,
+    zIndex: 0,
   },
-  content: {
-    padding: 20,
+  heroImage: { width: "100%", height: "100%", resizeMode: "cover" },
+
+  // Back button
+  backRow: { position: "absolute", left: 20, zIndex: 20 },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(0,0,0,0.42)",
+    borderWidth: 0.8,
+    borderColor: "rgba(255,255,255,0.16)",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  headerInfo: {
+
+  // Popular badge
+  popularBadge: {
+    position: "absolute",
+    left: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#C9A84C",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  popularText: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    color: "#0A0A0A",
+    letterSpacing: 0.4,
+  },
+
+  // Toast
+  toast: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    zIndex: 100,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#C9A84C",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  toastGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderWidth: 0.8,
+    borderColor: "rgba(201,168,76,0.28)",
+    borderRadius: 16,
+  },
+  toastIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(201,168,76,0.12)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  toastTitle: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    color: "#C9A84C",
+    marginBottom: 1,
+  },
+  toastSub: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.5)",
+  },
+
+  // Scroll
+  scrollView: { flex: 1 },
+
+  // Content card
+  card: {
+    marginHorizontal: 12,
+    borderRadius: 28,
+    borderWidth: 0.8,
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 32,
+    shadowColor: "#C9A84C",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  cardRule: {
+    height: 1,
+    width: 44,
+    backgroundColor: "#C9A84C",
+    borderRadius: 1,
+    marginBottom: 22,
+    opacity: 0.65,
+  },
+
+  // Name + Price
+  namePriceRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 12,
+    gap: 12,
+    marginBottom: 14,
   },
-  headerLeft: {
+  itemName: {
     flex: 1,
-    marginRight: 16,
+    fontSize: 26,
+    fontFamily: "LibertinusSans_700Bold",
+    lineHeight: 32,
+    letterSpacing: 0.3,
   },
-  name: {
-    fontSize: 28,
-    fontFamily: 'LibertinusSans_700Bold',
-    marginBottom: 8,
-    letterSpacing: 0.5,
+  itemPrice: {
+    fontSize: 22,
+    fontFamily: "Inter_700Bold",
+    color: "#C9A84C",
+    letterSpacing: -0.4,
+    paddingTop: 2,
   },
-  popularBadge: {
+
+  // Pills
+  pillRow: {
     flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    gap: 4,
-  },
-  popularText: {
-    fontSize: 12,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  price: {
-    fontSize: 28,
-    fontFamily: 'Inter_700Bold',
-  },
-  categoryContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 16,
-  },
-  category: {
-    fontSize: 16,
-    fontFamily: 'Inter_400Regular',
-  },
-  description: {
-    fontSize: 16,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 24,
+    flexWrap: "wrap",
+    gap: 8,
     marginBottom: 20,
   },
-  infoCard: {
+  pill: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-    marginBottom: 24,
-    borderWidth: 0.2,
-    boxShadow: "0px 2px 8px rgba(212, 175, 55, 0.15)",
-    elevation: 2,
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 0.8,
+    backgroundColor: "rgba(255,255,255,0.03)",
   },
-  infoText: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: 'Inter_600SemiBold',
+  pillText: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    color: "#C9A84C",
+    letterSpacing: 0.2,
   },
-  quantitySection: {
-    padding: 20,
-    borderRadius: 24,
-    borderWidth: 0.2,
-    boxShadow: "0px 2px 8px rgba(212, 175, 55, 0.15)",
-    elevation: 2,
+  chiliEmoji: { fontSize: 11 },
+
+  // Divider
+  divider: { height: 1, marginBottom: 20 },
+
+  // Description
+  description: {
+    fontSize: 15,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 25,
+    marginBottom: 28,
+    opacity: 0.72,
   },
-  quantityLabel: {
-    fontSize: 16,
-    fontFamily: 'LibertinusSans_700Bold',
-    marginBottom: 12,
-  },
-  quantityControls: {
+
+  // Qty
+  qtyCard: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 24,
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 20,
+    borderWidth: 0.8,
+    backgroundColor: "rgba(255,255,255,0.02)",
   },
-  quantityButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  qtyLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 1.6,
+    opacity: 0.42,
+  },
+  qtyControls: { flexDirection: "row", alignItems: "center", gap: 20 },
+  qtyBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 0.8,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 0.5,
   },
-  quantityValue: {
-    fontSize: 24,
-    fontFamily: 'Inter_700Bold',
-    minWidth: 40,
+  qtyValue: {
+    fontSize: 20,
+    fontFamily: "Inter_700Bold",
+    minWidth: 30,
     textAlign: "center",
   },
+
+  // Footer
   footer: {
-    padding: 20,
-    borderTopWidth: 0.2,
-    gap: 12,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopWidth: 0.5,
+    zIndex: 10,
   },
-  totalContainer: {
+  footerFade: {
+    position: "absolute",
+    top: -40,
+    left: 0,
+    right: 0,
+    height: 40,
+  },
+  footerInner: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: 16,
+    paddingHorizontal: 20,
+    paddingTop: 14,
   },
-  totalLabel: {
-    fontSize: 18,
-    fontFamily: 'Inter_400Regular',
+  totalBlock: { gap: 1 },
+  totalCaption: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 1.8,
+    opacity: 0.38,
   },
-  totalValue: {
-    fontSize: 24,
-    fontFamily: 'Inter_700Bold',
+  totalAmount: {
+    fontSize: 22,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: -0.4,
   },
-  addButton: {
+  ctaFlex: { flex: 1 },
+  ctaWrapper: {
+    borderRadius: 50,
+    overflow: "hidden",
+    shadowColor: "#C9A84C",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.32,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+  ctaGradient: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 16,
-    borderRadius: 36,
     gap: 8,
-    // boxShadow: "0px 4px 12px rgba(212, 175, 55, 0.3)",
-    elevation: 4,
+    paddingVertical: 16,
+    paddingHorizontal: 28,
   },
-  addButtonText: {
-    fontSize: 18,
-    fontFamily: 'Inter_700Bold',
+  ctaText: {
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+    color: "#0A0A0A",
+    letterSpacing: 0.2,
   },
 });

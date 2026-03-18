@@ -17,6 +17,7 @@ import { useApp } from '@/contexts/AppContext';
 import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
 import Constants from 'expo-constants';
+import { blackGoldLight } from '@/styles/commonStyles';
 
 const version = Constants.expoConfig?.version ?? '1.0.0';
 const appName = Constants.expoConfig?.name ?? 'App';
@@ -558,12 +559,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
+backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: blackGoldLight.BORDER_GOLD,
+      // elevation: 3,
+      shadowColor: blackGoldLight.GOLD,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 6,
+    },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',

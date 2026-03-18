@@ -446,7 +446,7 @@ function CheckoutContent() {
       alignItems: 'center',
       borderWidth: 1,
       borderColor: BORDER_GOLD,
-      elevation: 3,
+      // elevation: 3,
       shadowColor: GOLD,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.2,

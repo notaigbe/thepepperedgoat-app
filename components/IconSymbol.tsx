@@ -208,7 +208,7 @@ const MAPPING = ({
   "clock.badge.checkmark": "schedule",
 
   // Authentication & Security
-  "arrow.right.square": "logout",
+  "rectangle.portrait.and.arrow.forward": "logout",
 
   // Fallback mappings (keep existing MaterialIcons names working)
   "receipt-long": "receipt-long",
