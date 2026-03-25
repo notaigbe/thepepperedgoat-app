@@ -2,7 +2,7 @@
   "expo": {
     "name": "The Peppered Goat",
     "slug": "the-peppered-goat",
-    "version": "1.4.0",
+    "version": "1.5.1",
     "orientation": "portrait",
     "icon": "./assets/images/peppered-goat-logo.jpg",
     "userInterfaceStyle": "automatic",
