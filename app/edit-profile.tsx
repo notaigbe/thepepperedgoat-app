@@ -27,7 +27,7 @@ import { SUPABASE_URL, supabase } from './integrations/supabase/client';
 import { blackGoldLight } from '@/styles/commonStyles';
 
 const GOOGLE_PLACES_API_KEY =
-  process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || 'AIzaSyAD8zYhfNdoR6DEv5E1Dbbr0dyI7fMAJ3Q';
+  process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || '';
 
 interface AddressValidationResult {
   success: boolean;

@@ -1,6 +1,6 @@
 import { useApp } from '@/contexts/AppContext';
 import type { CartItem } from '@/contexts/AppContext';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,17 +14,72 @@ import {
   Pressable,
   Platform,
   StatusBar,
+  Modal,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
 import Dialog from '@/components/Dialog';
 import { blackGoldLight } from "@/styles/commonStyles";
+import swallowImage from '@/assets/images/swallow.jpeg';
+import soupImage from '@/assets/images/soup.jpg';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export default function CartScreen() {
-  const { cart, updateCartQuantity, removeFromCart, currentColors } = useApp();
+  const { cart, updateCartQuantity, removeFromCart, currentColors, menuItems, addToCart, menuCategories } = useApp();
+
+  const getCategoryKey = (categoryId: string | null) => {
+    if (!categoryId) return '';
+    return menuCategories.find(c => c.id === categoryId)?.key?.toLowerCase() ?? '';
+  };
   const router = useRouter();
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogType, setDialogType] = useState<'remove' | 'empty'>('remove');
   const [itemToRemove, setItemToRemove] = useState<string | null>(null);
+  const [swallowDrawerVisible, setSwallowDrawerVisible] = useState(false);
+  const [soupDrawerVisible, setSoupDrawerVisible] = useState(false);
+  const drawerAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const soupDrawerAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  const swallows = menuItems.filter(item =>
+    getCategoryKey(item.category_id).includes('swallow')
+  );
+
+  const soups = menuItems.filter(item =>
+    getCategoryKey(item.category_id).includes('soup')
+  );
+
+  const openSwallowDrawer = () => {
+    setSwallowDrawerVisible(true);
+    Animated.spring(drawerAnim, { toValue: 0, useNativeDriver: true, bounciness: 4 }).start();
+  };
+
+  const closeSwallowDrawer = () => {
+    Animated.timing(drawerAnim, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true }).start(() => setSwallowDrawerVisible(false));
+  };
+
+  const openSoupDrawer = () => {
+    setSoupDrawerVisible(true);
+    Animated.spring(soupDrawerAnim, { toValue: 0, useNativeDriver: true, bounciness: 4 }).start();
+  };
+
+  const closeSoupDrawer = () => {
+    Animated.timing(soupDrawerAnim, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true }).start(() => setSoupDrawerVisible(false));
+  };
+
+  const soupQuantity = cart
+    .filter(item => getCategoryKey(item.category_id).includes('soup'))
+    .reduce((sum, item) => sum + item.quantity, 0);
+
+  const swallowQuantity = cart
+    .filter(item => getCategoryKey(item.category_id).includes('swallow'))
+    .reduce((sum, item) => sum + item.quantity, 0);
+
+  const showSwallowBadge = soupQuantity > 0 && swallowQuantity < soupQuantity;
+  const showSoupBadge = swallowQuantity > 0 && soupQuantity < swallowQuantity;
+
+  // const firstCartSoupImageUrl = cart.find(item => getCategoryKey(item.category_id).includes('soup'))?.image_url;
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.0975;
@@ -72,14 +127,14 @@ export default function CartScreen() {
         end={{ x: 1, y: 1 }}
         style={styles.headerContainer}
       >
-      <SafeAreaView style={{ backgroundColor: 'transparent' }} edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Shopping Cart</Text>
-          <Text style={styles.itemCount}>
-            {cart.length} {cart.length === 1 ? 'item' : 'items'}
-          </Text>
-        </View>
-      </SafeAreaView>
+        <SafeAreaView style={{ backgroundColor: 'transparent' }} edges={['top']}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Shopping Cart</Text>
+            <Text style={styles.itemCount}>
+              {cart.length} {cart.length === 1 ? 'item' : 'items'}
+            </Text>
+          </View>
+        </SafeAreaView>
       </LinearGradient>
 
       {cart.length === 0 ? (
@@ -99,38 +154,84 @@ export default function CartScreen() {
             showsVerticalScrollIndicator={false}
           >
             {cart.map((item) => (
-              <View key={item.id} style={styles.cartItem}>
-                <View style={styles.imageContainer}>
-                  <Image source={{ uri: item.image_url }} style={styles.itemImage} />
-                </View>
+              <React.Fragment key={item.id}>
+                <View style={{ position: 'relative', marginBottom: 24 }}>
+                  <View style={[styles.cartItem, { marginBottom: 0 }]}>
+                    <View style={styles.imageContainer}>
+                      <Image source={{ uri: item.image_url }} style={styles.itemImage} />
+                    </View>
 
-                <View style={styles.itemDetails}>
-                  <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-                  <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
-                  <View style={styles.quantityContainer}>
+                    <View style={styles.itemDetails}>
+                      <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+                      <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+                      <View style={styles.quantityContainer}>
+                        <Pressable
+                          style={styles.quantityButton}
+                          onPress={() => handleQuantityChange(item.id, -1)}
+                        >
+                          <IconSymbol name="minus" size={14} color="#000000" />
+                        </Pressable>
+                        <Text style={styles.quantity}>{item.quantity}</Text>
+                        <Pressable
+                          style={styles.quantityButton}
+                          onPress={() => handleQuantityChange(item.id, 1)}
+                        >
+                          <IconSymbol name="plus" size={14} color="#000000" />
+                        </Pressable>
+                      </View>
+                    </View>
+
                     <Pressable
-                      style={styles.quantityButton}
-                      onPress={() => handleQuantityChange(item.id, -1)}
+                      style={({ pressed }) => [styles.removeButton, { opacity: pressed ? 0.4 : 1 }]}
+                      onPress={() => handleRemoveItem(item.id)}
                     >
-                      <IconSymbol name="minus" size={14} color="#000000" />
-                    </Pressable>
-                    <Text style={styles.quantity}>{item.quantity}</Text>
-                    <Pressable
-                      style={styles.quantityButton}
-                      onPress={() => handleQuantityChange(item.id, 1)}
-                    >
-                      <IconSymbol name="plus" size={14} color="#000000" />
+                      <IconSymbol name="trash" size={20} color="rgba(0,0,0,0.35)" />
                     </Pressable>
                   </View>
-                </View>
 
-                <Pressable
-                  style={({ pressed }) => [styles.removeButton, { opacity: pressed ? 0.4 : 1 }]}
-                  onPress={() => handleRemoveItem(item.id)}
-                >
-                  <IconSymbol name="trash" size={20} color="rgba(0,0,0,0.35)" />
-                </Pressable>
-              </View>
+                  {/* Prompt to add a soup when a swallow is in the cart without a matching soup */}
+                  {getCategoryKey(item.category_id).includes('swallow') && showSoupBadge && (
+                    <Pressable
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        openSoupDrawer();
+                      }}
+                      style={styles.pairingBadge}
+                    >
+                      <View style={styles.pairingBadgeInner}>
+                        
+                          <Image
+                            source={ soupImage}
+                            style={styles.pairingBadgeImage}
+                          />
+
+                        <Text style={styles.pairingBadgeText}>Add a Soup</Text>
+                        <IconSymbol name="arrow.right" size={11} color="rgba(255,255,255,0.8)" />
+                      </View>
+                    </Pressable>
+                  )}
+
+                  {/* Prompt to add a swallow when a soup is in the cart without a matching swallow */}
+                  {getCategoryKey(item.category_id).includes('soup') && showSwallowBadge && (
+                    <Pressable
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        openSwallowDrawer();
+                      }}
+                      style={styles.pairingBadge}
+                    >
+                      <View style={styles.pairingBadgeInner}>
+                        <Image
+                          source={swallowImage}
+                          style={styles.pairingBadgeImage}
+                        />
+                        <Text style={styles.pairingBadgeText}>Add a Swallow</Text>
+                        <IconSymbol name="arrow.right" size={11} color="rgba(255,255,255,0.8)" />
+                      </View>
+                    </Pressable>
+                  )}
+                </View>
+              </React.Fragment>
             ))}
           </ScrollView>
 
@@ -158,6 +259,86 @@ export default function CartScreen() {
           </View>
         </>
       )}
+
+      {/* ── Swallow Drawer ─────────────────────────────────────────────────── */}
+      <Modal visible={swallowDrawerVisible} transparent animationType="none" onRequestClose={closeSwallowDrawer}>
+        <Pressable style={styles.drawerBackdrop} onPress={closeSwallowDrawer} />
+        <Animated.View style={[styles.drawer, { transform: [{ translateY: drawerAnim }] }]}>
+          <View style={styles.drawerHandle} />
+          <View style={styles.drawerHeader}>
+            <Image source={swallowImage} style={styles.drawerHeaderImage} />
+            <Text style={styles.drawerTitle}>Add a Swallow</Text>
+            <Pressable onPress={closeSwallowDrawer} style={styles.drawerClose}>
+              <IconSymbol name="xmark" size={20} color="rgba(0,0,0,0.4)" />
+            </Pressable>
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.drawerList}>
+            {swallows.length === 0 ? (
+              <Text style={styles.drawerEmpty}>No swallows available</Text>
+            ) : (
+              swallows.map(item => (
+                <Pressable
+                  key={item.id}
+                  style={styles.drawerItem}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    addToCart({ ...item, quantity: 1 });
+                    closeSwallowDrawer();
+                  }}
+                >
+                  <Image source={{ uri: item.image_url }} style={styles.drawerItemImage} />
+                  <View style={styles.drawerItemInfo}>
+                    <Text style={styles.drawerItemName}>{item.name}</Text>
+                    <Text style={styles.drawerItemDesc} numberOfLines={1}>{item.description}</Text>
+                    <Text style={styles.drawerItemPrice}>${item.price.toFixed(2)}</Text>
+                  </View>
+                  <IconSymbol name="plus.circle.fill" size={28} color={blackGoldLight.GOLD} />
+                </Pressable>
+              ))
+            )}
+          </ScrollView>
+        </Animated.View>
+      </Modal>
+
+      {/* ── Soup Drawer ────────────────────────────────────────────────────── */}
+      <Modal visible={soupDrawerVisible} transparent animationType="none" onRequestClose={closeSoupDrawer}>
+        <Pressable style={styles.drawerBackdrop} onPress={closeSoupDrawer} />
+        <Animated.View style={[styles.drawer, { transform: [{ translateY: soupDrawerAnim }] }]}>
+          <View style={styles.drawerHandle} />
+          <View style={styles.drawerHeader}>
+              <Image source={ soupImage } style={styles.drawerHeaderImage} />
+            <Text style={styles.drawerTitle}>Add a Soup</Text>
+            <Pressable onPress={closeSoupDrawer} style={styles.drawerClose}>
+              <IconSymbol name="xmark" size={20} color="rgba(0,0,0,0.4)" />
+            </Pressable>
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.drawerList}>
+            {soups.length === 0 ? (
+              <Text style={styles.drawerEmpty}>No soups available</Text>
+            ) : (
+              soups.map(item => (
+                <Pressable
+                  key={item.id}
+                  style={styles.drawerItem}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    addToCart({ ...item, quantity: 1 });
+                    closeSoupDrawer();
+                  }}
+                >
+                  <Image source={{ uri: item.image_url }} style={styles.drawerItemImage} />
+                  <View style={styles.drawerItemInfo}>
+                    <Text style={styles.drawerItemName}>{item.name}</Text>
+                    <Text style={styles.drawerItemDesc} numberOfLines={1}>{item.description}</Text>
+                    <Text style={styles.drawerItemPrice}>${item.price.toFixed(2)}</Text>
+                  </View>
+                  <IconSymbol name="plus.circle.fill" size={28} color={blackGoldLight.GOLD} />
+                </Pressable>
+              ))
+            )}
+          </ScrollView>
+        </Animated.View>
+      </Modal>
 
       <Dialog
         visible={dialogVisible}
@@ -253,7 +434,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 14,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.07)',
     shadowColor: '#000000',
@@ -316,6 +496,39 @@ const styles = StyleSheet.create({
     padding: 8,
     justifyContent: 'flex-start',
     alignSelf: 'flex-start',
+  },
+  // ── Pairing badge ────────────────────────────────────────────────────────
+  pairingBadge: {
+    position: 'absolute',
+    bottom: -18,
+    right: 12,
+    zIndex: 10,
+  },
+  pairingBadgeInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    overflow: 'hidden',
+    elevation: 10,
+  },
+  pairingBadgeImage: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  pairingBadgeText: {
+    fontFamily: 'LibertinusSans_700Bold',
+    fontSize: 13,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   // ── Summary ──────────────────────────────────────────────────────────────
   summary: {
@@ -382,5 +595,106 @@ const styles = StyleSheet.create({
     fontFamily: 'LibertinusSans_700Bold',
     color: '#FFFFFF',
     letterSpacing: 0.5,
+  },
+  // ── Drawers ──────────────────────────────────────────────────────────────
+  drawerBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  drawer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: SCREEN_HEIGHT * 0.7,
+    paddingBottom: 40,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 20,
+  },
+  drawerHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  drawerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: blackGoldLight.BORDER_GOLD,
+  },
+  drawerHeaderImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  drawerTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK,
+  },
+  drawerClose: {
+    padding: 4,
+  },
+  drawerList: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
+    gap: 12,
+  },
+  drawerEmpty: {
+    textAlign: 'center',
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: 'rgba(0,0,0,0.4)',
+    marginTop: 20,
+  },
+  drawerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.07)',
+    backgroundColor: blackGoldLight.BODY_BG,
+    gap: 12,
+  },
+  drawerItemImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+  },
+  drawerItemInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  drawerItemName: {
+    fontSize: 15,
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK,
+  },
+  drawerItemDesc: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    color: 'rgba(0,0,0,0.45)',
+  },
+  drawerItemPrice: {
+    fontSize: 15,
+    fontFamily: 'LibertinusSans_700Bold',
+    color: blackGoldLight.INK_MID,
+    marginTop: 2,
   },
 });

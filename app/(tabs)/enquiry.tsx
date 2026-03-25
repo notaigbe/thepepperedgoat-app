@@ -201,7 +201,7 @@ export default function EnquiriesScreen() {
                 style={styles.input}
                 value={formData.phone}
                 onChangeText={(t) => updateFormField("phone", t)}
-                placeholder="Enter your phone number (optional)"
+                placeholder="Phone number (optional)"
                 placeholderTextColor={blackGoldLight.INK_SOFT}
                 keyboardType="phone-pad"
                 editable={!loading}
@@ -233,7 +233,7 @@ export default function EnquiriesScreen() {
                 style={styles.input}
                 value={formData.guest_count}
                 onChangeText={(t) => updateFormField("guest_count", t)}
-                placeholder="Approximate number of guests (optional)"
+                placeholder="Number of guests (optional)"
                 placeholderTextColor={blackGoldLight.INK_SOFT}
                 keyboardType="number-pad"
                 editable={!loading}

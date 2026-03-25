@@ -335,8 +335,9 @@ export default function AdminMenuManagement() {
   const getCategoryTitle = (categoryId: string | null) =>
     !categoryId ? "—" : categories.find((c) => c.id === categoryId)?.title ?? categoryId;
 
-  const filteredItems =
-    selectedCategoryId === "All" ? items : items.filter((i) => i.category_id === selectedCategoryId);
+  const filteredItems = (selectedCategoryId === "All" ? items : items.filter((i) => i.category_id === selectedCategoryId))
+    .slice()
+    .sort((a, b) => Number(b.is_available ?? true) - Number(a.is_available ?? true));
 
   React.useEffect(() => {
     (async () => {

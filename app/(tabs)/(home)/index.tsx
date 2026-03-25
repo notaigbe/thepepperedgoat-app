@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  SectionList,
   Image,
   Pressable,
   Platform,
@@ -351,6 +351,27 @@ export default function HomeScreen() {
     });
   }, [searchQuery, selectedCategory, menuItems, menuCategories]);
 
+  const sectionData = useMemo(() => {
+    if (selectedCategory !== "all") {
+      return [{ title: "", data: filteredItems }];
+    }
+    const categoryMap = new Map<string, { title: string; data: any[] }>();
+    for (const cat of menuCategories) {
+      if (cat.key !== "all") categoryMap.set(cat.id, { title: cat.title, data: [] });
+    }
+    const uncategorized: any[] = [];
+    for (const item of filteredItems) {
+      if (item.category_id && categoryMap.has(item.category_id)) {
+        categoryMap.get(item.category_id)!.data.push(item);
+      } else {
+        uncategorized.push(item);
+      }
+    }
+    const sections = [...categoryMap.values()].filter((s) => s.data.length > 0);
+    if (uncategorized.length > 0) sections.push({ title: "Other", data: uncategorized });
+    return sections;
+  }, [filteredItems, menuCategories, selectedCategory]);
+
   const showToast = useCallback((type: "success" | "error" | "info", message: string) => {
     setToastType(type); setToastMessage(message); setToastVisible(true);
   }, []);
@@ -556,10 +577,18 @@ export default function HomeScreen() {
           <ActivityIndicator size="large" color={blackGoldLight.GOLD} />
         </View>
       ) : (
-        <FlatList
-          data={filteredItems}
+        <SectionList
+          sections={sectionData}
           renderItem={renderMenuItemCard}
           keyExtractor={(item) => item.id}
+          renderSectionHeader={({ section }) =>
+            section.title ? (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionHeaderText}>{section.title}</Text>
+                <View style={styles.sectionHeaderRule} />
+              </View>
+            ) : null
+          }
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews
@@ -825,6 +854,29 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  // ─── Section Header ───────────────────────────────────────────────
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: 20,
+    paddingBottom: 8,
+    gap: 10,
+    backgroundColor: blackGoldLight.BODY_BG,
+  },
+  sectionHeaderText: {
+    fontSize: 13,
+    fontFamily: "LibertinusSans_700Bold",
+    color: blackGoldLight.GOLD,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+  },
+  sectionHeaderRule: {
+    flex: 1,
+    height: 1,
+    backgroundColor: blackGoldLight.BORDER_GOLD,
+    opacity: 0.5,
   },
 
   // ─── States ───────────────────────────────────────────────────────
