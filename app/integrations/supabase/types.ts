@@ -649,7 +649,7 @@ export interface Database {
           user_id: string
           title: string
           message: string
-          type: 'special' | 'event' | 'order' | 'general' | 'giftcard'
+          type: 'special' | 'event' | 'order' | 'general'
           read: boolean
           action_url: string | null
           created_at: string
@@ -659,7 +659,7 @@ export interface Database {
           user_id: string
           title: string
           message: string
-          type: 'special' | 'event' | 'order' | 'general' | 'giftcard'
+          type: 'special' | 'event' | 'order' | 'general'
           read?: boolean
           action_url?: string | null
           created_at?: string
@@ -669,7 +669,7 @@ export interface Database {
           user_id?: string
           title?: string
           message?: string
-          type?: 'special' | 'event' | 'order' | 'general' | 'giftcard'
+          type?: 'special' | 'event' | 'order' | 'general'
           read?: boolean
           action_url?: string | null
           created_at?: string

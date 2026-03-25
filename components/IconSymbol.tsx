@@ -40,6 +40,7 @@ const MAPPING = ({
   "heart.fill": "favorite",
   "heart": "favorite-border",
   "square.and.arrow.down": "save",
+  "shipping.truck.fill": "local-shipping",
 
   // Admin Dashboard Specific Icons
   "shield.lefthalf.filled": "admin-panel-settings",
@@ -104,7 +105,7 @@ const MAPPING = ({
 
   // Media & Content
   "photo.fill": "image",
-  "photo": "image-outlined",
+  "photo": "image",
   "camera.fill": "camera-alt",
   "camera": "camera-alt",
   "camera.rotate": "flip-camera-ios",

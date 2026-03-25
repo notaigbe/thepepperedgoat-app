@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -14,13 +13,30 @@ import { useRouter } from "expo-router";
 import { IconSymbol } from "@/components/IconSymbol";
 import { colors } from "@/styles/commonStyles";
 import * as Haptics from "expo-haptics";
-import {
-  orderService,
-  menuService,
-  userService,
-} from "@/services/supabaseService";
+import { orderService } from "@/services/supabaseService";
 import { supabase } from "@/app/integrations/supabase/client";
 import { useApp } from "@/contexts/AppContext";
+
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const D = {
+  gold: "#C9A84C",
+  goldDim: "#C9A84C55",
+  goldFaint: "#C9A84C18",
+  surface: "#111613",
+  surfaceRaised: "#181C19",
+  divider: "#FFFFFF0D",
+  dividerStrong: "#FFFFFF18",
+  textPrimary: "#F0EDE6",
+  textSecondary: "#7A8A7E",
+  textMuted: "#3D4D41",
+  danger: "#C0392B",
+  dangerFaint: "#C0392B18",
+  success: "#2ECC71",
+  successFaint: "#2ECC7118",
+  teal: "#4ECDC4",
+  tealFaint: "#4ECDC418",
+  radius: 4,
+};
 
 interface Metric {
   id: string;
@@ -38,6 +54,18 @@ interface TopItem {
   revenue: string;
 }
 
+const formatTimeAgo = (date: string): string => {
+  const diffMs = Date.now() - new Date(date).getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
+
 export default function AdminAnalytics() {
   const router = useRouter();
   const { userProfile } = useApp();
@@ -46,514 +74,264 @@ export default function AdminAnalytics() {
   const [topItems, setTopItems] = useState<TopItem[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
-  const isSuperAdmin = userProfile?.userRole === 'super_admin';
+  const isSuperAdmin = userProfile?.userRole === "super_admin";
 
   const fetchAnalyticsData = useCallback(async () => {
     try {
       setLoading(true);
-
-      // Fetch all orders
-      const { data: orders, error: ordersError } =
-        await orderService.getAllOrders();
+      const { data: orders, error: ordersError } = await orderService.getAllOrders();
       if (ordersError) throw ordersError;
 
-      // Fetch users based on role
       let usersQuery = (supabase as any).from("user_profiles").select("*");
-      
-      // If regular admin, only count users with user_role = 'user'
-      if (!isSuperAdmin) {
-        usersQuery = usersQuery.eq('user_role', 'user');
-      }
-      // If super_admin, count all users (no filter)
-
+      if (!isSuperAdmin) usersQuery = usersQuery.eq("user_role", "user");
       const { data: users, error: usersError } = await usersQuery;
       if (usersError) throw usersError;
 
-      // Fetch all menu items with order data
-      const { data: menuItems, error: menuError } = await supabase
-        .from("menu_items")
-        .select("*");
+      const { data: menuItems, error: menuError } = await supabase.from("menu_items").select("*");
       if (menuError) throw menuError;
 
-      // Calculate metrics
       const totalOrders = orders?.length || 0;
-      const totalRevenue =
-        orders?.reduce(
-          (sum: number, order: any) => sum + (order.total || 0),
-          0
-        ) || 0;
+      const totalRevenue = orders?.reduce((sum: number, o: any) => sum + (o.total || 0), 0) || 0;
       const activeUsers = users?.length || 0;
       const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-      const newMetrics: Metric[] = [
-        {
-          id: "revenue",
-          title: "Total Revenue",
-          value: `$${totalRevenue.toFixed(2)}`,
-          change: "+12.5%",
-          positive: true,
-          icon: "attach-money" as const,
-          color: "#4CAF50",
-        },
-        {
-          id: "orders",
-          title: "Total Orders",
-          value: totalOrders.toString(),
-          change: "+8.3%",
-          positive: true,
-          icon: "receipt-long" as const,
-          color: colors.primary,
-        },
-        {
-          id: "users",
-          title: isSuperAdmin ? "Total Users" : "Active Users",
-          value: activeUsers.toString(),
-          change: "+15.2%",
-          positive: true,
-          icon: "people" as const,
-          color: "#4ECDC4",
-        },
-        {
-          id: "avg-order",
-          title: "Avg Order Value",
-          value: `$${avgOrderValue.toFixed(2)}`,
-          change: "-2.1%",
-          positive: false,
-          icon: "trending-up" as const,
-          color: "#95E1D3",
-        },
-      ];
+      setMetrics([
+        { id: "revenue", title: "Revenue", value: `$${totalRevenue.toFixed(2)}`, change: "+12.5%", positive: true, icon: "dollarsign.circle", color: D.success },
+        { id: "orders", title: "Orders", value: totalOrders.toString(), change: "+8.3%", positive: true, icon: "receipt", color: D.gold },
+        { id: "users", title: isSuperAdmin ? "Total Users" : "Active Users", value: activeUsers.toString(), change: "+15.2%", positive: true, icon: "person.2", color: D.teal },
+        { id: "avg", title: "Avg Order", value: `$${avgOrderValue.toFixed(2)}`, change: "-2.1%", positive: false, icon: "chart.line.uptrend.xyaxis", color: D.textSecondary },
+      ]);
 
-      setMetrics(newMetrics);
-
-      // Calculate top items by order count
-      const itemOrderCounts: {
-        [key: string]: { name: string; count: number; totalRevenue: number };
-      } = {};
-
+      const itemCounts: Record<string, { name: string; count: number; revenue: number }> = {};
       orders?.forEach((order: any) => {
-        if (order.order_items) {
-          order.order_items.forEach((item: any) => {
-            const itemName = item.item_name || "Unknown";
-            if (!itemOrderCounts[itemName]) {
-              itemOrderCounts[itemName] = {
-                name: itemName,
-                count: 0,
-                totalRevenue: 0,
-              };
-            }
-            itemOrderCounts[itemName].count += item.quantity || 1;
-            itemOrderCounts[itemName].totalRevenue +=
-              item.price * (item.quantity || 1);
-          });
-        }
+        order.order_items?.forEach((item: any) => {
+          const name = item.item_name || "Unknown";
+          if (!itemCounts[name]) itemCounts[name] = { name, count: 0, revenue: 0 };
+          itemCounts[name].count += item.quantity || 1;
+          itemCounts[name].revenue += item.price * (item.quantity || 1);
+        });
       });
 
-      const topSellingItems = Object.values(itemOrderCounts)
-        .sort((a, b) => b.count - a.count)
+      const sorted = Object.values(itemCounts).sort((a, b) => b.count - a.count).slice(0, 5);
+      setTopItems(sorted.length > 0
+        ? sorted.map((i) => ({ name: i.name, orders: i.count, revenue: `$${i.revenue.toFixed(2)}` }))
+        : defaultTopItems()
+      );
+
+      const recent = orders
+        ?.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 5)
-        .map((item) => ({
-          name: item.name,
-          orders: item.count,
-          revenue: `$${item.totalRevenue.toFixed(2)}`,
-        }));
-
-      setTopItems(
-        topSellingItems.length > 0 ? topSellingItems : getDefaultTopItems()
-      );
-
-      // Get recent orders for activity
-      const recentOrders =
-        orders
-          ?.sort(
-            (a: any, b: any) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime()
-          )
-          .slice(0, 4)
-          .map((order: any) => ({
-            type: "order",
-            text: `New order #${order.id.slice(-6)}`,
-            time: formatTimeAgo(order.created_at),
-          })) || [];
-
-      setRecentActivity(
-        recentOrders.length > 0 ? recentOrders : getDefaultActivity()
-      );
-    } catch (error) {
-      console.error("Error fetching analytics:", error);
-      // Set default data on error
-      setMetrics(getDefaultMetrics());
-      setTopItems(getDefaultTopItems());
-      setRecentActivity(getDefaultActivity());
+        .map((o: any) => ({ type: "order", text: `Order #${o.id.slice(-6)}`, time: formatTimeAgo(o.created_at) })) || [];
+      setRecentActivity(recent.length > 0 ? recent : defaultActivity());
+    } catch (err) {
+      console.error("Analytics fetch error:", err);
+      setMetrics(defaultMetrics(isSuperAdmin));
+      setTopItems(defaultTopItems());
+      setRecentActivity(defaultActivity());
     } finally {
       setLoading(false);
     }
   }, [isSuperAdmin]);
 
-  useEffect(() => {
-    fetchAnalyticsData();
-  }, [fetchAnalyticsData]);
+  useEffect(() => { fetchAnalyticsData(); }, [fetchAnalyticsData]);
 
-  const formatTimeAgo = (date: string): string => {
-    const now = new Date();
-    const time = new Date(date);
-    const diffMs = now.getTime() - time.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Pressable style={styles.backButton} onPress={() => {
+          if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          router.back();
+        }}>
+          <IconSymbol name="chevron.left" size={20} color={D.textSecondary} />
+        </Pressable>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerEyebrow}>THE PEPPERED GOAT</Text>
+          <Text style={styles.headerTitle}>Analytics</Text>
+        </View>
+        <Pressable style={styles.refreshBtn} onPress={() => {
+          if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          fetchAnalyticsData();
+        }}>
+          <IconSymbol name="arrow.clockwise" size={18} color={D.textSecondary} />
+        </Pressable>
+      </View>
 
-    if (diffMins < 1) return "just now";
-    if (diffMins < 60)
-      return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
-    if (diffHours < 24)
-      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-    return time.toLocaleDateString();
-  };
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={D.gold} />
+          <Text style={styles.loadingText}>LOADING</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 
-  const getDefaultMetrics = (): Metric[] => [
-    {
-      id: "revenue",
-      title: "Total Revenue",
-      value: "$0.00",
-      change: "+0%",
-      positive: true,
-      icon: "dollarsign.circle" as const,
-      color: "#4CAF50",
-    },
-    {
-      id: "orders",
-      title: "Total Orders",
-      value: "0",
-      change: "+0%",
-      positive: true,
-      icon: "receipt" as const,
-      color: colors.primary,
-    },
-    {
-      id: "users",
-      title: "Active Users",
-      value: "0",
-      change: "+0%",
-      positive: true,
-      icon: "person.2" as const,
-      color: "#4ECDC4",
-    },
-    {
-      id: "avg-order",
-      title: "Avg Order Value",
-      value: "$0.00",
-      change: "+0%",
-      positive: true,
-      icon: "chart.line.uptrend.xyaxis" as const,
-      color: "#95E1D3",
-    },
+          {/* ── Metrics grid ── */}
+          <Text style={styles.sectionLabel}>OVERVIEW</Text>
+          <View style={styles.metricsGrid}>
+            {metrics.map((m) => (
+              <View key={m.id} style={styles.metricCard}>
+                <View style={[styles.metricDot, { backgroundColor: m.color }]} />
+                <Text style={styles.metricTitle}>{m.title.toUpperCase()}</Text>
+                <Text style={styles.metricValue}>{m.value}</Text>
+                <Text style={[styles.metricChange, { color: m.positive ? D.success : D.danger }]}>
+                  {m.change}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {/* ── Top items ── */}
+          <Text style={styles.sectionLabel}>TOP SELLERS</Text>
+          <View style={styles.tableContainer}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, { flex: 0.5 }]}>#</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 3 }]}>ITEM</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 1, textAlign: "right" }]}>ORDERS</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: "right" }]}>REVENUE</Text>
+            </View>
+            {topItems.map((item, i) => (
+              <View key={i} style={[styles.tableRow, i === topItems.length - 1 && styles.tableRowLast]}>
+                <Text style={[styles.tableRank, { flex: 0.5 }]}>{i + 1}</Text>
+                <Text style={[styles.tableCell, { flex: 3 }]} numberOfLines={1}>{item.name}</Text>
+                <Text style={[styles.tableCell, { flex: 1, textAlign: "right" }]}>{item.orders}</Text>
+                <Text style={[styles.tableCellGold, { flex: 1.5, textAlign: "right" }]}>{item.revenue}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* ── Recent activity ── */}
+          <Text style={styles.sectionLabel}>RECENT ACTIVITY</Text>
+          <View style={styles.activityContainer}>
+            {recentActivity.map((a, i) => (
+              <View key={i} style={[styles.activityRow, i === recentActivity.length - 1 && styles.activityRowLast]}>
+                <View style={[styles.activityDot, { backgroundColor: a.type === "order" ? D.gold : D.teal }]} />
+                <Text style={styles.activityText}>{a.text}</Text>
+                <Text style={styles.activityTime}>{a.time}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={{ height: 48 }} />
+        </ScrollView>
+      )}
+    </SafeAreaView>
+  );
+}
+
+function defaultMetrics(isSuperAdmin: boolean): Metric[] {
+  return [
+    { id: "revenue", title: "Revenue", value: "$0.00", change: "+0%", positive: true, icon: "dollarsign.circle", color: D.success },
+    { id: "orders", title: "Orders", value: "0", change: "+0%", positive: true, icon: "receipt", color: D.gold },
+    { id: "users", title: isSuperAdmin ? "Total Users" : "Active Users", value: "0", change: "+0%", positive: true, icon: "person.2", color: D.teal },
+    { id: "avg", title: "Avg Order", value: "$0.00", change: "+0%", positive: true, icon: "chart.line.uptrend.xyaxis", color: D.textSecondary },
   ];
-
-  const getDefaultTopItems = (): TopItem[] => [
+}
+function defaultTopItems(): TopItem[] {
+  return [
     { name: "Jollof Rice", orders: 45, revenue: "$674.55" },
     { name: "Suya Skewers", orders: 38, revenue: "$493.62" },
     { name: "Egusi Soup", orders: 32, revenue: "$543.68" },
     { name: "Zobo Drink", orders: 28, revenue: "$111.72" },
     { name: "Fried Rice", orders: 25, revenue: "$349.75" },
   ];
-
-  const getDefaultActivity = () => [
-    { type: "order", text: "New order placed", time: "2 minutes ago" },
-    { type: "user", text: "New user registered", time: "15 minutes ago" },
-    { type: "order", text: "Order completed", time: "1 hour ago" },
-    { type: "giftcard", text: "Gift card purchased", time: "2 hours ago" },
+}
+function defaultActivity() {
+  return [
+    { type: "order", text: "New order placed", time: "2m ago" },
+    { type: "user", text: "New user registered", time: "15m ago" },
+    { type: "order", text: "Order completed", time: "1h ago" },
   ];
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => {
-            if (Platform.OS !== "web") {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-            router.back();
-          }}
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </Pressable>
-        <Text style={styles.title}>Analytics</Text>
-        <Pressable style={styles.refreshButton} onPress={fetchAnalyticsData}>
-          <IconSymbol name="arrow.clockwise" size={20} color={colors.text} />
-        </Pressable>
-      </View>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>
-            Loading analytics...
-          </Text>
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.metricsContainer}>
-            {metrics.map((metric) => (
-              <View key={metric.id} style={styles.metricCard}>
-                <View
-                  style={[
-                    styles.metricIcon,
-                    { backgroundColor: metric.color + "20" },
-                  ]}
-                >
-                  <IconSymbol
-                    name={metric.icon as any}
-                    size={28}
-                    color={metric.color}
-                  />
-                </View>
-                <View style={styles.metricContent}>
-                  <Text style={styles.metricTitle}>{metric.title}</Text>
-                  <Text style={styles.metricValue}>{metric.value}</Text>
-                  <Text
-                    style={[
-                      styles.metricChange,
-                      { color: metric.positive ? "#4CAF50" : "#FF6B6B" },
-                    ]}
-                  >
-                    {metric.change} from last month
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Top Selling Items</Text>
-            <View style={styles.topItemsContainer}>
-              {topItems.map((item, index) => (
-                <View key={index} style={styles.topItem}>
-                  <View style={styles.topItemRank}>
-                    <Text style={styles.topItemRankText}>{index + 1}</Text>
-                  </View>
-                  <View style={styles.topItemContent}>
-                    <Text style={styles.topItemName}>{item.name}</Text>
-                    <Text style={styles.topItemOrders}>
-                      {item.orders} orders
-                    </Text>
-                  </View>
-                  <Text style={styles.topItemRevenue}>{item.revenue}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Recent Activity</Text>
-            <View style={styles.activityContainer}>
-              {recentActivity.map((activity, index) => (
-                <View key={index} style={styles.activityItem}>
-                  <View
-                    style={[
-                      styles.activityDot,
-                      { backgroundColor: getActivityColor(activity.type) },
-                    ]}
-                  />
-                  <View style={styles.activityContent}>
-                    <Text style={styles.activityText}>{activity.text}</Text>
-                    <Text style={styles.activityTime}>{activity.time}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              ✅ Analytics powered by Supabase
-            </Text>
-          </View>
-        </ScrollView>
-      )}
-    </SafeAreaView>
-  );
-
-  function getActivityColor(type: string): string {
-    switch (type) {
-      case "order":
-        return "#4CAF50";
-      case "user":
-        return "#4ECDC4";
-      case "giftcard":
-        return "#95E1D3";
-      default:
-        return colors.primary;
-    }
-  }
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: D.surface },
+  scrollView: { flex: 1 },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
   },
-  backButton: {
-    padding: 8,
+  backButton: { padding: 4, marginRight: 14 },
+  headerCenter: { flex: 1 },
+  headerEyebrow: { fontSize: 9, fontWeight: "700", letterSpacing: 3, color: D.gold, marginBottom: 2 },
+  headerTitle: { fontSize: 22, fontWeight: "300", letterSpacing: 0.5, color: D.textPrimary },
+  refreshBtn: { padding: 4 },
+
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
+  loadingText: { fontSize: 10, fontWeight: "700", letterSpacing: 2, color: D.textMuted },
+
+  sectionLabel: {
+    fontSize: 10, fontWeight: "700", letterSpacing: 2, color: D.textMuted,
+    paddingHorizontal: 20, paddingTop: 24, paddingBottom: 10,
   },
-  refreshButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: colors.text,
-    flex: 1,
-    textAlign: "center",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-  },
-  metricsContainer: {
-    padding: 16,
-    gap: 12,
+
+  // 2×2 metrics grid
+  metricsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 20,
+    gap: 1,
   },
   metricCard: {
+    width: "49.5%",
+    backgroundColor: D.surfaceRaised,
+    padding: 16,
+    borderRadius: D.radius,
+  },
+  metricDot: { width: 6, height: 6, borderRadius: 3, marginBottom: 10 },
+  metricTitle: { fontSize: 9, fontWeight: "700", letterSpacing: 2, color: D.textMuted, marginBottom: 6 },
+  metricValue: { fontSize: 26, fontWeight: "300", letterSpacing: 0.5, color: D.textPrimary, marginBottom: 4 },
+  metricChange: { fontSize: 11, fontWeight: "600", letterSpacing: 0.5 },
+
+  // Table
+  tableContainer: {
+    marginHorizontal: 20,
+    backgroundColor: D.surfaceRaised,
+    borderRadius: D.radius,
+    overflow: "hidden",
+  },
+  tableHeader: {
     flexDirection: "row",
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: D.dividerStrong,
   },
-  metricIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    justifyContent: "center",
+  tableHeaderCell: { fontSize: 9, fontWeight: "700", letterSpacing: 2, color: D.textMuted },
+  tableRow: {
+    flexDirection: "row",
     alignItems: "center",
-    marginRight: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
   },
-  metricContent: {
-    flex: 1,
+  tableRowLast: { borderBottomWidth: 0 },
+  tableRank: { fontSize: 11, fontWeight: "700", color: D.textMuted },
+  tableCell: { fontSize: 13, color: D.textSecondary, letterSpacing: 0.2 },
+  tableCellGold: { fontSize: 13, fontWeight: "600", color: D.gold },
+
+  // Activity
+  activityContainer: {
+    marginHorizontal: 20,
+    backgroundColor: D.surfaceRaised,
+    borderRadius: D.radius,
+    overflow: "hidden",
   },
-  metricTitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  metricValue: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: colors.text,
-    marginTop: 4,
-  },
-  metricChange: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  section: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: colors.text,
-    marginBottom: 16,
-  },
-  topItemsContainer: {
+  activityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
     gap: 12,
   },
-  topItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 0.2,
-    borderColor: colors.border,
-  },
-  topItemRank: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  topItemRankText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
-  topItemContent: {
-    flex: 1,
-  },
-  topItemName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  topItemOrders: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  topItemRevenue: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.primary,
-  },
-  activityContainer: {
-    gap: 16,
-  },
-  activityItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  activityDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginTop: 4,
-    marginRight: 12,
-  },
-  activityContent: {
-    flex: 1,
-  },
-  activityText: {
-    fontSize: 16,
-    color: colors.text,
-  },
-  activityTime: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  footer: {
-    padding: 24,
-    alignItems: "center",
-  },
-  footerText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: "center",
-  },
+  activityRowLast: { borderBottomWidth: 0 },
+  activityDot: { width: 6, height: 6, borderRadius: 3 },
+  activityText: { flex: 1, fontSize: 13, color: D.textSecondary, letterSpacing: 0.2 },
+  activityTime: { fontSize: 11, color: D.textMuted, fontWeight: "500" },
 });

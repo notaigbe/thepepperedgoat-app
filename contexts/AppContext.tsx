@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react';
-import { MenuItem, MenuCategory, CartItem, Order, UserProfile, GiftCard, PaymentMethod, AppNotification, ThemeSettings, ThemeMode, ColorScheme, MerchRedemption, UserRole } from '@/types';
+import { MenuItem, MenuCategory, CartItem, Order, UserProfile, PaymentMethod, AppNotification, ThemeSettings, ThemeMode, ColorScheme, MerchRedemption, UserRole } from '@/types';
 import { useColorScheme } from 'react-native';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/app/integrations/supabase/client';
@@ -39,7 +39,6 @@ interface AppContextType {
   currentColors: any;
   isTabBarVisible: boolean;
   setTabBarVisible: (visible: boolean) => void;
-  receivePointsGiftCard: (senderId: string, senderName: string, points: number, message?: string) => void;
   toast: ToastConfig;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   hideToast: () => void;
@@ -424,11 +423,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setThemeSettings((prev) => ({ ...prev, colorScheme: scheme }));
   };
 
-  const receivePointsGiftCard = (senderId: string, senderName: string, points: number, message?: string) => {
-    showToast(`Received ${points} points from ${senderName}!`, 'success');
-    loadUserProfile();
-  };
-
   const getUnreadNotificationCount = () => {
     if (!userProfile?.notifications) return 0;
     return userProfile.notifications.filter(n => !n.read).length;
@@ -456,7 +450,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         currentColors,
         isTabBarVisible,
         setTabBarVisible,
-        receivePointsGiftCard,
         toast,
         showToast,
         hideToast,

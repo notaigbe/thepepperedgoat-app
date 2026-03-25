@@ -20,12 +20,37 @@ import { useApp } from '@/contexts/AppContext';
 import Dialog from '@/components/Dialog';
 import Toast from '@/components/Toast';
 
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const D = {
+  gold: "#C9A84C",
+  goldDim: "#C9A84C55",
+  goldFaint: "#C9A84C18",
+  surface: "#111613",
+  surfaceRaised: "#181C19",
+  divider: "#FFFFFF0D",
+  dividerStrong: "#FFFFFF18",
+  textPrimary: "#F0EDE6",
+  textSecondary: "#7A8A7E",
+  textMuted: "#3D4D41",
+  danger: "#C0392B",
+  dangerFaint: "#C0392B18",
+  success: "#2ECC71",
+  successFaint: "#2ECC7118",
+  purple: "#9B59B6",
+  purpleFaint: "#9B59B618",
+  orange: "#E67E22",
+  orangeFaint: "#E67E2218",
+  teal: "#4ECDC4",
+  tealFaint: "#4ECDC418",
+  radius: 4,
+};
+
 interface User {
   id: string;
   name: string;
   email: string;
   phone: string;
-  points: number;
+  // points: number;
   totalOrders: number;
   totalSpent: number;
   joinDate: string;
@@ -36,12 +61,53 @@ interface User {
 interface UserRSVP {
   id: string;
   event_id: string;
-  event: {
-    id: string;
-    title: string;
-    date: string;
-  };
+  event: { id: string; title: string; date: string };
 }
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+function UserAvatar({ name, role }: { name: string; role: User['userRole'] }) {
+  const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  const bg = role === 'super_admin' ? D.orange : role === 'admin' ? D.purple : D.gold;
+  return (
+    <View style={[avatarStyles.circle, { backgroundColor: bg + '30', borderColor: bg + '60' }]}>
+      <Text style={[avatarStyles.initials, { color: bg }]}>{initials}</Text>
+    </View>
+  );
+}
+const avatarStyles = StyleSheet.create({
+  circle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  initials: { fontSize: 14, fontWeight: '700', letterSpacing: 0.5 },
+});
+
+// ─── Role badge ───────────────────────────────────────────────────────────────
+function RoleBadge({ role }: { role: User['userRole'] }) {
+  if (role === 'user') return null;
+  const isSA = role === 'super_admin';
+  return (
+    <View style={[badgeStyles.badge, { borderColor: isSA ? D.orange + '70' : D.purple + '70', backgroundColor: isSA ? D.orangeFaint : D.purpleFaint }]}>
+      <Text style={[badgeStyles.text, { color: isSA ? D.orange : D.purple }]}>
+        {isSA ? 'SUPER ADMIN' : 'ADMIN'}
+      </Text>
+    </View>
+  );
+}
+const badgeStyles = StyleSheet.create({
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: D.radius,
+    borderWidth: 1,
+  },
+  text: { fontSize: 8, fontWeight: '700', letterSpacing: 1.5 },
+});
 
 export default function AdminUserManagement() {
   const router = useRouter();
@@ -54,28 +120,20 @@ export default function AdminUserManagement() {
   const [loadingRSVPs, setLoadingRSVPs] = useState(false);
   const [bannedEvents, setBannedEvents] = useState<Set<string>>(new Set());
 
-  // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({
-    title: '',
-    message: '',
-    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+    title: '', message: '',
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>,
   });
-
-  // Toast state
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
-  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
-    setDialogConfig({ title, message, buttons });
-    setDialogVisible(true);
+  const showDialog = (title: string, message: string, buttons: typeof dialogConfig.buttons) => {
+    setDialogConfig({ title, message, buttons }); setDialogVisible(true);
   };
-
-  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
-    setToastType(type);
-    setToastMessage(message);
-    setToastVisible(true);
+  const showToast = (type: typeof toastType, message: string) => {
+    setToastType(type); setToastMessage(message); setToastVisible(true);
   };
 
   const isSuperAdmin = userProfile?.userRole === 'super_admin';
@@ -83,38 +141,21 @@ export default function AdminUserManagement() {
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Build query based on user role
       let query = (supabase as any).from('user_profiles').select('*');
-      
-      // If regular admin, only show users with user_role = 'user'
-      if (!isSuperAdmin) {
-        query = query.eq('user_role', 'user');
-      }
-      // If super_admin, show all users (no filter needed)
-
+      if (!isSuperAdmin) query = query.eq('user_role', 'user');
       const { data: userProfiles, error: usersError } = await query;
-
       if (usersError) throw usersError;
-
-      // Get all orders to calculate stats
-      const { data: orders, error: ordersError } = await (supabase as any)
-        .from('orders')
-        .select('user_id, total, created_at');
-
+      const { data: orders, error: ordersError } = await (supabase as any).from('orders').select('user_id, total, created_at');
       if (ordersError) throw ordersError;
-
-      // Combine data
       const formattedUsers: User[] = (userProfiles || []).map((profile: any) => {
         const userOrders = (orders || []).filter((o: any) => o.user_id === profile.id);
         const totalSpent = userOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
-
         return {
           id: profile.id,
           name: profile.name || 'Unknown',
           email: profile.email || '',
           phone: profile.phone || 'N/A',
-          points: profile.points || 0,
+          // points: profile.points || 0,
           totalOrders: userOrders.length,
           totalSpent,
           joinDate: profile.created_at || new Date().toISOString(),
@@ -122,7 +163,6 @@ export default function AdminUserManagement() {
           userRole: profile.user_role || 'user',
         };
       });
-
       setUsers(formattedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -132,327 +172,177 @@ export default function AdminUserManagement() {
     }
   }, [isSuperAdmin]);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const loadUserRSVPs = async (userId: string) => {
     try {
       setLoadingRSVPs(true);
       const { data, error } = await eventService.getUserRSVPs(userId);
-      
-      if (error) {
-        console.error('Error loading user RSVPs:', error);
-        showToast('error', 'Failed to load user RSVPs');
-        return;
-      }
-
+      if (error) { showToast('error', 'Failed to load RSVPs'); return; }
       setUserRSVPs(data || []);
-
-      // Load banned events for this user
       const { data: bans, error: bansError } = await eventService.getUserEventBans(userId);
-      if (!bansError && bans) {
-        setBannedEvents(new Set(bans.map((ban: any) => ban.event_id)));
-      }
-    } catch (error) {
-      console.error('Error loading user RSVPs:', error);
-      showToast('error', 'Failed to load user RSVPs');
-    } finally {
-      setLoadingRSVPs(false);
-    }
+      if (!bansError && bans) setBannedEvents(new Set(bans.map((ban: any) => ban.event_id)));
+    } catch { showToast('error', 'Failed to load RSVPs'); }
+    finally { setLoadingRSVPs(false); }
   };
 
   const handleViewUserDetails = async (user: User) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedUser(user);
     await loadUserRSVPs(user.id);
   };
 
-  const handleCancelUserRSVP = async (userId: string, eventId: string, eventTitle: string) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    showDialog(
-      'Cancel User RSVP',
-      `Are you sure you want to cancel this user's reservation for "${eventTitle}"? They will be notified.`,
-      [
-        { text: 'Cancel', style: 'cancel', onPress: () => {} },
-        {
-          text: 'Confirm',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await eventService.adminCancelRSVP(userId, eventId);
-
-              if (error) {
-                showToast('error', 'Failed to cancel RSVP');
-                return;
-              }
-
-              showToast('success', 'RSVP cancelled successfully. User has been notified.');
-              
-              // Reload RSVPs
-              if (selectedUser) {
-                await loadUserRSVPs(selectedUser.id);
-              }
-            } catch (error) {
-              console.error('Error cancelling RSVP:', error);
-              showToast('error', 'Failed to cancel RSVP');
-            }
-          },
-        },
-      ]
-    );
+  const handleCancelUserRSVP = (userId: string, eventId: string, eventTitle: string) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    showDialog('Cancel RSVP', `Cancel "${eventTitle}" for this user?`, [
+      { text: 'Cancel', style: 'cancel', onPress: () => {} },
+      { text: 'Confirm', style: 'destructive', onPress: async () => {
+        const { error } = await eventService.adminCancelRSVP(userId, eventId);
+        if (error) { showToast('error', 'Failed to cancel RSVP'); return; }
+        showToast('success', 'RSVP cancelled');
+        if (selectedUser) await loadUserRSVPs(selectedUser.id);
+      }},
+    ]);
   };
 
-  const handleBanUserFromEvent = async (userId: string, eventId: string, eventTitle: string) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    showDialog(
-      'Ban User from Event',
-      `Are you sure you want to ban this user from "${eventTitle}"? They will not be able to RSVP to this event.`,
-      [
-        { text: 'Cancel', style: 'cancel', onPress: () => {} },
-        {
-          text: 'Ban User',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await eventService.banUserFromEvent(userId, eventId, 'Banned by admin');
-
-              if (error) {
-                showToast('error', 'Failed to ban user from event');
-                return;
-              }
-
-              showToast('success', 'User has been banned from this event');
-              
-              // Reload RSVPs and bans
-              if (selectedUser) {
-                await loadUserRSVPs(selectedUser.id);
-              }
-            } catch (error) {
-              console.error('Error banning user:', error);
-              showToast('error', 'Failed to ban user from event');
-            }
-          },
-        },
-      ]
-    );
+  const handleBanUserFromEvent = (userId: string, eventId: string, eventTitle: string) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    showDialog('Ban from Event', `Ban this user from "${eventTitle}"?`, [
+      { text: 'Cancel', style: 'cancel', onPress: () => {} },
+      { text: 'Ban', style: 'destructive', onPress: async () => {
+        const { error } = await eventService.banUserFromEvent(userId, eventId, 'Banned by admin');
+        if (error) { showToast('error', 'Failed to ban user'); return; }
+        showToast('success', 'User banned from event');
+        if (selectedUser) await loadUserRSVPs(selectedUser.id);
+      }},
+    ]);
   };
 
-  const handleUnbanUserFromEvent = async (userId: string, eventId: string, eventTitle: string) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    showDialog(
-      'Unban User from Event',
-      `Are you sure you want to unban this user from "${eventTitle}"?`,
-      [
-        { text: 'Cancel', style: 'cancel', onPress: () => {} },
-        {
-          text: 'Unban User',
-          onPress: async () => {
-            try {
-              const { error } = await eventService.unbanUserFromEvent(userId, eventId);
-
-              if (error) {
-                showToast('error', 'Failed to unban user from event');
-                return;
-              }
-
-              showToast('success', 'User has been unbanned from this event');
-              
-              // Reload RSVPs and bans
-              if (selectedUser) {
-                await loadUserRSVPs(selectedUser.id);
-              }
-            } catch (error) {
-              console.error('Error unbanning user:', error);
-              showToast('error', 'Failed to unban user from event');
-            }
-          },
-        },
-      ]
-    );
+  const handleUnbanUserFromEvent = (userId: string, eventId: string, eventTitle: string) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    showDialog('Unban from Event', `Unban this user from "${eventTitle}"?`, [
+      { text: 'Cancel', style: 'cancel', onPress: () => {} },
+      { text: 'Unban', onPress: async () => {
+        const { error } = await eventService.unbanUserFromEvent(userId, eventId);
+        if (error) { showToast('error', 'Failed to unban user'); return; }
+        showToast('success', 'User unbanned');
+        if (selectedUser) await loadUserRSVPs(selectedUser.id);
+      }},
+    ]);
   };
 
-  const handlePromoteToAdmin = async (userId: string, userName: string) => {
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-
-      showDialog(
-        'Promote to Admin',
-        `Are you sure you want to promote ${userName} to admin?`,
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => {} },
-          {
-            text: 'Promote',
-            onPress: async () => {
-              const { error } = await userService.updateUserRole(userId, 'admin');
-
-              if (error) {
-                showToast('error', 'Failed to promote user to admin');
-                return;
-              }
-
-              showToast('success', `${userName} has been promoted to admin`);
-              fetchUsers();
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      console.error('Error promoting user:', error);
-      showToast('error', 'Failed to promote user to admin');
-    }
+  const handlePromoteToAdmin = (userId: string, userName: string) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    showDialog('Promote to Admin', `Promote ${userName} to admin?`, [
+      { text: 'Cancel', style: 'cancel', onPress: () => {} },
+      { text: 'Promote', onPress: async () => {
+        const { error } = await userService.updateUserRole(userId, 'admin');
+        if (error) { showToast('error', 'Failed to promote'); return; }
+        showToast('success', `${userName} promoted`);
+        fetchUsers();
+      }},
+    ]);
   };
 
-  const handleRevokeAdmin = async (userId: string, userName: string) => {
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-
-      showDialog(
-        'Revoke Admin',
-        `Are you sure you want to revoke admin privileges from ${userName}?`,
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => {} },
-          {
-            text: 'Revoke',
-            style: 'destructive',
-            onPress: async () => {
-              const { error } = await userService.updateUserRole(userId, 'user');
-
-              if (error) {
-                showToast('error', 'Failed to revoke admin privileges');
-                return;
-              }
-
-              showToast('success', `Admin privileges revoked from ${userName}`);
-              fetchUsers();
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      console.error('Error revoking admin:', error);
-      showToast('error', 'Failed to revoke admin privileges');
-    }
+  const handleRevokeAdmin = (userId: string, userName: string) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    showDialog('Revoke Admin', `Revoke admin from ${userName}?`, [
+      { text: 'Cancel', style: 'cancel', onPress: () => {} },
+      { text: 'Revoke', style: 'destructive', onPress: async () => {
+        const { error } = await userService.updateUserRole(userId, 'user');
+        if (error) { showToast('error', 'Failed to revoke'); return; }
+        showToast('success', `Admin revoked from ${userName}`);
+        fetchUsers();
+      }},
+    ]);
   };
 
   const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    (u) => u.name.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  // Calculate active users (only regular users)
   const activeRegularUsers = users.filter((u) => u.active && u.userRole === 'user').length;
 
+  const toastEl = <Toast visible={toastVisible} message={toastMessage} type={toastType} onHide={() => setToastVisible(false)}
+    currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }} />;
+  const dialogEl = <Dialog visible={dialogVisible} title={dialogConfig.title} message={dialogConfig.message}
+    buttons={dialogConfig.buttons} onHide={() => setDialogVisible(false)}
+    currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }} />;
+
+  // ── Detail view ──────────────────────────────────────────────────────────────
   if (selectedUser) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Pressable
-            style={styles.backButton}
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              setSelectedUser(null);
-              setUserRSVPs([]);
-              setBannedEvents(new Set());
-            }}
-          >
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          <Pressable style={styles.backButton} onPress={() => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setSelectedUser(null); setUserRSVPs([]); setBannedEvents(new Set());
+          }}>
+            <IconSymbol name="chevron.left" size={20} color={D.textSecondary} />
           </Pressable>
-          <Text style={styles.title}>{selectedUser.name}</Text>
-          <View style={{ width: 40 }} />
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerEyebrow}>USER DETAIL</Text>
+            <Text style={styles.headerTitle}>{selectedUser.name}</Text>
+          </View>
+          <View style={{ width: 28 }} />
         </View>
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.detailsContainer}>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>Email</Text>
-              <Text style={styles.detailValue}>{selectedUser.email}</Text>
-            </View>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>Phone</Text>
-              <Text style={styles.detailValue}>{selectedUser.phone}</Text>
-            </View>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>Points</Text>
-              <Text style={styles.detailValue}>{selectedUser.points}</Text>
-            </View>
+
+          {/* User info rows */}
+          <View style={styles.infoSection}>
+            {[
+              { label: 'EMAIL', value: selectedUser.email },
+              { label: 'PHONE', value: selectedUser.phone },
+              // { label: 'POINTS', value: selectedUser.points.toLocaleString() },
+              { label: 'ROLE', value: selectedUser.userRole.replace('_', ' ').toUpperCase() },
+            ].map((row) => (
+              <View key={row.label} style={styles.infoRow}>
+                <Text style={styles.infoLabel}>{row.label}</Text>
+                <Text style={styles.infoValue}>{row.value}</Text>
+              </View>
+            ))}
           </View>
 
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Event RSVPs</Text>
-          </View>
+          {/* RSVPs */}
+          <Text style={styles.sectionLabel}>EVENT RSVPS</Text>
 
           {loadingRSVPs ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
+              <ActivityIndicator size="small" color={D.gold} />
             </View>
           ) : userRSVPs.length === 0 ? (
             <View style={styles.emptyState}>
-              <IconSymbol name="calendar" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyText}>No event RSVPs</Text>
+              <IconSymbol name="calendar" size={32} color={D.textMuted} />
+              <Text style={styles.emptyText}>NO RSVPS</Text>
             </View>
           ) : (
-            <View style={styles.rsvpList}>
+            <View style={styles.listContainer}>
               {userRSVPs.map((rsvp) => {
                 const isBanned = bannedEvents.has(rsvp.event_id);
                 return (
-                  <View key={rsvp.id} style={styles.rsvpCard}>
+                  <View key={rsvp.id} style={styles.rsvpRow}>
                     <View style={styles.rsvpInfo}>
                       <Text style={styles.rsvpTitle}>{rsvp.event.title}</Text>
                       <Text style={styles.rsvpDate}>
-                        {new Date(rsvp.event.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
+                        {new Date(rsvp.event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </Text>
                       {isBanned && (
                         <View style={styles.bannedBadge}>
-                          <Text style={styles.bannedBadgeText}>User is banned from this event</Text>
+                          <Text style={styles.bannedBadgeText}>BANNED</Text>
                         </View>
                       )}
                     </View>
-                    <View style={styles.rsvpActions}>
-                      <Pressable
-                        style={[styles.actionBtn, styles.cancelBtn]}
-                        onPress={() => handleCancelUserRSVP(selectedUser.id, rsvp.event_id, rsvp.event.title)}
-                      >
-                        <IconSymbol name="xmark" size={16} color="#FF6B6B" />
-                        <Text style={styles.cancelBtnText}>Cancel</Text>
+                    <View style={styles.rsvpButtons}>
+                      <Pressable style={styles.rsvpBtn} onPress={() => handleCancelUserRSVP(selectedUser.id, rsvp.event_id, rsvp.event.title)}>
+                        <IconSymbol name="xmark" size={13} color={D.danger} />
                       </Pressable>
                       {isBanned ? (
-                        <Pressable
-                          style={[styles.actionBtn, styles.unbanBtn]}
-                          onPress={() => handleUnbanUserFromEvent(selectedUser.id, rsvp.event_id, rsvp.event.title)}
-                        >
-                          <IconSymbol name="checkmark" size={16} color="#4CAF50" />
-                          <Text style={styles.unbanBtnText}>Unban</Text>
+                        <Pressable style={[styles.rsvpBtn, styles.rsvpBtnSuccess]} onPress={() => handleUnbanUserFromEvent(selectedUser.id, rsvp.event_id, rsvp.event.title)}>
+                          <IconSymbol name="checkmark" size={13} color={D.success} />
                         </Pressable>
                       ) : (
-                        <Pressable
-                          style={[styles.actionBtn, styles.banBtn]}
-                          onPress={() => handleBanUserFromEvent(selectedUser.id, rsvp.event_id, rsvp.event.title)}
-                        >
-                          <IconSymbol name="nosign" size={16} color="#FF6B6B" />
-                          <Text style={styles.banBtnText}>Ban</Text>
+                        <Pressable style={[styles.rsvpBtn, styles.rsvpBtnDanger]} onPress={() => handleBanUserFromEvent(selectedUser.id, rsvp.event_id, rsvp.event.title)}>
+                          <IconSymbol name="nosign" size={13} color={D.danger} />
                         </Pressable>
                       )}
                     </View>
@@ -461,581 +351,260 @@ export default function AdminUserManagement() {
               })}
             </View>
           )}
+          <View style={{ height: 40 }} />
         </ScrollView>
-
-        <Toast
-          visible={toastVisible}
-          message={toastMessage}
-          type={toastType}
-          onHide={() => setToastVisible(false)}
-          currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
-        />
-        <Dialog
-          visible={dialogVisible}
-          title={dialogConfig.title}
-          message={dialogConfig.message}
-          buttons={dialogConfig.buttons}
-          onHide={() => setDialogVisible(false)}
-          currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
-        />
+        {toastEl}{dialogEl}
       </SafeAreaView>
     );
   }
 
+  // ── List view ────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => {
-            if (Platform.OS !== 'web') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace('/(admin)' as any);
-            }
-          }}
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
+        <Pressable style={styles.backButton} onPress={() => {
+          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          if (router.canGoBack()) router.back(); else router.replace('/(admin)' as any);
+        }}>
+          <IconSymbol name="chevron.left" size={20} color={D.textSecondary} />
         </Pressable>
-        <Text style={styles.title}>User Management</Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerEyebrow}>THE PEPPERED GOAT</Text>
+          <Text style={styles.headerTitle}>Users</Text>
+        </View>
+        <View style={{ width: 28 }} />
       </View>
 
-      <View style={styles.searchContainer}>
-        <IconSymbol name="magnifyingglass" size={20} color={colors.textSecondary} />
+      {/* Search */}
+      <View style={styles.searchBar}>
+        <IconSymbol name="magnifyingglass" size={16} color={D.textMuted} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search users..."
-          placeholderTextColor={colors.textSecondary}
+          placeholder="Search…"
+          placeholderTextColor={D.textMuted}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{users.length}</Text>
-            <Text style={styles.statLabel}>
-              {isSuperAdmin ? 'Total Users' : 'Regular Users'}
-            </Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {activeRegularUsers}
-            </Text>
-            <Text style={styles.statLabel}>Active Users</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {users.reduce((sum, u) => sum + u.points, 0).toLocaleString()}
-            </Text>
-            <Text style={styles.statLabel}>Total Points</Text>
-          </View>
+        {/* Stats row */}
+        <View style={styles.statsRow}>
+          {[
+            { value: users.length, label: isSuperAdmin ? 'TOTAL' : 'USERS' },
+            { value: activeRegularUsers, label: 'ACTIVE' },
+            // { value: users.reduce((s, u) => s + u.points, 0).toLocaleString(), label: 'POINTS' },
+          ].map((s) => (
+            <View key={s.label} style={styles.statCell}>
+              <Text style={styles.statValue}>{s.value}</Text>
+              <Text style={styles.statLabel}>{s.label}</Text>
+            </View>
+          ))}
         </View>
+
+        <Text style={styles.sectionLabel}>{filteredUsers.length} MEMBERS</Text>
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Loading users...</Text>
+            <ActivityIndicator size="small" color={D.gold} />
+            <Text style={styles.loadingText}>LOADING</Text>
           </View>
         ) : (
-          <View style={styles.usersContainer}>
-          {filteredUsers.map((user) => (
-            <Pressable
-              key={user.id}
-              style={styles.userCard}
-              onPress={() => handleViewUserDetails(user)}
-            >
-              <View style={styles.userHeader}>
-                <View style={[
-                  styles.userAvatar,
-                  { backgroundColor: user.userRole === 'super_admin' ? '#FF6B35' : user.userRole === 'admin' ? '#9B59B6' : colors.primary }
-                ]}>
-                  <Text style={styles.userInitials}>
-                    {user.name
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')}
-                  </Text>
-                </View>
+          <View style={styles.listContainer}>
+            {filteredUsers.map((user) => (
+              <Pressable key={user.id} style={styles.userRow} onPress={() => handleViewUserDetails(user)}>
+                <UserAvatar name={user.name} role={user.userRole} />
                 <View style={styles.userInfo}>
                   <View style={styles.userNameRow}>
                     <Text style={styles.userName}>{user.name}</Text>
-                    {user.userRole === 'super_admin' && (
-                      <View style={styles.superAdminBadge}>
-                        <Text style={styles.badgeText}>Super Admin</Text>
-                      </View>
-                    )}
-                    {user.userRole === 'admin' && (
-                      <View style={styles.adminBadge}>
-                        <Text style={styles.badgeText}>Admin</Text>
-                      </View>
-                    )}
+                    <RoleBadge role={user.userRole} />
                   </View>
                   <Text style={styles.userEmail}>{user.email}</Text>
-                  <Text style={styles.userPhone}>{user.phone}</Text>
+                  <View style={styles.userMetaRow}>
+                    <Text style={styles.userMeta}>{user.totalOrders} orders</Text>
+                    <Text style={styles.userMetaDot}>·</Text>
+                    <Text style={styles.userMeta}>${user.totalSpent.toFixed(0)} spent</Text>
+                    <Text style={styles.userMetaDot}>·</Text>
+                    {/* <Text style={styles.userMeta}>{user.points} pts</Text> */}
+                  </View>
                 </View>
-                <View
-                  style={[
-                    styles.statusIndicator,
-                    { backgroundColor: user.active ? '#4CAF50' : '#FF6B6B' },
-                  ]}
-                />
-              </View>
-
-              <View style={styles.userStats}>
-                <View style={styles.userStat}>
-                  <IconSymbol name="star.circle.fill" size={20} color={colors.primary} />
-                  <Text style={styles.userStatValue}>{user.points}</Text>
-                  <Text style={styles.userStatLabel}>Points</Text>
-                </View>
-                <View style={styles.userStat}>
-                  <IconSymbol name="receipt" size={20} color="#4ECDC4" />
-                  <Text style={styles.userStatValue}>{user.totalOrders}</Text>
-                  <Text style={styles.userStatLabel}>Orders</Text>
-                </View>
-                <View style={styles.userStat}>
-                  <IconSymbol name="dollarsign.circle" size={20} color="#95E1D3" />
-                  <Text style={styles.userStatValue}>
-                    ${user.totalSpent.toFixed(0)}
-                  </Text>
-                  <Text style={styles.userStatLabel}>Spent</Text>
-                </View>
-              </View>
-
-              <View style={styles.userFooter}>
-                <Text style={styles.joinDate}>
-                  Joined: {new Date(user.joinDate).toLocaleDateString()}
-                </Text>
-                <View style={styles.userActions}>
+                <View style={styles.userRowActions}>
                   <Pressable
-                    style={[styles.actionButton, styles.pointsButton]}
+                    style={styles.iconBtn}
                     onPress={(e) => {
                       e.stopPropagation();
-                      if (Platform.OS !== 'web') {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
-                      router.push({
-                        pathname: '/admin/manage-points',
-                        params: {
-                          userId: user.id,
-                          userName: user.name,
-                          currentPoints: user.points.toString(),
-                        },
-                      } as any);
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      // router.push({ pathname: '/admin/manage-points', params: { userId: user.id, userName: user.name, currentPoints: user.points.toString() } } as any);
                     }}
                   >
-                    <IconSymbol
-                      name="star.circle.fill"
-                      size={16}
-                      color={colors.highlight}
-                    />
-                    <Text style={[styles.actionButtonText, styles.pointsButtonText]}>
-                      Manage Points
-                    </Text>
+                    <IconSymbol name="star.circle.fill" size={18} color={D.gold} />
                   </Pressable>
                   {isSuperAdmin && user.userRole !== 'super_admin' && (
                     <Pressable
-                      style={[
-                        styles.actionButton,
-                        user.userRole === 'admin' && styles.revokeButton,
-                      ]}
+                      style={styles.iconBtn}
                       onPress={(e) => {
                         e.stopPropagation();
-                        if (user.userRole === 'admin') {
-                          handleRevokeAdmin(user.id, user.name);
-                        } else {
-                          handlePromoteToAdmin(user.id, user.name);
-                        }
+                        user.userRole === 'admin' ? handleRevokeAdmin(user.id, user.name) : handlePromoteToAdmin(user.id, user.name);
                       }}
                     >
                       <IconSymbol
                         name={user.userRole === 'admin' ? 'minus.circle.fill' : 'shield.lefthalf.filled'}
-                        size={16}
-                        color={user.userRole === 'admin' ? '#FF6B6B' : colors.primary}
+                        size={18}
+                        color={user.userRole === 'admin' ? D.danger : D.purple}
                       />
-                      <Text
-                        style={[
-                          styles.actionButtonText,
-                          user.userRole === 'admin' && styles.revokeButtonText,
-                        ]}
-                      >
-                        {user.userRole === 'admin' ? 'Revoke Admin' : 'Make Admin'}
-                      </Text>
                     </Pressable>
                   )}
+                  <IconSymbol name="chevron.right" size={14} color={D.textMuted} />
                 </View>
-              </View>
-            </Pressable>
-          ))}
+              </Pressable>
+            ))}
 
-          {filteredUsers.length === 0 && (
-            <View style={styles.emptyState}>
-              <IconSymbol name="person.2" size={64} color={colors.textSecondary} />
-              <Text style={styles.emptyText}>No users found</Text>
-            </View>
-          )}
+            {filteredUsers.length === 0 && (
+              <View style={styles.emptyState}>
+                <IconSymbol name="person.2" size={36} color={D.textMuted} />
+                <Text style={styles.emptyText}>NO USERS FOUND</Text>
+              </View>
+            )}
           </View>
         )}
+        <View style={{ height: 40 }} />
       </ScrollView>
-      <Toast
-        visible={toastVisible}
-        message={toastMessage}
-        type={toastType}
-        onHide={() => setToastVisible(false)}
-        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
-      />
-      <Dialog
-        visible={dialogVisible}
-        title={dialogConfig.title}
-        message={dialogConfig.message}
-        buttons={dialogConfig.buttons}
-        onHide={() => setDialogVisible(false)}
-        currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
-      />
+      {toastEl}{dialogEl}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: D.surface },
+  scrollView: { flex: 1 },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
   },
-  backButton: {
-    padding: 8,
+  backButton: { padding: 4, marginRight: 14 },
+  headerCenter: { flex: 1 },
+  headerEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 3, color: D.gold, marginBottom: 2 },
+  headerTitle: { fontSize: 22, fontWeight: '300', letterSpacing: 0.5, color: D.textPrimary },
+
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    backgroundColor: D.surfaceRaised,
+    borderRadius: D.radius,
+    borderWidth: 1,
+    borderColor: D.divider,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
+  searchInput: { flex: 1, fontSize: 14, color: D.textPrimary, letterSpacing: 0.2 },
+
+  statsRow: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: D.radius,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: D.divider,
+  },
+  statCell: {
     flex: 1,
-    textAlign: 'center',
+    alignItems: 'center',
+    paddingVertical: 14,
+    backgroundColor: D.surfaceRaised,
+    borderRightWidth: 1,
+    borderRightColor: D.divider,
   },
-  searchContainer: {
+  statValue: { fontSize: 20, fontWeight: '300', color: D.textPrimary, letterSpacing: 0.5 },
+  statLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2, color: D.textMuted, marginTop: 4 },
+
+  sectionLabel: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted,
+    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8,
+  },
+
+  listContainer: { paddingHorizontal: 20, gap: 1 },
+
+  userRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
-    margin: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    backgroundColor: D.surfaceRaised,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
   },
-  searchInput: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-    color: colors.text,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 12,
-    marginBottom: 16,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 0.2,
-    borderColor: colors.border,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  usersContainer: {
-    padding: 16,
-    gap: 16,
-  },
-  userCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 0.2,
-    borderColor: colors.border,
-  },
-  userHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  userAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  userInitials: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  superAdminBadge: {
-    backgroundColor: '#FF6B35',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  adminBadge: {
-    backgroundColor: '#9B59B6',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  userEmail: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  userPhone: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  statusIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  userStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 16,
-    borderTopWidth: 0.5,
-    borderBottomWidth: 0.5,
-    borderColor: colors.border,
-  },
-  userStat: {
-    alignItems: 'center',
-  },
-  userStatValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginTop: 4,
-  },
-  userStatLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  userFooter: {
+  userInfo: { flex: 1 },
+  userNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  userName: { fontSize: 15, fontWeight: '500', letterSpacing: 0.2, color: D.textPrimary },
+  userEmail: { fontSize: 12, color: D.textSecondary, marginTop: 2 },
+  userMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
+  userMeta: { fontSize: 11, color: D.textMuted, fontWeight: '500' },
+  userMetaDot: { fontSize: 11, color: D.textMuted },
+  userRowActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  iconBtn: { padding: 8 },
+
+  loadingContainer: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+  loadingText: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted },
+  emptyState: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+  emptyText: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted },
+
+  // Detail view
+  infoSection: { marginHorizontal: 20, marginTop: 20, borderRadius: D.radius, overflow: 'hidden', borderWidth: 1, borderColor: D.divider },
+  infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
-  },
-  joinDate: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  userActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: colors.card,
-    borderRadius: 8,
-    borderWidth: 0.2,
-    borderColor: colors.primary,
-  },
-  actionButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  revokeButton: {
-    borderColor: '#FF6B6B',
-  },
-  revokeButtonText: {
-    color: '#FF6B6B',
-  },
-  pointsButton: {
-    borderColor: colors.highlight,
-  },
-  pointsButtonText: {
-    color: colors.highlight,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 64,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 16,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 64,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 16,
-  },
-  detailsContainer: {
-    padding: 16,
-    gap: 12,
-  },
-  detailCard: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 0.2,
-    borderColor: colors.border,
-  },
-  detailLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  detailValue: {
-    fontSize: 16,
-    color: colors.text,
-    fontWeight: '600',
-  },
-  sectionHeader: {
     paddingHorizontal: 16,
+    paddingVertical: 13,
+    backgroundColor: D.surfaceRaised,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
+  },
+  infoLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted },
+  infoValue: { fontSize: 14, color: D.textPrimary, fontWeight: '400', letterSpacing: 0.2 },
+
+  rsvpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: D.surfaceRaised,
     paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  rsvpList: {
-    padding: 16,
-    gap: 12,
-  },
-  rsvpCard: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 0.2,
-    borderColor: colors.border,
-  },
-  rsvpInfo: {
-    marginBottom: 12,
-  },
-  rsvpTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  rsvpDate: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
+  rsvpInfo: { flex: 1 },
+  rsvpTitle: { fontSize: 14, fontWeight: '500', color: D.textPrimary, letterSpacing: 0.2 },
+  rsvpDate: { fontSize: 11, color: D.textSecondary, marginTop: 3 },
   bannedBadge: {
-    backgroundColor: '#FF6B6B20',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginTop: 8,
+    marginTop: 6,
     alignSelf: 'flex-start',
+    backgroundColor: D.dangerFaint,
+    borderWidth: 1,
+    borderColor: D.danger + '55',
+    borderRadius: D.radius,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  bannedBadgeText: {
-    fontSize: 12,
-    color: '#FF6B6B',
-    fontWeight: '600',
-  },
-  rsvpActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+  bannedBadgeText: { fontSize: 8, fontWeight: '700', letterSpacing: 1.5, color: D.danger },
+  rsvpButtons: { flexDirection: 'row', gap: 6 },
+  rsvpBtn: {
+    width: 32, height: 32,
+    borderRadius: D.radius,
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 0.2,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: D.dividerStrong,
   },
-  cancelBtn: {
-    backgroundColor: '#FF6B6B20',
-    borderColor: '#FF6B6B',
-  },
-  cancelBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF6B6B',
-  },
-  banBtn: {
-    backgroundColor: '#FF6B6B20',
-    borderColor: '#FF6B6B',
-  },
-  banBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF6B6B',
-  },
-  unbanBtn: {
-    backgroundColor: '#4CAF5020',
-    borderColor: '#4CAF50',
-  },
-  unbanBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4CAF50',
-  },
+  rsvpBtnDanger: { backgroundColor: D.dangerFaint, borderColor: D.danger + '55' },
+  rsvpBtnSuccess: { backgroundColor: D.successFaint, borderColor: D.success + '55' },
 });

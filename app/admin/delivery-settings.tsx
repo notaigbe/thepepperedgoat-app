@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -19,6 +18,25 @@ import Toast from '@/components/Toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DeliveryProvider, DELIVERY_PROVIDERS } from '@/constants/DeliveryConfig';
 
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const D = {
+  gold: "#C9A84C",
+  goldDim: "#C9A84C55",
+  goldFaint: "#C9A84C18",
+  surface: "#111613",
+  surfaceRaised: "#181C19",
+  divider: "#FFFFFF0D",
+  dividerStrong: "#FFFFFF18",
+  textPrimary: "#F0EDE6",
+  textSecondary: "#7A8A7E",
+  textMuted: "#3D4D41",
+  danger: "#C0392B",
+  dangerFaint: "#C0392B18",
+  info: "#3B82F6",
+  infoFaint: "#3B82F610",
+  radius: 4,
+};
+
 const DELIVERY_SETTINGS_KEY = 'delivery_settings';
 
 interface DeliverySettings {
@@ -33,6 +51,14 @@ interface DeliverySettings {
   pickupNotes: string;
 }
 
+function FieldLabel({ children }: { children: string }) {
+  return <Text style={fieldLabelStyle}>{children}</Text>;
+}
+const fieldLabelStyle: import('react-native').TextStyle = {
+  fontSize: 10, fontWeight: '700', letterSpacing: 2,
+  color: D.textSecondary, marginBottom: 8, marginTop: 4,
+};
+
 export default function DeliverySettingsScreen() {
   const router = useRouter();
   const [settings, setSettings] = useState<DeliverySettings>({
@@ -46,409 +72,294 @@ export default function DeliverySettingsScreen() {
     restaurantZipCode: '90001',
     pickupNotes: 'Please call upon arrival',
   });
-  const [loading, setLoading] = useState(true);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
   useEffect(() => {
-    loadSettings();
+    (async () => {
+      try {
+        const saved = await AsyncStorage.getItem(DELIVERY_SETTINGS_KEY);
+        if (saved) setSettings(JSON.parse(saved));
+      } catch {}
+    })();
   }, []);
-
-  const loadSettings = async () => {
-    try {
-      const saved = await AsyncStorage.getItem(DELIVERY_SETTINGS_KEY);
-      if (saved) {
-        setSettings(JSON.parse(saved));
-      }
-    } catch (error) {
-      console.error('Failed to load delivery settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const saveSettings = async () => {
     try {
       await AsyncStorage.setItem(DELIVERY_SETTINGS_KEY, JSON.stringify(settings));
-      showToast('success', 'Delivery settings saved successfully');
-    } catch (error) {
-      console.error('Failed to save delivery settings:', error);
+      showToast('success', 'Settings saved');
+    } catch {
       showToast('error', 'Failed to save settings');
     }
   };
 
-  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
-    setToastType(type);
-    setToastMessage(message);
-    setToastVisible(true);
+  const showToast = (type: typeof toastType, message: string) => {
+    setToastType(type); setToastMessage(message); setToastVisible(true);
   };
 
-  const updateSetting = (key: keyof DeliverySettings, value: any) => {
+  const update = (key: keyof DeliverySettings, value: any) =>
     setSettings((prev) => ({ ...prev, [key]: value }));
-  };
 
   return (
     <SafeAreaView style={styles.container}>
+
+      {/* ── Header ── */}
       <View style={styles.header}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => {
-            if (Platform.OS !== 'web') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-            router.back();
-          }}
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
+        <Pressable style={styles.backButton} onPress={() => {
+          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          router.back();
+        }}>
+          <IconSymbol name="chevron.left" size={20} color={D.textSecondary} />
         </Pressable>
-        <Text style={styles.title}>Delivery Settings</Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerEyebrow}>THE PEPPERED GOAT</Text>
+          <Text style={styles.headerTitle}>Delivery Settings</Text>
+        </View>
+        <View style={{ width: 28 }} />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Delivery Configuration</Text>
-            <Text style={styles.sectionDescription}>
-              Configure your delivery settings. Make sure to set up API credentials in Supabase Edge Functions.
-            </Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Default Delivery Provider</Text>
-              <View style={styles.providerSelector}>
-                {(Object.keys(DELIVERY_PROVIDERS) as DeliveryProvider[]).map((provider) => (
-                  <Pressable
-                    key={provider}
-                    style={[
-                      styles.providerButton,
-                      settings.defaultProvider === provider && styles.providerButtonActive,
-                    ]}
-                    onPress={() => {
-                      if (Platform.OS !== 'web') {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
-                      updateSetting('defaultProvider', provider);
-                    }}
-                  >
-                    <IconSymbol 
-                      name={DELIVERY_PROVIDERS[provider].icon} 
-                      size={20} 
-                      color={settings.defaultProvider === provider ? colors.background : colors.text} 
-                    />
-                    <Text style={[
-                      styles.providerButtonText,
-                      settings.defaultProvider === provider && styles.providerButtonTextActive,
-                    ]}>
-                      {DELIVERY_PROVIDERS[provider].name}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.settingRow}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Auto-trigger Delivery</Text>
-                <Text style={styles.settingDescription}>
-                  Automatically trigger delivery when order status changes to "Ready"
+        {/* ── Provider selection ── */}
+        <Text style={styles.sectionLabel}>DEFAULT PROVIDER</Text>
+        <View style={styles.providerRow}>
+          {(Object.keys(DELIVERY_PROVIDERS) as DeliveryProvider[]).map((provider) => {
+            const active = settings.defaultProvider === provider;
+            return (
+              <Pressable
+                key={provider}
+                style={[styles.providerCard, active && styles.providerCardActive]}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  update('defaultProvider', provider);
+                }}
+              >
+                <IconSymbol
+                  name={DELIVERY_PROVIDERS[provider].icon}
+                  size={20}
+                  color={active ? D.gold : D.textSecondary}
+                />
+                <Text style={[styles.providerLabel, active && styles.providerLabelActive]}>
+                  {DELIVERY_PROVIDERS[provider].name.toUpperCase()}
                 </Text>
-              </View>
-              <Switch
-                value={settings.autoTriggerDelivery}
-                onValueChange={(value) => updateSetting('autoTriggerDelivery', value)}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor="#FFFFFF"
-              />
-            </View>
-          </View>
+              </Pressable>
+            );
+          })}
+        </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Restaurant Information</Text>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Restaurant Name</Text>
-              <TextInput
-                style={styles.input}
-                value={settings.restaurantName}
-                onChangeText={(value) => updateSetting('restaurantName', value)}
-                placeholder="Enter restaurant name"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Phone Number</Text>
-              <TextInput
-                style={styles.input}
-                value={settings.restaurantPhone}
-                onChangeText={(value) => updateSetting('restaurantPhone', value)}
-                placeholder="+1234567890"
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="phone-pad"
-              />
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Pickup Address</Text>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Street Address</Text>
-              <TextInput
-                style={styles.input}
-                value={settings.restaurantStreet}
-                onChangeText={(value) => updateSetting('restaurantStreet', value)}
-                placeholder="123 Main Street"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </View>
-
-            <View style={styles.row}>
-              <View style={[styles.inputGroup, { flex: 2 }]}>
-                <Text style={styles.inputLabel}>City</Text>
-                <TextInput
-                  style={styles.input}
-                  value={settings.restaurantCity}
-                  onChangeText={(value) => updateSetting('restaurantCity', value)}
-                  placeholder="Los Angeles"
-                  placeholderTextColor={colors.textSecondary}
-                />
-              </View>
-
-              <View style={[styles.inputGroup, { flex: 1, marginLeft: 12 }]}>
-                <Text style={styles.inputLabel}>State</Text>
-                <TextInput
-                  style={styles.input}
-                  value={settings.restaurantState}
-                  onChangeText={(value) => updateSetting('restaurantState', value)}
-                  placeholder="CA"
-                  placeholderTextColor={colors.textSecondary}
-                  maxLength={2}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>ZIP Code</Text>
-              <TextInput
-                style={styles.input}
-                value={settings.restaurantZipCode}
-                onChangeText={(value) => updateSetting('restaurantZipCode', value)}
-                placeholder="90001"
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="number-pad"
-                maxLength={5}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Pickup Notes</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={settings.pickupNotes}
-                onChangeText={(value) => updateSetting('pickupNotes', value)}
-                placeholder="Special instructions for drivers"
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-          </View>
-
-          <Pressable
-            style={styles.saveButton}
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              }
-              saveSettings();
-            }}
-          >
-            <IconSymbol name="square.and.arrow.down" size={20} color="#FFFFFF" />
-            <Text style={styles.saveButtonText}>Save Settings</Text>
-          </Pressable>
-
-          <View style={styles.infoBox}>
-            <IconSymbol name="info.circle.fill" size={20} color={colors.primary} />
-            <Text style={styles.infoText}>
-              To complete the delivery setup, you need to configure API credentials in Supabase Edge Functions for your chosen provider. 
-              See the documentation for detailed instructions.
+        {/* ── Auto trigger ── */}
+        <Text style={styles.sectionLabel}>AUTOMATION</Text>
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.settingLabel}>Auto-trigger Delivery</Text>
+            <Text style={styles.settingDesc}>
+              Dispatch automatically when order status changes to Ready
             </Text>
           </View>
+          <Switch
+            value={settings.autoTriggerDelivery}
+            onValueChange={(v) => update('autoTriggerDelivery', v)}
+            trackColor={{ false: D.dividerStrong, true: D.goldDim }}
+            thumbColor={settings.autoTriggerDelivery ? D.gold : D.textMuted}
+          />
+        </View>
 
-          <View style={[styles.infoBox, { borderColor: colors.secondary, marginTop: 16 }]}>
-            <IconSymbol name="lightbulb.fill" size={20} color={colors.secondary} />
+        {/* ── Restaurant info ── */}
+        <Text style={styles.sectionLabel}>RESTAURANT</Text>
+        <View style={styles.fieldGroup}>
+          <FieldLabel>NAME</FieldLabel>
+          <TextInput style={styles.input} value={settings.restaurantName}
+            onChangeText={(v) => update('restaurantName', v)}
+            placeholder="Restaurant name" placeholderTextColor={D.textMuted} />
+
+          <FieldLabel>PHONE</FieldLabel>
+          <TextInput style={styles.input} value={settings.restaurantPhone}
+            onChangeText={(v) => update('restaurantPhone', v)}
+            placeholder="+1234567890" placeholderTextColor={D.textMuted} keyboardType="phone-pad" />
+        </View>
+
+        {/* ── Address ── */}
+        <Text style={styles.sectionLabel}>PICKUP ADDRESS</Text>
+        <View style={styles.fieldGroup}>
+          <FieldLabel>STREET</FieldLabel>
+          <TextInput style={styles.input} value={settings.restaurantStreet}
+            onChangeText={(v) => update('restaurantStreet', v)}
+            placeholder="123 Main Street" placeholderTextColor={D.textMuted} />
+
+          <View style={styles.inlineRow}>
+            <View style={{ flex: 2 }}>
+              <FieldLabel>CITY</FieldLabel>
+              <TextInput style={styles.input} value={settings.restaurantCity}
+                onChangeText={(v) => update('restaurantCity', v)}
+                placeholder="Los Angeles" placeholderTextColor={D.textMuted} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <FieldLabel>STATE</FieldLabel>
+              <TextInput style={styles.input} value={settings.restaurantState}
+                onChangeText={(v) => update('restaurantState', v)}
+                placeholder="CA" placeholderTextColor={D.textMuted} maxLength={2} />
+            </View>
+          </View>
+
+          <FieldLabel>ZIP CODE</FieldLabel>
+          <TextInput style={styles.input} value={settings.restaurantZipCode}
+            onChangeText={(v) => update('restaurantZipCode', v)}
+            placeholder="90001" placeholderTextColor={D.textMuted} keyboardType="number-pad" maxLength={5} />
+
+          <FieldLabel>PICKUP NOTES</FieldLabel>
+          <TextInput style={[styles.input, styles.textArea]} value={settings.pickupNotes}
+            onChangeText={(v) => update('pickupNotes', v)}
+            placeholder="Special instructions for drivers"
+            placeholderTextColor={D.textMuted} multiline numberOfLines={3} />
+        </View>
+
+        {/* ── Save ── */}
+        <Pressable
+          style={styles.saveButton}
+          onPress={() => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            saveSettings();
+          }}
+        >
+          <IconSymbol name="square.and.arrow.down" size={16} color={D.surface} />
+          <Text style={styles.saveButtonText}>SAVE SETTINGS</Text>
+        </Pressable>
+
+        {/* ── Info boxes ── */}
+        <View style={styles.infoBox}>
+          <IconSymbol name="info.circle.fill" size={16} color={D.info} />
+          <Text style={styles.infoText}>
+            API credentials must be configured in Supabase Edge Functions for your chosen provider.
+          </Text>
+        </View>
+
+        <View style={[styles.infoBox, { marginTop: 10, borderColor: D.goldDim }]}>
+          <IconSymbol name="lightbulb.fill" size={16} color={D.gold} />
+          <View style={{ flex: 1 }}>
             <Text style={styles.infoText}>
-              <Text style={{ fontWeight: '700' }}>Uber Direct:</Text> Requires UBER_CLIENT_ID, UBER_CLIENT_SECRET, and UBER_CUSTOMER_ID.{'\n\n'}
-              <Text style={{ fontWeight: '700' }}>DoorDash:</Text> Requires DOORDASH_DEVELOPER_ID, DOORDASH_KEY_ID, and DOORDASH_SIGNING_SECRET.
+              <Text style={{ color: D.gold, fontWeight: '700' }}>Uber Direct: </Text>
+              Requires UBER_CLIENT_ID, UBER_CLIENT_SECRET, UBER_CUSTOMER_ID.
+            </Text>
+            <Text style={[styles.infoText, { marginTop: 8 }]}>
+              <Text style={{ color: D.gold, fontWeight: '700' }}>DoorDash: </Text>
+              Requires DOORDASH_DEVELOPER_ID, DOORDASH_KEY_ID, DOORDASH_SIGNING_SECRET.
             </Text>
           </View>
         </View>
+
+        <View style={{ height: 48 }} />
       </ScrollView>
 
-      <Toast
-        visible={toastVisible}
-        message={toastMessage}
-        type={toastType}
+      <Toast visible={toastVisible} message={toastMessage} type={toastType}
         onHide={() => setToastVisible(false)}
-        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
-      />
+        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  container: { flex: 1, backgroundColor: D.surface },
+  scrollView: { flex: 1 },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
   },
-  backButton: {
-    padding: 8,
+  backButton: { padding: 4, marginRight: 14 },
+  headerCenter: { flex: 1 },
+  headerEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 3, color: D.gold, marginBottom: 2 },
+  headerTitle: { fontSize: 22, fontWeight: '300', letterSpacing: 0.5, color: D.textPrimary },
+
+  sectionLabel: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted,
+    paddingHorizontal: 20, paddingTop: 24, paddingBottom: 10,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
+
+  providerRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 20 },
+  providerCard: {
     flex: 1,
-    textAlign: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: D.radius,
+    borderWidth: 1,
+    borderColor: D.dividerStrong,
+    backgroundColor: D.surfaceRaised,
   },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  sectionDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 16,
-    lineHeight: 20,
-  },
+  providerCardActive: { borderColor: D.goldDim, backgroundColor: D.goldFaint },
+  providerLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.5, color: D.textMuted },
+  providerLabelActive: { color: D.gold },
+
   settingRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 12,
+    marginHorizontal: 20,
+    backgroundColor: D.surfaceRaised,
+    borderRadius: D.radius,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: D.divider,
+  },
+  settingInfo: { flex: 1, marginRight: 16 },
+  settingLabel: { fontSize: 14, fontWeight: '500', color: D.textPrimary, letterSpacing: 0.2, marginBottom: 3 },
+  settingDesc: { fontSize: 12, color: D.textSecondary, lineHeight: 17 },
+
+  fieldGroup: {
+    marginHorizontal: 20,
+    backgroundColor: D.surfaceRaised,
+    borderRadius: D.radius,
     padding: 16,
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: D.divider,
   },
-  settingInfo: {
-    flex: 1,
-    marginRight: 16,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  settingDescription: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-  },
+  inlineRow: { flexDirection: 'row' },
+
   input: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 15,
-    color: colors.text,
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    backgroundColor: D.surface,
+    borderRadius: D.radius,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    letterSpacing: 0.2,
+    color: D.textPrimary,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: D.divider,
   },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  row: {
-    flexDirection: 'row',
-  },
+  textArea: { minHeight: 76, textAlignVertical: 'top' },
+
   saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    marginBottom: 24,
+    gap: 10,
+    backgroundColor: D.gold,
+    borderRadius: D.radius,
+    paddingVertical: 15,
+    marginHorizontal: 20,
+    marginTop: 24,
   },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
+  saveButtonText: { fontSize: 11, fontWeight: '700', letterSpacing: 2, color: D.surface },
+
   infoBox: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 0.2,
-    borderColor: colors.primary,
-    gap: 12,
+    marginHorizontal: 20,
+    marginTop: 16,
+    padding: 14,
+    borderRadius: D.radius,
+    borderWidth: 1,
+    borderColor: D.info + '40',
+    backgroundColor: D.infoFaint,
+    gap: 10,
+    alignItems: 'flex-start',
   },
-  infoText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text,
-    lineHeight: 18,
-  },
-  providerSelector: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  providerButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 0.5,
-    borderColor: colors.border,
-  },
-  providerButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  providerButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  providerButtonTextActive: {
-    color: colors.background,
-  },
+  infoText: { flex: 1, fontSize: 12, color: D.textSecondary, lineHeight: 18 },
 });

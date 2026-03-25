@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -21,6 +20,29 @@ import { UserRole } from '@/types';
 import Dialog from '@/components/Dialog';
 import Toast from '@/components/Toast';
 
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const D = {
+  gold: "#C9A84C",
+  goldDim: "#C9A84C55",
+  goldFaint: "#C9A84C18",
+  surface: "#111613",
+  surfaceRaised: "#181C19",
+  divider: "#FFFFFF0D",
+  dividerStrong: "#FFFFFF18",
+  textPrimary: "#F0EDE6",
+  textSecondary: "#7A8A7E",
+  textMuted: "#3D4D41",
+  danger: "#C0392B",
+  dangerFaint: "#C0392B18",
+  success: "#2ECC71",
+  successFaint: "#2ECC7118",
+  purple: "#9B59B6",
+  purpleFaint: "#9B59B618",
+  orange: "#E67E22",
+  orangeFaint: "#E67E2218",
+  radius: 4,
+};
+
 interface AdminUser {
   id: string;
   name: string;
@@ -30,6 +52,34 @@ interface AdminUser {
   created_at: string;
 }
 
+const ROLE_CONFIG: Record<UserRole, { label: string; color: string; faint: string }> = {
+  user:        { label: 'USER',        color: D.textMuted,  faint: '#FFFFFF08' },
+  admin:       { label: 'ADMIN',       color: D.purple,     faint: D.purpleFaint },
+  super_admin: { label: 'SUPER ADMIN', color: D.orange,     faint: D.orangeFaint },
+};
+
+function AdminAvatar({ name, role }: { name: string; role: UserRole }) {
+  const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  const cfg = ROLE_CONFIG[role];
+  return (
+    <View style={[avatarStyles.circle, { backgroundColor: cfg.faint, borderColor: cfg.color + '50' }]}>
+      <Text style={[avatarStyles.initials, { color: cfg.color }]}>{initials}</Text>
+    </View>
+  );
+}
+const avatarStyles = StyleSheet.create({
+  circle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  initials: { fontSize: 14, fontWeight: '700', letterSpacing: 0.5 },
+});
+
 export default function AdminManagement() {
   const router = useRouter();
   const { userProfile } = useApp();
@@ -37,52 +87,35 @@ export default function AdminManagement() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({
-    title: '',
-    message: '',
-    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+    title: '', message: '',
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>,
   });
-
-  // Toast state
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
-  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
-    setDialogConfig({ title, message, buttons });
-    setDialogVisible(true);
+  const showDialog = (title: string, message: string, buttons: typeof dialogConfig.buttons) => {
+    setDialogConfig({ title, message, buttons }); setDialogVisible(true);
   };
-
-  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
-    setToastType(type);
-    setToastMessage(message);
-    setToastVisible(true);
+  const showToast = (type: typeof toastType, message: string) => {
+    setToastType(type); setToastMessage(message); setToastVisible(true);
   };
 
   const fetchAdmins = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await userService.getAllUsers();
-
       if (error) throw error;
-
-      // Filter to show only admin and super-admin users
       const adminUsers = (data || [])
-        .filter((user: any) => user.user_role === 'admin' || user.user_role === 'super_admin')
-        .map((user: any) => ({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone || 'N/A',
-          user_role: user.user_role as UserRole,
-          created_at: user.created_at,
+        .filter((u: any) => u.user_role === 'admin' || u.user_role === 'super_admin')
+        .map((u: any) => ({
+          id: u.id, name: u.name, email: u.email,
+          phone: u.phone || 'N/A', user_role: u.user_role as UserRole, created_at: u.created_at,
         }));
-
       setAdmins(adminUsers);
-    } catch (error) {
-      console.error('Error fetching admins:', error);
+    } catch {
       showToast('error', 'Failed to load admin users');
       setAdmins([]);
     } finally {
@@ -91,598 +124,324 @@ export default function AdminManagement() {
   }, []);
 
   useEffect(() => {
-    // Check if user is super admin
     if (userProfile?.userRole !== 'super_admin') {
-      showDialog(
-        'Access Denied',
-        'Only super-admins can access this page.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-            style: 'default'
-          },
-        ]
-      );
+      showDialog('Access Denied', 'Only super-admins can access this page.', [
+        { text: 'OK', onPress: () => router.back(), style: 'default' },
+      ]);
       return;
     }
     fetchAdmins();
   }, [userProfile, router, fetchAdmins]);
 
-  const handleUpdateRole = async (userId: string, newRole: UserRole) => {
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-
-      // Confirm before granting super-admin
-      if (newRole === 'super_admin') {
-        showDialog(
-          'Confirm Super-Admin',
-          'Are you sure you want to grant super-admin privileges? This will give full control over all admin functions.',
-          [
-            { text: 'Cancel', style: 'cancel', onPress: () => {} },
-            {
-              text: 'Confirm',
-              style: 'destructive',
-              onPress: async () => {
-                const { error } = await userService.updateUserRole(userId, newRole);
-
-                if (error) throw error;
-
-                showToast('success', 'User role updated successfully');
-                fetchAdmins();
-              },
-            },
-          ]
-        );
-      } else {
-        const { error } = await userService.updateUserRole(userId, newRole);
-
-        if (error) throw error;
-
-        showToast('success', 'User role updated successfully');
-        fetchAdmins();
-      }
-    } catch (error) {
-      console.error('Error updating user role:', error);
-      showToast('error', 'Failed to update user role');
+  const handleUpdateRole = (userId: string, newRole: UserRole) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const confirmUpdate = async () => {
+      const { error } = await userService.updateUserRole(userId, newRole);
+      if (error) { showToast('error', 'Failed to update role'); return; }
+      showToast('success', 'Role updated');
+      fetchAdmins();
+    };
+    if (newRole === 'super_admin') {
+      showDialog('Confirm Super Admin', 'Grant full super-admin control?', [
+        { text: 'Cancel', style: 'cancel', onPress: () => {} },
+        { text: 'Confirm', style: 'destructive', onPress: confirmUpdate },
+      ]);
+    } else {
+      confirmUpdate();
     }
   };
 
-  const handleDeleteAdmin = async (userId: string, userName: string) => {
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      }
-
-      showDialog(
-        'Delete Admin',
-        `Are you sure you want to delete ${userName}? This action cannot be undone.`,
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => {} },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
-              const { error } = await userService.deleteUser(userId);
-
-              if (error) throw error;
-
-              showToast('success', 'Admin deleted successfully');
-              fetchAdmins();
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      console.error('Error deleting admin:', error);
-      showToast('error', 'Failed to delete admin');
-    }
+  const handleDeleteAdmin = (userId: string, userName: string) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    showDialog('Delete Admin', `Delete ${userName}? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel', onPress: () => {} },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        const { error } = await userService.deleteUser(userId);
+        if (error) { showToast('error', 'Failed to delete admin'); return; }
+        showToast('success', 'Admin deleted');
+        fetchAdmins();
+      }},
+    ]);
   };
 
   const handlePromoteUser = () => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    showDialog(
-      'Promote User',
-      'To promote a user to admin, go to User Management and select the user you want to promote.',
-      [
-        {
-          text: 'Go to Users',
-          onPress: () => router.push('/admin/users' as any),
-          style: 'default'
-        },
-        { text: 'Cancel', style: 'cancel', onPress: () => {} },
-      ]
-    );
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    showDialog('Promote User', 'Go to User Management to promote a user to admin.', [
+      { text: 'Go to Users', onPress: () => router.push('/admin/users' as any), style: 'default' },
+      { text: 'Cancel', style: 'cancel', onPress: () => {} },
+    ]);
   };
 
   const filteredAdmins = admins.filter(
-    (admin) =>
-      admin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      admin.email.toLowerCase().includes(searchQuery.toLowerCase())
+    (a) => a.name.toLowerCase().includes(searchQuery.toLowerCase()) || a.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (userProfile?.userRole !== 'super_admin') {
-    return null;
-  }
+  if (userProfile?.userRole !== 'super_admin') return null;
 
   return (
     <SafeAreaView style={styles.container}>
+
+      {/* ── Header ── */}
       <View style={styles.header}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => {
-            if (Platform.OS !== 'web') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace('/admin' as any);
-            }
-          }}
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
+        <Pressable style={styles.backButton} onPress={() => {
+          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          if (router.canGoBack()) router.back(); else router.replace('/admin' as any);
+        }}>
+          <IconSymbol name="chevron.left" size={20} color={D.textSecondary} />
         </Pressable>
-        <Text style={styles.title}>Admin Management</Text>
-        <Pressable style={styles.addButton} onPress={handlePromoteUser}>
-          <IconSymbol name="person.fill" size={24} color={colors.primary} />
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerEyebrow}>THE PEPPERED GOAT</Text>
+          <Text style={styles.headerTitle}>Admins</Text>
+        </View>
+        <Pressable style={styles.addBtn} onPress={handlePromoteUser}>
+          <IconSymbol name="person.fill" size={18} color={D.gold} />
         </Pressable>
       </View>
 
-      <View style={styles.searchContainer}>
-        <IconSymbol name="search" size={20} color={colors.textSecondary} />
+      {/* ── Search ── */}
+      <View style={styles.searchBar}>
+        <IconSymbol name="magnifyingglass" size={16} color={D.textMuted} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search admins..."
-          placeholderTextColor={colors.textSecondary}
+          placeholder="Search admins…"
+          placeholderTextColor={D.textMuted}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {admins.filter((a) => a.user_role === 'super_admin').length}
-            </Text>
-            <Text style={styles.statLabel}>Super Admins</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {admins.filter((a) => a.user_role === 'admin').length}
-            </Text>
-            <Text style={styles.statLabel}>Admins</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{admins.length}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
+
+        {/* Stats */}
+        <View style={styles.statsRow}>
+          {[
+            { value: admins.filter((a) => a.user_role === 'super_admin').length, label: 'SUPER ADMINS' },
+            { value: admins.filter((a) => a.user_role === 'admin').length, label: 'ADMINS' },
+            { value: admins.length, label: 'TOTAL' },
+          ].map((s) => (
+            <View key={s.label} style={styles.statCell}>
+              <Text style={styles.statValue}>{s.value}</Text>
+              <Text style={styles.statLabel}>{s.label}</Text>
+            </View>
+          ))}
         </View>
+
+        <Text style={styles.sectionLabel}>{filteredAdmins.length} ACCOUNTS</Text>
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Loading admins...</Text>
+            <ActivityIndicator size="small" color={D.gold} />
+            <Text style={styles.loadingText}>LOADING</Text>
           </View>
         ) : (
-          <View style={styles.adminsContainer}>
-            {filteredAdmins.map((admin) => (
-              <View key={admin.id} style={styles.adminCard}>
-                <View style={styles.adminHeader}>
-                  <View
-                    style={[
-                      styles.adminAvatar,
-                      {
-                        backgroundColor: admin.user_role === 'super_admin'
-                          ? '#FF6B35'
-                          : colors.primary,
-                      },
-                    ]}
-                  >
-                    <Text style={styles.adminInitials}>
-                      {admin.name
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')}
-                    </Text>
-                  </View>
-                  <View style={styles.adminInfo}>
-                    <View style={styles.adminNameRow}>
-                      <Text style={styles.adminName}>{admin.name}</Text>
-                      {admin.user_role === 'super_admin' && (
-                        <View style={styles.superAdminBadge}>
-                          <IconSymbol
-                            name="shield.checkered"
-                            size={14}
-                            color="#FFFFFF"
-                          />
-                          <Text style={styles.superAdminBadgeText}>
-                            Super Admin
-                          </Text>
+          <View style={styles.listContainer}>
+            {filteredAdmins.map((admin) => {
+              const cfg = ROLE_CONFIG[admin.user_role];
+              return (
+                <View key={admin.id} style={styles.adminCard}>
+                  {/* Left accent bar */}
+                  <View style={[styles.cardAccentBar, { backgroundColor: cfg.color }]} />
+
+                  <View style={styles.cardInner}>
+                    {/* Identity */}
+                    <View style={styles.identityRow}>
+                      <AdminAvatar name={admin.name} role={admin.user_role} />
+                      <View style={styles.adminInfo}>
+                        <View style={styles.nameRow}>
+                          <Text style={styles.adminName}>{admin.name}</Text>
+                          <View style={[styles.roleBadge, { borderColor: cfg.color + '60', backgroundColor: cfg.faint }]}>
+                            <Text style={[styles.roleBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
+                          </View>
                         </View>
-                      )}
-                      {admin.user_role === 'admin' && (
-                        <View style={styles.adminBadge}>
-                          <IconSymbol
-                            name="shield.lefthalf.filled"
-                            size={14}
-                            color="#FFFFFF"
-                          />
-                          <Text style={styles.adminBadgeText}>Admin</Text>
-                        </View>
-                      )}
+                        <Text style={styles.adminEmail}>{admin.email}</Text>
+                        <Text style={styles.adminMeta}>
+                          Added {new Date(admin.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </Text>
+                      </View>
                     </View>
-                    <Text style={styles.adminEmail}>{admin.email}</Text>
-                    <Text style={styles.adminPhone}>{admin.phone}</Text>
+
+                    {/* Role selector */}
+                    <View style={styles.roleSelector}>
+                      <Text style={styles.roleSelectorLabel}>ROLE</Text>
+                      <View style={styles.roleButtons}>
+                        {(['admin', 'super_admin'] as UserRole[]).map((role) => {
+                          const rCfg = ROLE_CONFIG[role];
+                          const isActive = admin.user_role === role;
+                          return (
+                            <Pressable
+                              key={role}
+                              style={[
+                                styles.roleBtn,
+                                { borderColor: isActive ? rCfg.color : D.dividerStrong },
+                                isActive && { backgroundColor: rCfg.faint },
+                              ]}
+                              onPress={() => handleUpdateRole(admin.id, role)}
+                            >
+                              <Text style={[styles.roleBtnText, { color: isActive ? rCfg.color : D.textMuted }]}>
+                                {rCfg.label}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+
+                        {/* Delete */}
+                        <Pressable style={styles.deleteBtn} onPress={() => handleDeleteAdmin(admin.id, admin.name)}>
+                          <IconSymbol name="trash.fill" size={14} color={D.danger} />
+                        </Pressable>
+                      </View>
+                    </View>
                   </View>
                 </View>
-
-                <View style={styles.adminActions}>
-                  <Pressable
-                    style={[
-                      styles.actionButton,
-                      admin.user_role === 'user' && styles.actionButtonInactive,
-                    ]}
-                    onPress={() => handleUpdateRole(admin.id, 'user')}
-                  >
-                    <IconSymbol
-                      name={admin.user_role === 'user' ? 'circle.inset.filled' : 'circle'}
-                      size={20}
-                      color={admin.user_role === 'user' ? '#9E9E9E' : colors.textSecondary}
-                    />
-                    <Text
-                      style={[
-                        styles.actionButtonText,
-                        admin.user_role === 'user' && styles.actionButtonTextActive,
-                      ]}
-                    >
-                      User
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={[
-                      styles.actionButton,
-                      admin.user_role === 'admin' && styles.actionButtonActive,
-                    ]}
-                    onPress={() => handleUpdateRole(admin.id, 'admin')}
-                  >
-                    <IconSymbol
-                      name={admin.user_role === 'admin' ? 'circle.inset.filled' : 'circle'}
-                      size={20}
-                      color={admin.user_role === 'admin' ? '#4CAF50' : colors.textSecondary}
-                    />
-                    <Text
-                      style={[
-                        styles.actionButtonText,
-                        admin.user_role === 'admin' && styles.actionButtonTextActive,
-                      ]}
-                    >
-                      Admin
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={[
-                      styles.actionButton,
-                      admin.user_role === 'super_admin' && styles.actionButtonActive,
-                    ]}
-                    onPress={() => handleUpdateRole(admin.id, 'super_admin')}
-                  >
-                    <IconSymbol
-                      name={
-                        admin.user_role === 'super_admin'
-                          ? 'circle.inset.filled' : 'circle'
-                      }
-                      size={20}
-                      color={
-                        admin.user_role === 'super_admin' ? '#FF6B35' : colors.textSecondary
-                      }
-                    />
-                    <Text
-                      style={[
-                        styles.actionButtonText,
-                        admin.user_role === 'super_admin' && styles.actionButtonTextActive,
-                      ]}
-                    >
-                      Super Admin
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={styles.deleteButton}
-                    onPress={() => handleDeleteAdmin(admin.id, admin.name)}
-                  >
-                    <IconSymbol name="trash.fill" size={20} color="#FF6B6B" />
-                  </Pressable>
-                </View>
-
-                <View style={styles.adminFooter}>
-                  <Text style={styles.joinDate}>
-                    Added: {new Date(admin.created_at).toLocaleDateString()}
-                  </Text>
-                </View>
-              </View>
-            ))}
+              );
+            })}
 
             {filteredAdmins.length === 0 && (
               <View style={styles.emptyState}>
-                <IconSymbol
-                  name="shield.lefthalf.filled"
-                  size={64}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.emptyText}>No admins found</Text>
-                <Pressable
-                  style={styles.promoteButton}
-                  onPress={handlePromoteUser}
-                >
-                  <Text style={styles.promoteButtonText}>Promote a User</Text>
+                <IconSymbol name="shield.lefthalf.filled" size={36} color={D.textMuted} />
+                <Text style={styles.emptyText}>NO ADMINS FOUND</Text>
+                <Pressable style={styles.promoteBtn} onPress={handlePromoteUser}>
+                  <Text style={styles.promoteBtnText}>PROMOTE A USER</Text>
                 </Pressable>
               </View>
             )}
           </View>
         )}
+        <View style={{ height: 40 }} />
       </ScrollView>
-      <Toast
-        visible={toastVisible}
-        message={toastMessage}
-        type={toastType}
-        onHide={() => setToastVisible(false)}
-        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
-      />
-      <Dialog
-        visible={dialogVisible}
-        title={dialogConfig.title}
-        message={dialogConfig.message}
-        buttons={dialogConfig.buttons}
-        onHide={() => setDialogVisible(false)}
-        currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
-      />
+
+      <Toast visible={toastVisible} message={toastMessage} type={toastType} onHide={() => setToastVisible(false)}
+        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }} />
+      <Dialog visible={dialogVisible} title={dialogConfig.title} message={dialogConfig.message}
+        buttons={dialogConfig.buttons} onHide={() => setDialogVisible(false)}
+        currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: D.surface },
+  scrollView: { flex: 1 },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
   },
-  backButton: {
-    padding: 8,
-  },
-  addButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
-    flex: 1,
-    textAlign: 'center',
-  },
-  searchContainer: {
+  backButton: { padding: 4, marginRight: 14 },
+  headerCenter: { flex: 1 },
+  headerEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 3, color: D.gold, marginBottom: 2 },
+  headerTitle: { fontSize: 22, fontWeight: '300', letterSpacing: 0.5, color: D.textPrimary },
+  addBtn: { padding: 4 },
+
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
-    margin: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    gap: 10,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    backgroundColor: D.surfaceRaised,
+    borderRadius: D.radius,
+    borderWidth: 1,
+    borderColor: D.divider,
   },
-  searchInput: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-    color: colors.text,
-  },
-  statsContainer: {
+  searchInput: { flex: 1, fontSize: 14, color: D.textPrimary, letterSpacing: 0.2 },
+
+  statsRow: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 12,
-    marginBottom: 16,
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: D.radius,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: D.divider,
   },
-  statCard: {
+  statCell: {
     flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    paddingVertical: 14,
+    backgroundColor: D.surfaceRaised,
+    borderRightWidth: 1,
+    borderRightColor: D.divider,
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
+  statValue: { fontSize: 20, fontWeight: '300', color: D.textPrimary, letterSpacing: 0.5 },
+  statLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2, color: D.textMuted, marginTop: 4 },
+
+  sectionLabel: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted,
+    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8,
   },
-  statLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  adminsContainer: {
-    padding: 16,
-    gap: 16,
-  },
+
+  listContainer: { paddingHorizontal: 20, gap: 10 },
+
   adminCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 0.2,
-    borderColor: colors.border,
-  },
-  adminHeader: {
+    backgroundColor: D.surfaceRaised,
+    borderRadius: D.radius,
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: D.divider,
   },
-  adminAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  cardAccentBar: { width: 2 },
+  cardInner: { flex: 1, padding: 16 },
+
+  identityRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  adminInfo: { flex: 1 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 },
+  adminName: { fontSize: 15, fontWeight: '500', color: D.textPrimary, letterSpacing: 0.2 },
+  roleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: D.radius,
+    borderWidth: 1,
+  },
+  roleBadgeText: { fontSize: 8, fontWeight: '700', letterSpacing: 1.5 },
+  adminEmail: { fontSize: 12, color: D.textSecondary },
+  adminMeta: { fontSize: 11, color: D.textMuted, marginTop: 2 },
+
+  roleSelector: {
+    borderTopWidth: 1,
+    borderTopColor: D.divider,
+    paddingTop: 12,
+  },
+  roleSelectorLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2, color: D.textMuted, marginBottom: 8 },
+  roleButtons: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  roleBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: D.radius,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  roleBtnText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5 },
+  deleteBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: D.radius,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    backgroundColor: D.dangerFaint,
+    borderWidth: 1,
+    borderColor: D.danger + '55',
   },
-  adminInitials: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  adminInfo: {
-    flex: 1,
-  },
-  adminNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  adminName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  adminEmail: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  adminPhone: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  superAdminBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FF6B35',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  superAdminBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  adminBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  adminBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  adminActions: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 12,
-    borderTopWidth: 0.5,
-    borderBottomWidth: 0.5,
-    borderColor: colors.border,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background,
+
+  loadingContainer: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+  loadingText: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted },
+  emptyState: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+  emptyText: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted },
+  promoteBtn: {
+    marginTop: 4,
+    paddingHorizontal: 20,
     paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    gap: 4,
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    borderRadius: D.radius,
+    borderWidth: 1,
+    borderColor: D.goldDim,
+    backgroundColor: D.goldFaint,
   },
-  actionButtonActive: {
-    backgroundColor: colors.card,
-  },
-  actionButtonInactive: {
-    backgroundColor: colors.background,
-    opacity: 0.6,
-  },
-  actionButtonText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  actionButtonTextActive: {
-    color: colors.text,
-  },
-  deleteButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    borderWidth: 0.2,
-    borderColor: colors.border,
-  },
-  adminFooter: {
-    marginTop: 12,
-  },
-  joinDate: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 64,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  promoteButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  promoteButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 64,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 16,
-  },
+  promoteBtnText: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.gold },
 });

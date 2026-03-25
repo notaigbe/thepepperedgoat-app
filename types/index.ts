@@ -95,18 +95,18 @@ export interface MerchRedemption {
   status: 'pending' | 'processing' | 'shipped' | 'delivered';
 }
 
-export interface GiftCard {
-  id: string;
-  amount?: number;
-  points?: number;
-  recipientEmail?: string;
-  recipientName?: string;
-  recipientId?: string;
-  message?: string;
-  purchaseDate?: string;
-  senderId?: string;
-  type?: 'money' | 'points';
-}
+// export interface GiftCard {
+//   id: string;
+//   amount?: number;
+//   points?: number;
+//   recipientEmail?: string;
+//   recipientName?: string;
+//   recipientId?: string;
+//   message?: string;
+//   purchaseDate?: string;
+//   senderId?: string;
+//   type?: 'money' | 'points';
+// }
 
 export interface PaymentMethod {
   id: string;

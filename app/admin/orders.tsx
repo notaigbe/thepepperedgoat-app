@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -23,53 +22,71 @@ import { DeliveryTracking } from '@/components/DeliveryTracking';
 import { RESTAURANT_PICKUP_ADDRESS, DeliveryProvider } from '@/constants/DeliveryConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const D = {
+  gold: "#C9A84C",
+  goldDim: "#C9A84C55",
+  goldFaint: "#C9A84C18",
+  surface: "#111613",
+  surfaceRaised: "#181C19",
+  divider: "#FFFFFF0D",
+  dividerStrong: "#FFFFFF18",
+  textPrimary: "#F0EDE6",
+  textSecondary: "#7A8A7E",
+  textMuted: "#3D4D41",
+  danger: "#C0392B",
+  dangerFaint: "#C0392B18",
+  success: "#2ECC71",
+  successFaint: "#2ECC7118",
+  warning: "#E8A838",
+  warningFaint: "#E8A83818",
+  info: "#4ECDC4",
+  infoFaint: "#4ECDC418",
+  radius: 4,
+};
+
 interface OrderWithItems extends Order {
   items: CartItem[];
   userId?: string;
 }
 
+const STATUS_CONFIG = {
+  pending:   { color: D.warning,  label: 'PENDING'   },
+  preparing: { color: D.info,     label: 'PREPARING' },
+  ready:     { color: D.gold,     label: 'READY'     },
+  completed: { color: D.success,  label: 'COMPLETED' },
+} as const;
+
 export default function AdminOrderManagement() {
   const router = useRouter();
-  
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [loading, setLoading] = useState(true);
 
-  // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({
-    title: '',
-    message: '',
-    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>
+    title: '', message: '',
+    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>,
   });
-
-  // Toast state
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
-  const showDialog = (title: string, message: string, buttons: Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>) => {
+  const showDialog = (title: string, message: string, buttons: typeof dialogConfig.buttons) => {
     setDialogConfig({ title, message, buttons });
     setDialogVisible(true);
   };
-
-  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
-    setToastType(type);
-    setToastMessage(message);
-    setToastVisible(true);
+  const showToast = (type: typeof toastType, message: string) => {
+    setToastType(type); setToastMessage(message); setToastVisible(true);
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  useEffect(() => { fetchOrders(); }, []);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const res = await orderService.getAllOrders();
       if (res.error) throw res.error;
-      
-      // Transform backend data to match Order interface
       const transformedOrders = (res.data || []).map((order: any) => ({
         id: order.id,
         orderNumber: order.order_number || 0,
@@ -90,7 +107,6 @@ export default function AdminOrderManagement() {
         deliveryAddress: order.delivery_address,
         pickupNotes: order.pickup_notes,
       }));
-
       setOrders(transformedOrders);
     } catch (err) {
       console.error('Failed to load orders', err);
@@ -100,37 +116,29 @@ export default function AdminOrderManagement() {
     }
   };
 
-  const statusOptions = [
-    { value: 'all', label: 'All Orders', color: colors.text },
-    { value: 'pending', label: 'Pending', color: '#FFA500' },
-    { value: 'preparing', label: 'Preparing', color: '#4ECDC4' },
-    { value: 'ready', label: 'Ready', color: '#95E1D3' },
-    { value: 'completed', label: 'Completed', color: '#4CAF50' },
+  const statusFilterOptions = [
+    { value: 'all', label: 'ALL' },
+    { value: 'pending', label: 'PENDING' },
+    { value: 'preparing', label: 'PREPARING' },
+    { value: 'ready', label: 'READY' },
+    { value: 'completed', label: 'COMPLETED' },
   ];
 
   const getStatusMessage = (status: Order['status']) => {
     switch (status) {
-      case 'pending':
-        return 'Your order has been received and is pending confirmation.';
-      case 'preparing':
-        return 'Your order is being prepared by our kitchen staff.';
-      case 'ready':
-        return 'Your order is ready for pickup or delivery!';
-      case 'completed':
-        return 'Your order has been completed. Thank you for your order!';
-      default:
-        return 'Your order status has been updated.';
+      case 'pending': return 'Your order has been received and is pending confirmation.';
+      case 'preparing': return 'Your order is being prepared by our kitchen staff.';
+      case 'ready': return 'Your order is ready for pickup or delivery!';
+      case 'completed': return 'Your order has been completed. Thank you!';
+      default: return 'Your order status has been updated.';
     }
   };
 
   const handleStatusChange = (orderId: string, newStatus: Order['status'], userId?: string) => {
-    console.log('Changing order status:', orderId, newStatus);
     (async () => {
       try {
         const res = await orderService.updateOrderStatus(orderId, newStatus);
         if (res.error || !res.data) throw res.error || new Error('Update failed');
-        
-        // Transform the updated order
         const updatedOrder = res.data as any;
         const transformedOrder: OrderWithItems = {
           id: updatedOrder.id,
@@ -170,10 +178,8 @@ export default function AdminOrderManagement() {
           deliveryProvider: updatedOrder.delivery_provider,
           deliveryTriggeredAt: updatedOrder.delivery_triggered_at,
         };
-
         setOrders((prev) => prev.map((o) => (o.id === orderId ? transformedOrder : o)));
 
-        // Send notification to user
         if (userId) {
           const statusMessage = getStatusMessage(newStatus);
           await notificationService.createNotification({
@@ -183,45 +189,27 @@ export default function AdminOrderManagement() {
             type: 'order',
             actionUrl: '/order-history',
           });
-          console.log('Notification sent to user:', userId);
         }
 
-        // Trigger delivery if status is "ready" and has delivery address
         if (newStatus === 'ready' && transformedOrder.deliveryAddress && !transformedOrder.uberDeliveryId && !transformedOrder.doordashDeliveryId) {
-          console.log('Triggering delivery for order:', orderId);
-          
-          // Get default provider from settings
           const settingsJson = await AsyncStorage.getItem('delivery_settings');
           const settings = settingsJson ? JSON.parse(settingsJson) : { defaultProvider: 'uber_direct' };
           const defaultProvider: DeliveryProvider = settings.defaultProvider || 'uber_direct';
-          
           showDialog(
             'Trigger Delivery?',
-            `Do you want to trigger ${defaultProvider === 'doordash' ? 'DoorDash' : 'Uber Direct'} delivery for this order?`,
+            `Dispatch ${defaultProvider === 'doordash' ? 'DoorDash' : 'Uber Direct'} for this order?`,
             [
-              {
-                text: 'Cancel',
-                style: 'cancel',
-                onPress: () => console.log('Delivery trigger canceled'),
-              },
-              {
-                text: `Use ${defaultProvider === 'doordash' ? 'DoorDash' : 'Uber Direct'}`,
-                style: 'default',
-                onPress: () => triggerDelivery(orderId, transformedOrder, defaultProvider),
-              },
-              {
-                text: `Use ${defaultProvider === 'doordash' ? 'Uber Direct' : 'DoorDash'}`,
-                style: 'default',
-                onPress: () => triggerDelivery(orderId, transformedOrder, defaultProvider === 'doordash' ? 'uber_direct' : 'doordash'),
-              },
+              { text: 'Cancel', style: 'cancel', onPress: () => {} },
+              { text: `${defaultProvider === 'doordash' ? 'DoorDash' : 'Uber Direct'}`, style: 'default', onPress: () => triggerDelivery(orderId, transformedOrder, defaultProvider) },
+              { text: `${defaultProvider === 'doordash' ? 'Uber Direct' : 'DoorDash'}`, style: 'default', onPress: () => triggerDelivery(orderId, transformedOrder, defaultProvider === 'doordash' ? 'uber_direct' : 'doordash') },
             ]
           );
         } else {
-          showToast('success', 'Order status updated and notification sent to customer');
+          showToast('success', 'Status updated');
         }
       } catch (err) {
         console.error('Update order status failed', err);
-        showToast('error', 'Unable to update order status');
+        showToast('error', 'Unable to update status');
       }
     })();
   };
@@ -229,449 +217,302 @@ export default function AdminOrderManagement() {
   const triggerDelivery = async (orderId: string, order: OrderWithItems, provider: DeliveryProvider) => {
     try {
       const providerName = provider === 'doordash' ? 'DoorDash' : 'Uber Direct';
-      showToast('info', `Triggering ${providerName} delivery...`);
-      
+      showToast('info', `Dispatching ${providerName}…`);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
-
-      // Parse delivery address (assuming format: "street, city, state zipcode")
-      const addressParts = (order.deliveryAddress || '').split(',').map(p => p.trim());
+      const addressParts = (order.deliveryAddress || '').split(',').map((p: string) => p.trim());
       const streetAddress = addressParts[0] || '';
       const cityState = addressParts[1] || '';
       const zipCode = addressParts[2] || '';
-
       const pickupAddress = RESTAURANT_PICKUP_ADDRESS.address;
-
       const dropoffAddress = {
         street: streetAddress,
         city: cityState.split(' ')[0] || 'Los Angeles',
         state: cityState.split(' ')[1] || 'CA',
-        zipCode: zipCode,
+        zipCode,
         country: 'US',
       };
-
       const functionName = provider === 'doordash' ? 'trigger-doordash-delivery' : 'trigger-uber-delivery';
-
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/${functionName}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            orderId,
-            pickupAddress,
-            dropoffAddress,
-            pickupPhoneNumber: RESTAURANT_PICKUP_ADDRESS.phoneNumber,
-            dropoffPhoneNumber: '+1234567890', // TODO: Get from user profile
-            pickupName: RESTAURANT_PICKUP_ADDRESS.name,
-            dropoffName: 'Customer', // TODO: Get from user profile
-            pickupNotes: RESTAURANT_PICKUP_ADDRESS.notes,
-            dropoffNotes: order.pickupNotes || '',
-          }),
-        }
-      );
-
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          orderId, pickupAddress, dropoffAddress,
+          pickupPhoneNumber: RESTAURANT_PICKUP_ADDRESS.phoneNumber,
+          dropoffPhoneNumber: '+1234567890',
+          pickupName: RESTAURANT_PICKUP_ADDRESS.name,
+          dropoffName: 'Customer',
+          pickupNotes: RESTAURANT_PICKUP_ADDRESS.notes,
+          dropoffNotes: order.pickupNotes || '',
+        }),
+      });
       const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to trigger delivery');
-      }
-
-      console.log(`${providerName} delivery triggered:`, result);
-      showToast('success', `${providerName} delivery triggered successfully!`);
-      
-      // Refresh orders to get updated delivery info
+      if (!response.ok) throw new Error(result.error || 'Failed to trigger delivery');
+      showToast('success', `${providerName} dispatched`);
       await fetchOrders();
     } catch (err: any) {
-      console.error(`Failed to trigger delivery:`, err);
-      showToast('error', `Failed to trigger delivery: ${err.message}`);
-    }
-  };
-
-  const getStatusColor = (status: Order['status']) => {
-    switch (status) {
-      case 'pending':
-        return '#FFA500';
-      case 'preparing':
-        return '#4ECDC4';
-      case 'ready':
-        return '#95E1D3';
-      case 'completed':
-        return '#4CAF50';
-      default:
-        return colors.textSecondary;
+      showToast('error', `Dispatch failed: ${err.message}`);
     }
   };
 
   const filteredOrders =
-    selectedStatus === 'all'
-      ? orders
-      : orders.filter((order) => order.status === selectedStatus);
+    selectedStatus === 'all' ? orders : orders.filter((o) => o.status === selectedStatus);
 
   return (
     <SafeAreaView style={styles.container}>
+
+      {/* ── Header ── */}
       <View style={styles.header}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => {
-            if (Platform.OS !== 'web') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-            router.back();
-          }}
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
+        <Pressable style={styles.backButton} onPress={() => {
+          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          router.back();
+        }}>
+          <IconSymbol name="chevron.left" size={20} color={D.textSecondary} />
         </Pressable>
-        <Text style={styles.title}>Order Management</Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerEyebrow}>THE PEPPERED GOAT</Text>
+          <Text style={styles.headerTitle}>Orders</Text>
+        </View>
+        <Pressable style={styles.refreshButton} onPress={fetchOrders}>
+          <IconSymbol name="arrow.clockwise" size={18} color={D.textSecondary} />
+        </Pressable>
       </View>
 
+      {/* ── Status filter ── */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.statusFilter}
-        contentContainerStyle={styles.statusFilterContent}
+        style={styles.filterBar}
+        contentContainerStyle={styles.filterBarContent}
       >
-        {statusOptions.map((option) => (
-          <Pressable
-            key={option.value}
-            style={[
-              styles.statusChip,
-              selectedStatus === option.value && styles.statusChipActive,
-            ]}
-            onPress={() => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              setSelectedStatus(option.value);
-            }}
-          >
-            <Text
-              style={[
-                styles.statusChipText,
-                selectedStatus === option.value && styles.statusChipTextActive,
-              ]}
+        {statusFilterOptions.map((opt) => {
+          const active = selectedStatus === opt.value;
+          const cfg = opt.value !== 'all' ? STATUS_CONFIG[opt.value as keyof typeof STATUS_CONFIG] : null;
+          return (
+            <Pressable
+              key={opt.value}
+              style={[styles.filterChip, active && styles.filterChipActive, active && cfg ? { borderColor: cfg.color, backgroundColor: cfg.color + '18' } : null]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setSelectedStatus(opt.value);
+              }}
             >
-              {option.label}
-            </Text>
-          </Pressable>
-        ))}
+              <Text style={[styles.filterChipText, active && cfg ? { color: cfg.color } : active ? { color: D.gold } : null]}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
+      <Text style={styles.countLabel}>{filteredOrders.length} ORDERS</Text>
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.ordersContainer}>
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Loading orders...</Text>
-            </View>
-          ) : (
-            <>
-              {filteredOrders.map((order) => (
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={D.gold} />
+            <Text style={styles.loadingText}>LOADING ORDERS</Text>
+          </View>
+        ) : filteredOrders.length === 0 ? (
+          <View style={styles.emptyState}>
+            <IconSymbol name="receipt" size={40} color={D.textMuted} />
+            <Text style={styles.emptyText}>NO ORDERS</Text>
+          </View>
+        ) : (
+          <View style={styles.ordersContainer}>
+            {filteredOrders.map((order) => {
+              const cfg = STATUS_CONFIG[order.status as keyof typeof STATUS_CONFIG] ?? { color: D.textMuted, label: order.status.toUpperCase() };
+              return (
                 <View key={order.id} style={styles.orderCard}>
+
+                  {/* Card accent */}
+                  <View style={[styles.cardAccent, { backgroundColor: cfg.color }]} />
+
+                  {/* Order header */}
                   <View style={styles.orderHeader}>
                     <View>
-                      <Text style={styles.orderId}>Order #{order.orderNumber}</Text>
+                      <Text style={styles.orderNumber}>#{order.orderNumber}</Text>
                       <Text style={styles.orderDate}>
-                        {new Date(order.date).toLocaleString()}
+                        {new Date(order.date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </Text>
                     </View>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        { backgroundColor: getStatusColor(order.status) + '20' },
-                      ]}
-                    >
-                      <Text
-                        style={[styles.statusText, { color: getStatusColor(order.status) }]}
-                      >
-                        {order.status.toUpperCase()}
-                      </Text>
+                    <View style={[styles.statusBadge, { backgroundColor: cfg.color + '18', borderColor: cfg.color + '55' }]}>
+                      <Text style={[styles.statusBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
                     </View>
                   </View>
 
-                  <View style={styles.orderItems}>
+                  {/* Items */}
+                  <View style={styles.itemsSection}>
                     {order.items.map((item: CartItem, index: number) => (
-                      <View key={index} style={styles.orderItem}>
-                        <Text style={styles.itemQuantity}>{item.quantity}x</Text>
+                      <View key={index} style={styles.itemRow}>
+                        <Text style={styles.itemQty}>{item.quantity}×</Text>
                         <Text style={styles.itemName}>{item.name}</Text>
-                        <Text style={styles.itemPrice}>
-                          ${(item.price * item.quantity).toFixed(2)}
-                        </Text>
+                        <Text style={styles.itemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
                       </View>
                     ))}
                   </View>
 
-                  <View style={styles.orderFooter}>
-                    <View style={styles.orderTotal}>
-                      <Text style={styles.totalLabel}>Total:</Text>
-                      <Text style={styles.totalAmount}>${order.total.toFixed(2)}</Text>
-                    </View>
+                  {/* Total */}
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>TOTAL</Text>
+                    <Text style={styles.totalAmount}>${order.total.toFixed(2)}</Text>
                   </View>
 
-                  <View style={styles.statusActions}>
-                    <Text style={styles.actionsLabel}>Update Status:</Text>
+                  {/* Status actions */}
+                  <View style={styles.actionsSection}>
+                    <Text style={styles.actionsLabel}>UPDATE STATUS</Text>
                     <View style={styles.actionButtons}>
-                      {(['pending', 'preparing', 'ready', 'completed'] as const).map(
-                        (status) => (
+                      {(['pending', 'preparing', 'ready', 'completed'] as const).map((status) => {
+                        const sCfg = STATUS_CONFIG[status];
+                        const isActive = order.status === status;
+                        return (
                           <Pressable
                             key={status}
                             style={[
-                              styles.actionButton,
-                              order.status === status && styles.actionButtonActive,
-                              { borderColor: getStatusColor(status) },
+                              styles.actionBtn,
+                              { borderColor: isActive ? sCfg.color : D.dividerStrong },
+                              isActive && { backgroundColor: sCfg.color + '18' },
                             ]}
                             onPress={() => handleStatusChange(order.id, status, order.userId)}
                           >
-                            <Text
-                              style={[
-                                styles.actionButtonText,
-                                order.status === status && {
-                                  color: getStatusColor(status),
-                                },
-                              ]}
-                            >
-                              {status}
+                            <Text style={[styles.actionBtnText, { color: isActive ? sCfg.color : D.textMuted }]}>
+                              {sCfg.label}
                             </Text>
                           </Pressable>
-                        )
-                      )}
+                        );
+                      })}
                     </View>
                   </View>
 
                   {(order.uberDeliveryId || order.doordashDeliveryId) && (
-                    <View style={styles.deliveryTrackingContainer}>
+                    <View style={styles.deliverySection}>
                       <DeliveryTracking order={order} onRefresh={fetchOrders} />
                     </View>
                   )}
                 </View>
-              ))}
-
-              {filteredOrders.length === 0 && (
-                <View style={styles.emptyState}>
-                  <IconSymbol name="receipt" size={64} color={colors.textSecondary} />
-                  <Text style={styles.emptyText}>No orders found</Text>
-                </View>
-              )}
-            </>
-          )}
-        </View>
+              );
+            })}
+            <View style={{ height: 40 }} />
+          </View>
+        )}
       </ScrollView>
-      <Toast
-        visible={toastVisible}
-        message={toastMessage}
-        type={toastType}
-        onHide={() => setToastVisible(false)}
-        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }}
-      />
-      <Dialog
-        visible={dialogVisible}
-        title={dialogConfig.title}
-        message={dialogConfig.message}
-        buttons={dialogConfig.buttons}
-        onHide={() => setDialogVisible(false)}
-        currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }}
-      />
+
+      <Toast visible={toastVisible} message={toastMessage} type={toastType} onHide={() => setToastVisible(false)}
+        currentColors={{ text: colors.text, background: colors.background, primary: colors.primary }} />
+      <Dialog visible={dialogVisible} title={dialogConfig.title} message={dialogConfig.message}
+        buttons={dialogConfig.buttons} onHide={() => setDialogVisible(false)}
+        currentColors={{ text: colors.text, card: colors.card, primary: colors.primary, textSecondary: colors.textSecondary, background: colors.background }} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: D.surface },
+  scrollView: { flex: 1 },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
   },
-  backButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
-    flex: 1,
-    textAlign: 'center',
-  },
-  statusFilter: {
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-    maxHeight: 60,
-  },
-  statusFilterContent: {
-    gap: 8,
+  backButton: { padding: 4, marginRight: 14 },
+  headerCenter: { flex: 1 },
+  headerEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 3, color: D.gold, marginBottom: 2 },
+  headerTitle: { fontSize: 22, fontWeight: '300', letterSpacing: 0.5, color: D.textPrimary },
+  refreshButton: { padding: 4 },
+
+  filterBar: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 4, maxHeight: 62 },
+  filterBarContent: { gap: 8 },
+  filterChip: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
+    borderRadius: D.radius,
+    borderWidth: 1,
+    borderColor: D.divider,
   },
-  statusChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    borderWidth: 0.2,
-    borderColor: colors.border,
+  filterChipActive: { borderColor: D.goldDim },
+  filterChipText: { fontSize: 10, fontWeight: '700', letterSpacing: 1.5, color: D.textMuted },
+
+  countLabel: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted,
+    paddingHorizontal: 20, paddingTop: 18, paddingBottom: 8,
   },
-  statusChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  statusChipText: {
-    fontSize: 13,
-    color: colors.text,
-  },
-  statusChipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  ordersContainer: {
-    padding: 16,
-    gap: 16,
-  },
+
+  loadingContainer: { alignItems: 'center', paddingVertical: 80, gap: 12 },
+  loadingText: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted },
+  emptyState: { alignItems: 'center', paddingVertical: 80, gap: 12 },
+  emptyText: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted },
+
+  ordersContainer: { paddingHorizontal: 20, gap: 1 },
+
   orderCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 0.2,
-    borderColor: colors.border,
+    backgroundColor: D.surfaceRaised,
+    marginBottom: 12,
+    borderRadius: D.radius,
+    overflow: 'hidden',
   },
+  cardAccent: { height: 2 },
+
   orderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
-  orderId: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  orderDate: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
+  orderNumber: { fontSize: 17, fontWeight: '600', letterSpacing: 0.3, color: D.textPrimary },
+  orderDate: { fontSize: 11, color: D.textSecondary, marginTop: 3, letterSpacing: 0.3 },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: D.radius,
+    borderWidth: 1,
   },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
+  statusBadgeText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5 },
+
+  itemsSection: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
+    gap: 6,
   },
-  orderItems: {
-    gap: 8,
-    marginBottom: 16,
-  },
-  orderItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  itemQuantity: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    width: 30,
-  },
-  itemName: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.text,
-  },
-  itemPrice: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  orderFooter: {
-    borderTopWidth: 0.5,
-    borderTopColor: colors.border,
-    paddingTop: 12,
-    marginBottom: 16,
-  },
-  orderTotal: {
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  itemQty: { fontSize: 12, fontWeight: '700', color: D.textMuted, width: 24 },
+  itemName: { flex: 1, fontSize: 13, color: D.textSecondary, letterSpacing: 0.2 },
+  itemPrice: { fontSize: 13, fontWeight: '500', color: D.textPrimary },
+
+  totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  totalAmount: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  statusActions: {
-    borderTopWidth: 0.5,
-    borderTopColor: colors.border,
-    paddingTop: 12,
-  },
-  actionsLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  actionButton: {
     paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: D.divider,
+  },
+  totalLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted },
+  totalAmount: { fontSize: 18, fontWeight: '300', letterSpacing: 0.5, color: D.textPrimary },
+
+  actionsSection: { paddingHorizontal: 16, paddingVertical: 14 },
+  actionsLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: D.textMuted, marginBottom: 10 },
+  actionButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  actionBtn: {
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 0.2,
-    backgroundColor: colors.background,
+    borderRadius: D.radius,
+    borderWidth: 1,
   },
-  actionButtonActive: {
-    backgroundColor: colors.card,
-  },
-  actionButtonText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textTransform: 'capitalize',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 64,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 16,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 64,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 16,
-  },
-  deliveryTrackingContainer: {
-    marginTop: 16,
-    borderTopWidth: 0.5,
-    borderTopColor: colors.border,
-    paddingTop: 16,
+  actionBtnText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5 },
+
+  deliverySection: {
+    borderTopWidth: 1,
+    borderTopColor: D.divider,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
 });

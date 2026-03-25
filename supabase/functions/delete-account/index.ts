@@ -72,44 +72,44 @@ serve(async (req) => {
     }
 
     // Step 3: Anonymize gift cards (sent)
-    const { error: giftCardsSentError } = await supabaseAdmin
-      .from('gift_cards')
-      .update({
-        sender_id: null,
-      })
-      .eq('sender_id', user.id);
+    // const { error: giftCardsSentError } = await supabaseAdmin
+    //   .from('gift_cards')
+    //   .update({
+    //     sender_id: null,
+    //   })
+    //   .eq('sender_id', user.id);
 
-    if (giftCardsSentError) {
-      console.error('Error anonymizing sent gift cards:', giftCardsSentError);
-    }
+    // if (giftCardsSentError) {
+    //   console.error('Error anonymizing sent gift cards:', giftCardsSentError);
+    // }
 
-    // Step 4: Anonymize gift cards (received)
-    const { error: giftCardsReceivedError } = await supabaseAdmin
-      .from('gift_cards')
-      .update({
-        recipient_id: null,
-        recipient_email: null,
-        recipient_name: 'Deleted User',
-      })
-      .eq('recipient_id', user.id);
+    // // Step 4: Anonymize gift cards (received)
+    // const { error: giftCardsReceivedError } = await supabaseAdmin
+    //   .from('gift_cards')
+    //   .update({
+    //     recipient_id: null,
+    //     recipient_email: null,
+    //     recipient_name: 'Deleted User',
+    //   })
+    //   .eq('recipient_id', user.id);
 
-    if (giftCardsReceivedError) {
-      console.error('Error anonymizing received gift cards:', giftCardsReceivedError);
-    }
+    // if (giftCardsReceivedError) {
+    //   console.error('Error anonymizing received gift cards:', giftCardsReceivedError);
+    // }
 
-    // Step 5: Anonymize merch redemptions
-    const { error: merchError } = await supabaseAdmin
-      .from('merch_redemptions')
-      .update({
-        user_id: null,
-        delivery_address: null,
-        pickup_notes: null,
-      })
-      .eq('user_id', user.id);
+    // // Step 5: Anonymize merch redemptions
+    // const { error: merchError } = await supabaseAdmin
+    //   .from('merch_redemptions')
+    //   .update({
+    //     user_id: null,
+    //     delivery_address: null,
+    //     pickup_notes: null,
+    //   })
+    //   .eq('user_id', user.id);
 
-    if (merchError) {
-      console.error('Error anonymizing merch redemptions:', merchError);
-    }
+    // if (merchError) {
+    //   console.error('Error anonymizing merch redemptions:', merchError);
+    // }
 
     // Step 6: Anonymize stripe payments
     const { error: stripePaymentsError } = await supabaseAdmin

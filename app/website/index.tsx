@@ -34,11 +34,6 @@ export default function WebsiteHome() {
       title: 'Exclusive Events',
       description: 'Join our private dining experiences',
     },
-    {
-      icon: 'card-giftcard' as const,
-      title: 'Gift Cards',
-      description: 'Share the taste with friends and family',
-    },
   ];
 
   const handleNavigation = (route: string) => {
