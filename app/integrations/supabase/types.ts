@@ -16,6 +16,7 @@ export interface Database {
           name: string
           email: string
           phone: string | null
+          address: string | null
           points: number
           profile_image: string | null
           created_at: string
@@ -29,6 +30,7 @@ export interface Database {
           name: string
           email: string
           phone?: string | null
+          address?: string | null
           points?: number
           profile_image?: string | null
           created_at?: string
@@ -42,6 +44,7 @@ export interface Database {
           name?: string
           email?: string
           phone?: string | null
+          address?: string | null
           points?: number
           profile_image?: string | null
           created_at?: string

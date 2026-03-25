@@ -1540,15 +1540,15 @@ function CheckoutContent() {
           style={styles.footer}
         >
           <LinearGradient
-            colors={processing || outsideRadiusError ? [INK_MID, INK_MID] : [GOLD_BRIGHT, GOLD]}
+            colors={processing || outsideRadiusError || (orderType === 'delivery' && !deliveryAddress.trim()) ? [INK_MID, INK_MID] : [GOLD_BRIGHT, GOLD]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={[styles.placeOrderButton, { opacity: processing || outsideRadiusError ? 0.5 : 1 }]}
+            style={[styles.placeOrderButton, { opacity: processing || outsideRadiusError || (orderType === 'delivery' && !deliveryAddress.trim()) ? 0.5 : 1 }]}
           >
             <Pressable
               style={styles.placeOrderButtonInner}
               onPress={handlePlaceOrder}
-              disabled={processing || isFetchingQuote || !!outsideRadiusError}
+              disabled={processing || isFetchingQuote || !!outsideRadiusError || (orderType === 'delivery' && !deliveryAddress.trim())}
             >
               {processing ? (
                 <>

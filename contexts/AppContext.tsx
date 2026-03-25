@@ -147,6 +147,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         name: profile.name,
         email: profile.email,
         phone: profile.phone || '',
+        address: profile.address ?? undefined,
         points: profile.points || 0,
         profileImage: profile.profile_image ?? undefined,
         userRole: profile.user_role as UserRole,
