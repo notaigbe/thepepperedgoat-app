@@ -36,7 +36,16 @@
     "plugins": [
       "expo-font",
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.ooosumfoods.thepepperedgoat",
+          "enableGooglePay": true
+        }
+      ],
+      "expo-build-properties",
+      "expo-sharing"
     ],
     "scheme": "thepepperedgoat",
     "experiments": {
