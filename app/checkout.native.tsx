@@ -60,7 +60,9 @@ interface AddressValidationResult {
   };
   /** JSON string ready to pass as dropoff_address to Uber Direct API */
   uberAddress?: string;
+  status: 'accept' | 'confirm' | 'fix'; // ✅ ADD THIS
   confidence?: 'high' | 'medium' | 'low';
+  warnings?: string[]; // ✅ ADD THIS
   suggestions?: string[];
   error?: string;
 }
@@ -143,8 +145,8 @@ const GOOGLE_PLACES_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || '';
 
 const POINTS_TO_DOLLAR_RATE    = 0.01;
-const DISCOUNT_PERCENTAGE      = 0.15;
-const POINTS_REWARD_PERCENTAGE = 0.05;
+const DISCOUNT_PERCENTAGE      = 0.10;
+// const POINTS_REWARD_PERCENTAGE = 0.05;
 const QUOTE_REFRESH_BUFFER_MS  = 60_000;
 const FALLBACK_DELIVERY_FEE    = 19.99;
 
@@ -169,7 +171,7 @@ function CheckoutContent() {
   const [orderType, setOrderType]         = useState<OrderType>('pickup');
   const [deliveryAddress, setDeliveryAddress] = useState(userProfile?.address || '');
   const [pickupNotes, setPickupNotes]     = useState('');
-  const [usePoints, setUsePoints]         = useState(false);
+  // const [usePoints, setUsePoints]         = useState(false);
   const [processing, setProcessing]       = useState(false);
 
   // Address validation
@@ -206,25 +208,25 @@ function CheckoutContent() {
   }, [userProfile?.address]);
 
   // ── Computed values ────────────────────────────────────────────────
-  const availablePoints       = userProfile?.points || 0;
+  // const availablePoints       = userProfile?.points || 0;
   const subtotal              = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discount              = subtotal * DISCOUNT_PERCENTAGE;
   const subtotalAfterDiscount = subtotal - discount;
   const tax                   = subtotalAfterDiscount * 0.0975;
 
-  const pointsValueInDollars = availablePoints * POINTS_TO_DOLLAR_RATE;
-  const maxPointsDiscount    = subtotalAfterDiscount * 0.2;
-  const pointsDiscount       = usePoints ? Math.min(pointsValueInDollars, maxPointsDiscount) : 0;
+  // const pointsValueInDollars = availablePoints * POINTS_TO_DOLLAR_RATE;
+  // const maxPointsDiscount    = subtotalAfterDiscount * 0.2;
+  // const pointsDiscount       = usePoints ? Math.min(pointsValueInDollars, maxPointsDiscount) : 0;
 
   const deliveryFee =
     orderType === 'delivery'
       ? (deliveryQuote ? deliveryQuote.fee : FALLBACK_DELIVERY_FEE)
       : 0;
 
-  const total       = subtotalAfterDiscount + tax + deliveryFee - pointsDiscount;
-  const pointsToEarn = Math.floor(
-    (subtotalAfterDiscount * POINTS_REWARD_PERCENTAGE) / POINTS_TO_DOLLAR_RATE
-  );
+  const total       = subtotalAfterDiscount + tax + deliveryFee;
+  // const pointsToEarn = Math.floor(
+  //   (subtotalAfterDiscount * POINTS_REWARD_PERCENTAGE) / POINTS_TO_DOLLAR_RATE
+  // );
 
   // ── Helpers ────────────────────────────────────────────────────────
   const showToast = useCallback((type: 'success' | 'error' | 'info', message: string) => {
@@ -253,10 +255,10 @@ function CheckoutContent() {
   const getAddressValidationMessage = useCallback(() => {
     if (isValidatingAddress)                       return 'Validating address...';
     if (!addressValidation)                        return '';
-    if (!addressValidation.isValid)                return 'Address could not be verified. Please check for errors.';
-    if (addressValidation.confidence === 'high')   return 'Address verified ✓';
-    if (addressValidation.confidence === 'medium') return 'Address partially verified. Please review.';
-    return 'Address verification failed.';
+    if (addressValidation.status === 'fix') {      return 'Address could not be verified. Please check for errors.';}
+    if (addressValidation.confidence === 'high') { return 'Address verified ✓';}
+    if (addressValidation.confidence === 'medium') {   return 'Address verified with minor uncertainty.';}
+    return 'Address may be imprecise.';
   }, [isValidatingAddress, addressValidation]);
 
   const isQuoteExpired = useCallback(() => {
@@ -384,7 +386,7 @@ function CheckoutContent() {
         if (result.uberAddress)      setValidatedUberAddress(result.uberAddress);
       }
     } catch (error) {
-      setAddressValidation({ success: false, isValid: false, error: 'Failed to validate address' });
+      setAddressValidation({ success: false, isValid: false, status: 'fix', error: 'Failed to validate address' });
     } finally {
       setIsValidatingAddress(false);
     }
@@ -451,13 +453,13 @@ function CheckoutContent() {
   useEffect(() => {
     if (
       orderType === 'delivery' &&
-      addressValidation?.isValid &&
-      addressValidation.confidence !== 'low'
+      addressValidation?.isValid 
+      // && addressValidation.confidence !== 'low'
     ) {
       const addr = validatedAddress || deliveryAddress;
       if (addr) fetchDeliveryQuote(addr, validatedUberAddress || undefined);
     }
-  }, [addressValidation?.isValid, addressValidation?.confidence, orderType]);
+  }, [addressValidation?.isValid, orderType]);
 
   useEffect(() => {
     if (orderType !== 'delivery') {
@@ -531,7 +533,7 @@ function CheckoutContent() {
       if (addr) await fetchDeliveryQuote(addr);
     }
 
-    const pointsUsed = usePoints ? Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE) : 0;
+    // const pointsUsed = usePoints ? Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE) : 0;
     const orderItems = cart.map((item) => ({
       id: item.id, name: item.name, price: item.price, quantity: item.quantity,
     }));
@@ -559,9 +561,9 @@ function CheckoutContent() {
           delivery_fee:           deliveryFee.toFixed(2),
           total:                  total.toFixed(2),
           discount:               discount.toFixed(2),
-          points_earned:          pointsToEarn.toString(),
-          points_used:            pointsUsed.toString(),
-          points_discount:        pointsDiscount.toFixed(2),
+          // points_earned:          pointsToEarn.toString(),
+          // points_used:            pointsUsed.toString(),
+          // points_discount:        pointsDiscount.toFixed(2),
           item_count:             cart.length.toString(),
           customer_name:          userProfile?.name || '',
           customer_email:         userProfile?.email || user.email || '',
@@ -575,8 +577,7 @@ function CheckoutContent() {
     return response.json();
   }, [
     total, orderType, cart, userProfile, validatedAddress, deliveryAddress, pickupNotes,
-    subtotal, tax, discount, deliveryFee, pointsToEarn, usePoints, pointsDiscount,
-    deliveryQuote, isQuoteExpired, fetchDeliveryQuote, validatedUberAddress,
+    subtotal, tax, discount, deliveryFee, deliveryQuote, isQuoteExpired, fetchDeliveryQuote, validatedUberAddress,
   ]);
 
   // ── Order polling ──────────────────────────────────────────────────
@@ -654,43 +655,67 @@ function CheckoutContent() {
 
   const handlePlaceOrder = useCallback(async () => {
     if (orderType === 'delivery') {
-      if (!deliveryAddress.trim()) {
-        showToast('error', 'Please enter a delivery address.');
-        return;
-      }
+  if (!deliveryAddress.trim()) {
+    showToast('error', 'Please enter a delivery address.');
+    return;
+  }
 
-      // Hard block — address is confirmed outside delivery radius
-      if (outsideRadiusError) {
-        Alert.alert(
-          'Outside Delivery Area',
-          `We currently deliver within ${outsideRadiusError.radiusMiles} miles of our restaurant. Your address is ${outsideRadiusError.distanceMiles} miles away.\n\nPlease select a closer address or choose pickup.`,
-          [{ text: 'OK' }]
-        );
-        return;
-      }
+  if (outsideRadiusError) {
+    Alert.alert(
+      'Outside Delivery Area',
+      `We deliver within ${outsideRadiusError.radiusMiles} miles. Your address is ${outsideRadiusError.distanceMiles} miles away.`,
+      [{ text: 'OK' }]
+    );
+    return;
+  }
 
-      if (addressTouched && addressValidation) {
-        if (!addressValidation.isValid) {
-          Alert.alert(
-            'Address Verification',
-            'The address you entered could not be verified. Please check and correct it before continuing.',
-            [{ text: 'OK' }]
-          );
-          return;
-        }
-        if (addressValidation.confidence === 'low') {
-          Alert.alert(
-            'Address Verification',
-            'The address has low confidence. We recommend reviewing it.',
-            [
-              { text: 'Review Address', style: 'cancel' },
-              { text: 'Continue Anyway', onPress: async () => await proceedWithPayment(), style: 'destructive' },
-            ]
-          );
-          return;
-        }
-      }
+  if (addressTouched && addressValidation) {
+    const { status, confidence } = addressValidation as any;
+
+    // ❌ Hard block
+    if (status === 'fix') {
+      Alert.alert(
+        'Invalid Address',
+        'We couldn’t verify this address. Please check and correct it before continuing.',
+        [{ text: 'OK' }]
+      );
+      return;
     }
+
+    // ⚠️ Soft confirmation
+    if (status === 'confirm') {
+      Alert.alert(
+        'Confirm Address',
+        'We found this address, but some details may be slightly off. Do you want to continue?',
+        [
+          { text: 'Review', style: 'cancel' },
+          {
+            text: 'Continue',
+            onPress: async () => await proceedWithPayment(),
+          },
+        ]
+      );
+      return;
+    }
+
+    // ⚠️ Low confidence (even if ACCEPT)
+    if (confidence === 'low') {
+      Alert.alert(
+        'Low Confidence Address',
+        'This address may not be precise. We recommend reviewing it.',
+        [
+          { text: 'Review', style: 'cancel' },
+          {
+            text: 'Continue Anyway',
+            onPress: async () => await proceedWithPayment(),
+            style: 'destructive',
+          },
+        ]
+      );
+      return;
+    }
+  }
+}
     await proceedWithPayment();
   }, [orderType, deliveryAddress, addressTouched, addressValidation, outsideRadiusError, showToast, proceedWithPayment]);
 
@@ -1268,7 +1293,7 @@ function CheckoutContent() {
             >
               <IconSymbol name="info" size={20} color={GOLD} />
               <Text style={styles.infoText}>
-                Secure checkout powered by Stripe. Your payment information is encrypted and protected. Enjoy 15% off your order!
+                Secure checkout powered by Stripe. Your payment information is encrypted and protected. Enjoy 10% off your order!
               </Text>
             </LinearGradient>
 
@@ -1482,7 +1507,7 @@ function CheckoutContent() {
                 <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: SUCCESS_GREEN }]}>Discount (15%)</Text>
+                <Text style={[styles.summaryLabel, { color: SUCCESS_GREEN }]}>Discount (10%)</Text>
                 <Text style={[styles.summaryValue, { color: SUCCESS_GREEN }]}>-${discount.toFixed(2)}</Text>
               </View>
               <View style={styles.summaryRow}>
@@ -1501,12 +1526,12 @@ function CheckoutContent() {
                 </View>
               )}
 
-              {usePoints && pointsDiscount > 0 && (
+              {/* {usePoints && pointsDiscount > 0 && (
                 <View style={styles.summaryRow}>
                   <Text style={[styles.summaryLabel, { color: SUCCESS_GREEN }]}>Points Discount</Text>
                   <Text style={[styles.summaryValue, { color: SUCCESS_GREEN }]}>-${pointsDiscount.toFixed(2)}</Text>
                 </View>
-              )}
+              )} */}
 
               {/* Fading gold divider */}
               <LinearGradient
@@ -1521,12 +1546,12 @@ function CheckoutContent() {
                 <Text style={styles.summaryValueTotal}>${total.toFixed(2)}</Text>
               </View>
 
-              <View style={styles.pointsEarnCard}>
+              {/* <View style={styles.pointsEarnCard}>
                 <IconSymbol name="star" size={20} color={GOLD} />
                 <Text style={styles.pointsEarnText}>
                   You'll earn {pointsToEarn} points with this order! (${(pointsToEarn * POINTS_TO_DOLLAR_RATE).toFixed(2)} value)
                 </Text>
-              </View>
+              </View> */}
             </LinearGradient>
 
           </View>

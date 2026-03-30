@@ -116,14 +116,14 @@ export default function AdminUserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [userRSVPs, setUserRSVPs] = useState<UserRSVP[]>([]);
+  // const [userRSVPs, setUserRSVPs] = useState<UserRSVP[]>([]);
   const [loadingRSVPs, setLoadingRSVPs] = useState(false);
   const [bannedEvents, setBannedEvents] = useState<Set<string>>(new Set());
 
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({
     title: '', message: '',
-    buttons: [] as Array<{ text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }>,
+    buttons: [] as { text: string; onPress: () => void; style?: 'default' | 'destructive' | 'cancel' }[],
   });
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -174,62 +174,62 @@ export default function AdminUserManagement() {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const loadUserRSVPs = async (userId: string) => {
-    try {
-      setLoadingRSVPs(true);
-      const { data, error } = await eventService.getUserRSVPs(userId);
-      if (error) { showToast('error', 'Failed to load RSVPs'); return; }
-      setUserRSVPs(data || []);
-      const { data: bans, error: bansError } = await eventService.getUserEventBans(userId);
-      if (!bansError && bans) setBannedEvents(new Set(bans.map((ban: any) => ban.event_id)));
-    } catch { showToast('error', 'Failed to load RSVPs'); }
-    finally { setLoadingRSVPs(false); }
-  };
+  // const loadUserRSVPs = async (userId: string) => {
+  //   try {
+  //     setLoadingRSVPs(true);
+  //     const { data, error } = await eventService.getUserRSVPs(userId);
+  //     if (error) { showToast('error', 'Failed to load RSVPs'); return; }
+  //     setUserRSVPs(data || []);
+  //     const { data: bans, error: bansError } = await eventService.getUserEventBans(userId);
+  //     if (!bansError && bans) setBannedEvents(new Set(bans.map((ban: any) => ban.event_id)));
+  //   } catch { showToast('error', 'Failed to load RSVPs'); }
+  //   finally { setLoadingRSVPs(false); }
+  // };
 
   const handleViewUserDetails = async (user: User) => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedUser(user);
-    await loadUserRSVPs(user.id);
+    // await loadUserRSVPs(user.id);
   };
 
-  const handleCancelUserRSVP = (userId: string, eventId: string, eventTitle: string) => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    showDialog('Cancel RSVP', `Cancel "${eventTitle}" for this user?`, [
-      { text: 'Cancel', style: 'cancel', onPress: () => {} },
-      { text: 'Confirm', style: 'destructive', onPress: async () => {
-        const { error } = await eventService.adminCancelRSVP(userId, eventId);
-        if (error) { showToast('error', 'Failed to cancel RSVP'); return; }
-        showToast('success', 'RSVP cancelled');
-        if (selectedUser) await loadUserRSVPs(selectedUser.id);
-      }},
-    ]);
-  };
+  // const handleCancelUserRSVP = (userId: string, eventId: string, eventTitle: string) => {
+  //   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  //   showDialog('Cancel RSVP', `Cancel "${eventTitle}" for this user?`, [
+  //     { text: 'Cancel', style: 'cancel', onPress: () => {} },
+  //     { text: 'Confirm', style: 'destructive', onPress: async () => {
+  //       const { error } = await eventService.adminCancelRSVP(userId, eventId);
+  //       if (error) { showToast('error', 'Failed to cancel RSVP'); return; }
+  //       showToast('success', 'RSVP cancelled');
+  //       if (selectedUser) await loadUserRSVPs(selectedUser.id);
+  //     }},
+  //   ]);
+  // };
 
-  const handleBanUserFromEvent = (userId: string, eventId: string, eventTitle: string) => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    showDialog('Ban from Event', `Ban this user from "${eventTitle}"?`, [
-      { text: 'Cancel', style: 'cancel', onPress: () => {} },
-      { text: 'Ban', style: 'destructive', onPress: async () => {
-        const { error } = await eventService.banUserFromEvent(userId, eventId, 'Banned by admin');
-        if (error) { showToast('error', 'Failed to ban user'); return; }
-        showToast('success', 'User banned from event');
-        if (selectedUser) await loadUserRSVPs(selectedUser.id);
-      }},
-    ]);
-  };
+  // const handleBanUserFromEvent = (userId: string, eventId: string, eventTitle: string) => {
+  //   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  //   showDialog('Ban from Event', `Ban this user from "${eventTitle}"?`, [
+  //     { text: 'Cancel', style: 'cancel', onPress: () => {} },
+  //     { text: 'Ban', style: 'destructive', onPress: async () => {
+  //       const { error } = await eventService.banUserFromEvent(userId, eventId, 'Banned by admin');
+  //       if (error) { showToast('error', 'Failed to ban user'); return; }
+  //       showToast('success', 'User banned from event');
+  //       if (selectedUser) await loadUserRSVPs(selectedUser.id);
+  //     }},
+  //   ]);
+  // };
 
-  const handleUnbanUserFromEvent = (userId: string, eventId: string, eventTitle: string) => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    showDialog('Unban from Event', `Unban this user from "${eventTitle}"?`, [
-      { text: 'Cancel', style: 'cancel', onPress: () => {} },
-      { text: 'Unban', onPress: async () => {
-        const { error } = await eventService.unbanUserFromEvent(userId, eventId);
-        if (error) { showToast('error', 'Failed to unban user'); return; }
-        showToast('success', 'User unbanned');
-        if (selectedUser) await loadUserRSVPs(selectedUser.id);
-      }},
-    ]);
-  };
+  // const handleUnbanUserFromEvent = (userId: string, eventId: string, eventTitle: string) => {
+  //   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  //   showDialog('Unban from Event', `Unban this user from "${eventTitle}"?`, [
+  //     { text: 'Cancel', style: 'cancel', onPress: () => {} },
+  //     { text: 'Unban', onPress: async () => {
+  //       const { error } = await eventService.unbanUserFromEvent(userId, eventId);
+  //       if (error) { showToast('error', 'Failed to unban user'); return; }
+  //       showToast('success', 'User unbanned');
+  //       if (selectedUser) await loadUserRSVPs(selectedUser.id);
+  //     }},
+  //   ]);
+  // };
 
   const handlePromoteToAdmin = (userId: string, userName: string) => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -275,7 +275,7 @@ export default function AdminUserManagement() {
         <View style={styles.header}>
           <Pressable style={styles.backButton} onPress={() => {
             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setSelectedUser(null); setUserRSVPs([]); setBannedEvents(new Set());
+            setSelectedUser(null);
           }}>
             <IconSymbol name="chevron.left" size={20} color={D.textSecondary} />
           </Pressable>
@@ -304,9 +304,9 @@ export default function AdminUserManagement() {
           </View>
 
           {/* RSVPs */}
-          <Text style={styles.sectionLabel}>EVENT RSVPS</Text>
+          {/* <Text style={styles.sectionLabel}>EVENT RSVPS</Text> */}
 
-          {loadingRSVPs ? (
+          {/* {loadingRSVPs ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" color={D.gold} />
             </View>
@@ -350,7 +350,7 @@ export default function AdminUserManagement() {
                 );
               })}
             </View>
-          )}
+          )} */}
           <View style={{ height: 40 }} />
         </ScrollView>
         {toastEl}{dialogEl}
@@ -444,7 +444,7 @@ export default function AdminUserManagement() {
                       style={styles.iconBtn}
                       onPress={(e) => {
                         e.stopPropagation();
-                        user.userRole === 'admin' ? handleRevokeAdmin(user.id, user.name) : handlePromoteToAdmin(user.id, user.name);
+                        if (user.userRole === 'admin') { handleRevokeAdmin(user.id, user.name); } else { handlePromoteToAdmin(user.id, user.name); }
                       }}
                     >
                       <IconSymbol

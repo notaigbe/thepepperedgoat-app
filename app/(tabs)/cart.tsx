@@ -21,13 +21,14 @@ import {
 import { IconSymbol } from '@/components/IconSymbol';
 import Dialog from '@/components/Dialog';
 import { blackGoldLight } from "@/styles/commonStyles";
-import swallowImage from '@/assets/images/swallow.jpeg';
-import soupImage from '@/assets/images/soup.jpg';
+import { getOrderingStatus } from "@/utils/orderingHours";
+// import swallowImage from '@/assets/images/swallow.jpeg';
+// import soupImage from '@/assets/images/soup.jpg';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export default function CartScreen() {
-  const { cart, updateCartQuantity, removeFromCart, currentColors, menuItems, addToCart, menuCategories } = useApp();
+  const { cart, updateCartQuantity, removeFromCart, currentColors, menuItems, addToCart, menuCategories, userProfile } = useApp();
 
   const getCategoryKey = (categoryId: string | null) => {
     if (!categoryId) return '';
@@ -35,7 +36,8 @@ export default function CartScreen() {
   };
   const router = useRouter();
   const [dialogVisible, setDialogVisible] = useState(false);
-  const [dialogType, setDialogType] = useState<'remove' | 'empty'>('remove');
+  const [dialogType, setDialogType] = useState<'remove' | 'empty' | 'signin' | 'closed'>('remove');
+  const [orderingStatus] = useState(getOrderingStatus);
   const [itemToRemove, setItemToRemove] = useState<string | null>(null);
   const [swallowDrawerVisible, setSwallowDrawerVisible] = useState(false);
   const [soupDrawerVisible, setSoupDrawerVisible] = useState(false);
@@ -113,6 +115,16 @@ export default function CartScreen() {
       setDialogVisible(true);
       return;
     }
+    if (!orderingStatus.isOpen) {
+      setDialogType('closed');
+      setDialogVisible(true);
+      return;
+    }
+    if (!userProfile) {
+      setDialogType('signin');
+      setDialogVisible(true);
+      return;
+    }
     router.push('/checkout');
   };
 
@@ -158,7 +170,7 @@ export default function CartScreen() {
                 <View style={{ position: 'relative', marginBottom: 24 }}>
                   <View style={[styles.cartItem, { marginBottom: 0 }]}>
                     <View style={styles.imageContainer}>
-                      <Image source={{ uri: item.image_url }} style={styles.itemImage} />
+                      <Image source={{ uri: item.image_url ?? undefined }} style={styles.itemImage} />
                     </View>
 
                     <View style={styles.itemDetails}>
@@ -190,7 +202,7 @@ export default function CartScreen() {
                   </View>
 
                   {/* Prompt to add a soup when a swallow is in the cart without a matching soup */}
-                  {getCategoryKey(item.category_id).includes('swallow') && showSoupBadge && (
+                  {/* {getCategoryKey(item.category_id).includes('swallow') && showSoupBadge && (
                     <Pressable
                       onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -209,10 +221,10 @@ export default function CartScreen() {
                         <IconSymbol name="arrow.right" size={11} color="rgba(255,255,255,0.8)" />
                       </View>
                     </Pressable>
-                  )}
+                  )} */}
 
                   {/* Prompt to add a swallow when a soup is in the cart without a matching swallow */}
-                  {getCategoryKey(item.category_id).includes('soup') && showSwallowBadge && (
+                  {/* {getCategoryKey(item.category_id).includes('soup') && (
                     <Pressable
                       onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -225,11 +237,11 @@ export default function CartScreen() {
                           source={swallowImage}
                           style={styles.pairingBadgeImage}
                         />
-                        <Text style={styles.pairingBadgeText}>Add a Swallow</Text>
+                        <Text style={styles.pairingBadgeText}>Extra Swallow</Text>
                         <IconSymbol name="arrow.right" size={11} color="rgba(255,255,255,0.8)" />
                       </View>
                     </Pressable>
-                  )}
+                  )} */}
                 </View>
               </React.Fragment>
             ))}
@@ -261,13 +273,13 @@ export default function CartScreen() {
       )}
 
       {/* ── Swallow Drawer ─────────────────────────────────────────────────── */}
-      <Modal visible={swallowDrawerVisible} transparent animationType="none" onRequestClose={closeSwallowDrawer}>
+      {/* <Modal visible={swallowDrawerVisible} transparent animationType="none" onRequestClose={closeSwallowDrawer}>
         <Pressable style={styles.drawerBackdrop} onPress={closeSwallowDrawer} />
         <Animated.View style={[styles.drawer, { transform: [{ translateY: drawerAnim }] }]}>
           <View style={styles.drawerHandle} />
           <View style={styles.drawerHeader}>
             <Image source={swallowImage} style={styles.drawerHeaderImage} />
-            <Text style={styles.drawerTitle}>Add a Swallow</Text>
+            <Text style={styles.drawerTitle}>Add extra Swallow</Text>
             <Pressable onPress={closeSwallowDrawer} style={styles.drawerClose}>
               <IconSymbol name="xmark" size={20} color="rgba(0,0,0,0.4)" />
             </Pressable>
@@ -298,10 +310,10 @@ export default function CartScreen() {
             )}
           </ScrollView>
         </Animated.View>
-      </Modal>
+      </Modal> */}
 
       {/* ── Soup Drawer ────────────────────────────────────────────────────── */}
-      <Modal visible={soupDrawerVisible} transparent animationType="none" onRequestClose={closeSoupDrawer}>
+      {/* <Modal visible={soupDrawerVisible} transparent animationType="none" onRequestClose={closeSoupDrawer}>
         <Pressable style={styles.drawerBackdrop} onPress={closeSoupDrawer} />
         <Animated.View style={[styles.drawer, { transform: [{ translateY: soupDrawerAnim }] }]}>
           <View style={styles.drawerHandle} />
@@ -338,14 +350,23 @@ export default function CartScreen() {
             )}
           </ScrollView>
         </Animated.View>
-      </Modal>
+      </Modal> */}
 
       <Dialog
         visible={dialogVisible}
-        title={dialogType === 'remove' ? 'Remove Item' : 'Empty Cart'}
+        title={
+          dialogType === 'remove' ? 'Remove Item' :
+          dialogType === 'signin' ? 'Sign In Required' :
+          dialogType === 'closed' ? 'Kitchen Closed' :
+          'Empty Cart'
+        }
         message={
           dialogType === 'remove'
             ? 'Are you sure you want to remove this item from your cart?'
+            : dialogType === 'signin'
+            ? 'You need to be signed in to proceed to checkout.'
+            : dialogType === 'closed'
+            ? orderingStatus.message
             : 'Please add items to your cart before checking out.'
         }
         buttons={
@@ -353,6 +374,11 @@ export default function CartScreen() {
             ? [
                 { text: 'Cancel', onPress: () => setItemToRemove(null), style: 'cancel' },
                 { text: 'Remove', onPress: handleConfirmRemove, style: 'destructive' },
+              ]
+            : dialogType === 'signin'
+            ? [
+                { text: 'Cancel', onPress: () => {}, style: 'cancel' },
+                { text: 'Sign In', onPress: () => router.push('/(tabs)/profile'), style: 'default' },
               ]
             : [{ text: 'OK', onPress: () => {}, style: 'default' }]
         }

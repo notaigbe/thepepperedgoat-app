@@ -19,7 +19,7 @@ import type { CartItem } from '@/types';
 
 export default function OrderHistoryScreen() {
   const router = useRouter();
-  const { userProfile, currentColors, refreshUserProfile, addToCart, showToast, menuItems } = useApp();
+  const { userProfile, currentColors, loadUserProfile, addToCart, showToast, menuItems } = useApp();
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [reorderingOrderId, setReorderingOrderId] = useState<string | null>(null);
 
@@ -78,9 +78,10 @@ export default function OrderHistoryScreen() {
             name: item.name,
             price: menuItem.price, // Use current price from menu
             quantity: item.quantity,
-            image: menuItem.image,
+            image_url: menuItem.image_url,
             description: menuItem.description,
-            category: menuItem.category,
+            category_id: menuItem.category_id,
+            tag: menuItem.tag,
           };
           addToCart(cartItem);
           addedCount++;
@@ -327,7 +328,7 @@ export default function OrderHistoryScreen() {
                               <View style={styles.deliveryTrackingContainer}>
                                 <DeliveryTracking 
                                   order={order} 
-                                  onRefresh={refreshUserProfile}
+                                  onRefresh={loadUserProfile}
                                 />
                               </View>
                             )}

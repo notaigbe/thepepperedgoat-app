@@ -16,6 +16,7 @@ import { IconSymbol } from "@/components/IconSymbol";
 import * as Haptics from "expo-haptics";
 import { MenuItem } from "@/types";
 import { LinearGradient } from "expo-linear-gradient";
+import { getOrderingStatus } from "@/utils/orderingHours";
 
 // ─── Spice helpers ────────────────────────────────────────────────────────────
 const SPICE_LABELS: Record<number, string> = {
@@ -38,6 +39,7 @@ export default function ItemDetailScreen() {
   const insets = useSafeAreaInsets();
   const { addToCart, currentColors, menuItems, menuCategories } = useApp();
 
+  const [orderingStatus] = useState(getOrderingStatus);
   const [quantity, setQuantity] = useState(1);
   const [item, setItem] = useState<MenuItem | null>(null);
   const [lastAddedQuantity, setLastAddedQuantity] = useState(1);
@@ -97,6 +99,7 @@ export default function ItemDetailScreen() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleAddToCart = () => {
+    if (!orderingStatus.isOpen) return;
     const qty = quantity;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -369,16 +372,18 @@ export default function ItemDetailScreen() {
           </View>
 
           {/* CTA button */}
-          <Animated.View style={[styles.ctaFlex, { transform: [{ scale: addButtonScale }] }]}>
-            <Pressable onPress={handleAddToCart} style={styles.ctaWrapper}>
+          <Animated.View style={[styles.ctaFlex, { transform: [{ scale: addButtonScale }], opacity: orderingStatus.isOpen ? 1 : 0.45 }]}>
+            <Pressable onPress={handleAddToCart} style={styles.ctaWrapper} disabled={!orderingStatus.isOpen}>
               <LinearGradient
-                colors={["#C9A84C", "#A07828", "#C9A84C"]}
+                colors={orderingStatus.isOpen ? ["#C9A84C", "#A07828", "#C9A84C"] : ["#888", "#666", "#888"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.ctaGradient}
               >
-                <IconSymbol name="cart.fill" size={18} color="#0A0A0A" />
-                <Text style={styles.ctaText}>Add to Cart</Text>
+                <IconSymbol name={orderingStatus.isOpen ? "cart.fill" : "clock"} size={18} color="#0A0A0A" />
+                <Text style={styles.ctaText}>
+                  {orderingStatus.isOpen ? "Add to Cart" : orderingStatus.message}
+                </Text>
               </LinearGradient>
             </Pressable>
           </Animated.View>

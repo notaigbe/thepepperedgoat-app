@@ -36,9 +36,9 @@ export default function EnquiriesScreen() {
   const { currentColors, userProfile } = useApp();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<EnquiryForm>({
-    name: userProfile?.name || "",
-    email: userProfile?.email || "",
-    phone: userProfile?.phone || "",
+    name: userProfile ? userProfile.name : "",
+    email: userProfile ? userProfile.email : "",
+    phone: userProfile ? userProfile.phone : "",
     event_date: "",
     guest_count: "",
     details: "",
@@ -83,9 +83,9 @@ export default function EnquiriesScreen() {
       if (error) { showToast("error", "Failed to submit booking request. Please try again."); return; }
       showToast("success", "Your catering booking request has been submitted!");
       setFormData({
-        name: userProfile?.name || "",
-        email: userProfile?.email || "",
-        phone: userProfile?.phone || "",
+        name: userProfile ? userProfile.name : "",
+        email: userProfile ? userProfile.email : "",
+        phone: userProfile ? userProfile.phone : "",
         event_date: "", guest_count: "", details: "",
       });
       setSelectedDate(new Date());

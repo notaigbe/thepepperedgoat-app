@@ -207,4 +207,5 @@ export interface UserProfile {
   // themeSettings?: ThemeSettings;
   // merchRedemptions?: MerchRedemption[];
   userRole: UserRole;
+  stripe_customer_id?: string;
 }

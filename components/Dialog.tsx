@@ -30,6 +30,7 @@ interface DialogProps {
   buttons?: DialogButton[];
   onHide?: () => void;
   currentColors?: any;
+  children?: React.ReactNode;
 }
 
 export default function Dialog({
@@ -39,6 +40,7 @@ export default function Dialog({
   buttons = [],
   onHide = () => {},
   currentColors = {},
+  children,
 }: DialogProps) {
   const scaleAnim = useRef(new Animated.Value(0.88)).current;
   const fadeAnim  = useRef(new Animated.Value(0)).current;
@@ -132,6 +134,11 @@ export default function Dialog({
               {/* Message */}
               {!!message && (
                 <Text style={styles.message}>{message}</Text>
+              )}
+
+              {/* Custom content (e.g. TextInput) */}
+              {children && (
+                <View style={styles.childrenContainer}>{children}</View>
               )}
 
               {/* Fading gold divider above buttons */}
@@ -255,6 +262,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
+  childrenContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    zIndex: 1,
+  },
   message: {
     fontSize: 14,
     fontFamily: 'LibertinusSans_400Regular',

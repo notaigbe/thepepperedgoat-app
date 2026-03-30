@@ -90,6 +90,7 @@ const MAPPING = ({
 
   // Editing & Creation
   "pencil": "edit",
+  "tag.fill": "label",
   "pencil.and.list.clipboard": "edit-note",
   "square.and.pencil": "edit",
   "doc.text.fill": "description",
@@ -124,7 +125,7 @@ const MAPPING = ({
   "gearshape.fill": "settings",
   "slider.horizontal.3": "tune",
   "info.circle.fill": "info",
-  "info.circle": "info-circle",
+  "info.circle": "info-outline",
   "exclamationmark.triangle.fill": "warning",
   "exclamationmark.triangle": "warning-amber",
   "questionmark.circle.fill": "help",

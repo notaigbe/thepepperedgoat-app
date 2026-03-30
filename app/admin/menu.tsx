@@ -453,7 +453,7 @@ export default function AdminMenuManagement() {
           style={styles.cancelButton}
           onPress={() => {
             if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            itemId ? setEditingItemId(null) : setIsAddingItem(false);
+            if (itemId) { setEditingItemId(null); } else { setIsAddingItem(false); }
             resetForm();
           }}
         >

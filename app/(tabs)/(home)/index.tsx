@@ -24,13 +24,13 @@ import { imageService } from "@/services/supabaseService";
 import Toast from "@/components/Toast";
 import { LinearGradient } from "expo-linear-gradient";
 import { blackGoldLight } from "@/styles/commonStyles";
-
+import { getOrderingStatus } from "@/utils/orderingHours";
 
 // ─── Card geometry ────────────────────────────────────────────────────
 const { width: SCREEN_W } = Dimensions.get("window");
 const H_PAD    = 20;
 const CARD_W   = SCREEN_W - H_PAD * 2;
-const IMG_SIZE = 114;   // image panel width & height
+const IMG_SIZE = 116;   // image panel width & height
 const R        = 16;    // card corner radius
 const IMG_R    = 12;    // image inner corner radius (bottom-right only)
 
@@ -42,6 +42,7 @@ function getGreeting(): string {
   return "Good night";
 }
 
+
 // ─────────────────────────────────────────────────────────────────────
 // WELCOME HEADER — Black & Gold
 // ─────────────────────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ interface WelcomeHeaderProps {
   unreadCount: number;
   onNotificationPress: () => void;
   fadeAnim: Animated.Value;
+  firstName?: string | null;
 }
 
 function WelcomeHeader({
@@ -57,6 +59,7 @@ function WelcomeHeader({
   unreadCount,
   onNotificationPress,
   fadeAnim,
+  firstName,
 }: WelcomeHeaderProps) {
   const greeting = getGreeting();
 
@@ -139,7 +142,7 @@ function WelcomeHeader({
 
         {/* Greeting */}
         <Animated.View style={[hStyles.greetingBlock, { opacity: fadeAnim }]}>
-          <Text style={hStyles.greetingTime}>{greeting}</Text>
+          <Text style={hStyles.greetingTime}>{firstName ? `${greeting}, ${firstName}` : greeting}</Text>
           <Text style={hStyles.greetingLine1}>What shall we</Text>
           <Text style={hStyles.greetingLine2}>tempt you with?</Text>
         </Animated.View>
@@ -303,8 +306,10 @@ export default function HomeScreen() {
     loadMenuCategories,
     addToCart,
     getUnreadNotificationCount,
-    refreshMenuItems,
+    userProfile,
   } = useApp();
+
+  const firstName = userProfile?.name?.split(" ")[0] ?? null;
 
   const [loading, setLoading]           = useState(false);
   const [refreshing, setRefreshing]     = useState(false);
@@ -315,6 +320,12 @@ export default function HomeScreen() {
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType]       = useState<"success" | "error" | "info">("success");
+  const [orderingStatus, setOrderingStatus] = useState(getOrderingStatus);
+
+  useEffect(() => {
+    const interval = setInterval(() => setOrderingStatus(getOrderingStatus()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const unreadCount = getUnreadNotificationCount();
 
@@ -387,10 +398,14 @@ export default function HomeScreen() {
   }, [router]);
 
   const handleAddToCart = useCallback((item: any) => {
+    if (!orderingStatus.isOpen) {
+      showToast("info", orderingStatus.message);
+      return;
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     addToCart({ ...item, quantity: 1 });
     showToast("success", `${item.name} added to cart`);
-  }, [addToCart, showToast]);
+  }, [addToCart, showToast, orderingStatus.isOpen, orderingStatus.message]);
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery(""); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -405,7 +420,7 @@ export default function HomeScreen() {
     setRefreshing(true);
     try {
       if (Platform.OS === "ios") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      await Promise.all([typeof refreshMenuItems === "function" ? refreshMenuItems() : Promise.resolve()]);
+      await loadMenuItems();
       if (Platform.OS === "ios") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.warn("Refresh failed:", error);
@@ -413,7 +428,7 @@ export default function HomeScreen() {
     } finally {
       setRefreshing(false);
     }
-  }, [refreshMenuItems, showToast]);
+  }, [loadMenuItems, showToast]);
 
   // ─── Card ─────────────────────────────────────────────────────────
   const renderMenuItemCard = useCallback(({ item }: { item: any }) => (
@@ -449,7 +464,7 @@ export default function HomeScreen() {
           <Text style={styles.cardTitle} numberOfLines={2}>
             {item.name}
           </Text>
-          <Text style={styles.cardDescription} numberOfLines={4}>
+          <Text style={styles.cardDescription} numberOfLines={2}>
             {item.description}
           </Text>
         </View>
@@ -459,13 +474,16 @@ export default function HomeScreen() {
       <View style={styles.cardFooter}>
         <Text style={styles.cardPrice}>${item.price.toFixed(2)}</Text>
         <Pressable
-          style={styles.addButton}
+          style={[styles.addButton, !orderingStatus.isOpen && styles.addButtonDisabled]}
           onPress={(e) => { e.stopPropagation(); handleAddToCart(item); }}
           hitSlop={8}
           android_ripple={{ color: "rgba(0,0,0,0.15)", radius: 20, borderless: true }}
         >
           <LinearGradient
-            colors={[blackGoldLight.GOLD, blackGoldLight.HEADER_BOT]}
+            colors={orderingStatus.isOpen
+              ? [blackGoldLight.GOLD, blackGoldLight.HEADER_BOT]
+              : ["rgba(180,180,180,0.4)", "rgba(150,150,150,0.4)"]
+            }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.addButtonGradient}
@@ -491,7 +509,20 @@ export default function HomeScreen() {
         unreadCount={unreadCount}
         onNotificationPress={handleNotificationPress}
         fadeAnim={fadeAnim}
+        firstName={firstName}
       />
+
+      {/* Closed banner */}
+      {!orderingStatus.isOpen && (
+        <View style={styles.closedBanner}>
+          <IconSymbol
+            name={Platform.OS === "ios" ? "clock.fill" : "schedule"}
+            size={15}
+            color={blackGoldLight.GOLD}
+          />
+          <Text style={styles.closedBannerText}>{orderingStatus.message}</Text>
+        </View>
+      )}
 
       {/* Search & Filter */}
       <View style={styles.searchSection}>
@@ -633,6 +664,24 @@ const styles = StyleSheet.create({
     backgroundColor: blackGoldLight.BODY_BG,
   },
 
+  // ─── Closed banner ────────────────────────────────────────────────
+  closedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: blackGoldLight.GOLD_DIM,
+    borderBottomWidth: 1,
+    borderBottomColor: blackGoldLight.BORDER_GOLD,
+  },
+  closedBannerText: {
+    fontSize: 13,
+    fontFamily: "LibertinusSans_400Regular",
+    color: blackGoldLight.GOLD,
+    flex: 1,
+  },
+
   // ─── Search ───────────────────────────────────────────────────────
   searchSection: {
     flexDirection: "row",
@@ -765,13 +814,20 @@ const styles = StyleSheet.create({
     borderRadius: R,
     marginVertical: 8,
     overflow: "hidden",   // clips image to card corners cleanly
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    elevation: 4,
     borderWidth: 1,
-    borderColor: blackGoldLight.BORDER_LIGHT,
+    ...Platform.select({
+      ios: {
+        borderColor: blackGoldLight.BORDER_GOLD,
+        shadowColor: blackGoldLight.GOLD,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.22,
+        shadowRadius: 10,
+      },
+      android: {
+        borderColor: blackGoldLight.BORDER_LIGHT,
+        elevation: 4,
+      },
+    }),
   },
 
   // Top section: image left, text right
@@ -854,6 +910,9 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: "center",
     justifyContent: "center",
+  },
+  addButtonDisabled: {
+    opacity: 0.45,
   },
 
   // ─── Section Header ───────────────────────────────────────────────

@@ -431,9 +431,8 @@ const styles = StyleSheet.create({
     color: blackGoldLight.INK_SOFT, marginBottom: 4, textAlign: 'center',
   },
   orderIdValue: {
-    fontSize: 18, fontFamily: 'LibertinusSans_700Bold',
+    fontSize: 18, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     color: blackGoldLight.INK, textAlign: 'center', letterSpacing: 2,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
 
   // Generic card
