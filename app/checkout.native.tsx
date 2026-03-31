@@ -510,7 +510,7 @@ function CheckoutContent() {
       .from('user_profiles')
       .select('stripe_customer_id')
       .eq('user_id', user.id)
-      .single();
+      .single<{ stripe_customer_id: string | null }>();
 
     let customerId = customerData?.stripe_customer_id;
 

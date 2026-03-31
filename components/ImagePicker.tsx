@@ -23,6 +23,7 @@ interface ImagePickerProps {
   folder: string;
   label?: string;
   disabled?: boolean;
+  aspect?: [number, number];
 }
 
 export default function ImagePicker({
@@ -32,6 +33,7 @@ export default function ImagePicker({
   folder,
   label = 'Image',
   disabled = false,
+  aspect = [16, 9],
 }: ImagePickerProps) {
   const [uploading, setUploading] = useState(false);
   const [localImageUri, setLocalImageUri] = useState<string | undefined>(currentImageUrl);
@@ -50,7 +52,7 @@ export default function ImagePicker({
       const result = await ImagePickerExpo.launchImageLibraryAsync({
         mediaTypes: 'images' as any,
         allowsEditing: true,
-        aspect: [16, 9],
+        aspect: aspect,
         quality: 0.8,
       });
 
@@ -87,8 +89,13 @@ export default function ImagePicker({
 
       if (error) throw error;
 
-      const publicUrl = imageService.getPublicUrl(bucket, fileName);
-      onImageSelected(publicUrl!);
+      // Use a signed URL for display (works for both private and public buckets)
+      const signedUrl = await imageService.getSignedUrl(bucket, fileName);
+      if (signedUrl) setLocalImageUri(signedUrl);
+
+      // Pass the storage path (not a URL) so the caller can generate
+      // the appropriate URL type for their bucket (signed vs public)
+      onImageSelected(fileName);
 
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -121,7 +128,9 @@ export default function ImagePicker({
               <IconSymbol name="image" size={32} color={blackGoldLight.GOLD} />
             </View>
             <Text style={styles.placeholderText}>Tap to select image</Text>
-            <Text style={styles.placeholderHint}>16 : 9 recommended</Text>
+            <Text style={styles.placeholderHint}>
+              {aspect[0] === 1 && aspect[1] === 1 ? 'Square image recommended' : `${aspect[0]} : ${aspect[1]} recommended`}
+            </Text>
           </View>
         )}
 

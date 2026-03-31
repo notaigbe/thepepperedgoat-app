@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 import { IconSymbol } from "@/components/IconSymbol";
 import { colors } from "@/styles/commonStyles";
 import { menuItems as staticMenuItems } from "@/data/menuData";
-import { menuService } from "@/services/supabaseService";
+import { menuService, imageService } from "@/services/supabaseService";
 import { MenuItem, MenuCategory } from "@/types";
 import * as Haptics from "expo-haptics";
 import ImagePicker from "@/components/ImagePicker";
@@ -229,8 +229,9 @@ export default function AdminMenuManagement() {
   const showToast = (type: typeof toastType, message: string) => {
     setToastType(type); setToastMessage(message); setToastVisible(true);
   };
-  const handleImageSelected = (imageUrl: string) => {
-    setFormData((p) => ({ ...p, image_url: imageUrl }));
+  const handleImageSelected = (path: string) => {
+    const publicUrl = imageService.getPublicUrl("menu", path) || path;
+    setFormData((p) => ({ ...p, image_url: publicUrl }));
     showToast("success", "Image updated");
   };
 

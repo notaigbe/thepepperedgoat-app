@@ -4,10 +4,11 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  FlatList,
+  Modal,
   Pressable,
   TextInput,
   Platform,
-  Image,
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
@@ -20,14 +21,54 @@ import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
 import Dialog from '@/components/Dialog';
-import { imageService, userService } from '@/services/supabaseService';
-import * as ImagePicker from 'expo-image-picker';
+import { userService } from '@/services/supabaseService';
+import ImagePickerComponent from '@/components/ImagePicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SUPABASE_URL, supabase } from './integrations/supabase/client';
 import { blackGoldLight } from '@/styles/commonStyles';
 
 const GOOGLE_PLACES_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || '';
+
+const COUNTRY_CODES = [
+  { flag: '🇺🇸', name: 'United States', code: '+1' },
+  { flag: '🇨🇦', name: 'Canada', code: '+1' },
+  { flag: '🇬🇧', name: 'United Kingdom', code: '+44' },
+  { flag: '🇦🇺', name: 'Australia', code: '+61' },
+  { flag: '🇳🇿', name: 'New Zealand', code: '+64' },
+  { flag: '🇮🇪', name: 'Ireland', code: '+353' },
+  { flag: '🇿🇦', name: 'South Africa', code: '+27' },
+  { flag: '🇳🇬', name: 'Nigeria', code: '+234' },
+  { flag: '🇬🇭', name: 'Ghana', code: '+233' },
+  { flag: '🇰🇪', name: 'Kenya', code: '+254' },
+  { flag: '🇹🇿', name: 'Tanzania', code: '+255' },
+  { flag: '🇺🇬', name: 'Uganda', code: '+256' },
+  { flag: '🇪🇹', name: 'Ethiopia', code: '+251' },
+  { flag: '🇸🇳', name: 'Senegal', code: '+221' },
+  { flag: '🇨🇮', name: "Côte d'Ivoire", code: '+225' },
+  { flag: '🇮🇳', name: 'India', code: '+91' },
+  { flag: '🇵🇰', name: 'Pakistan', code: '+92' },
+  { flag: '🇧🇩', name: 'Bangladesh', code: '+880' },
+  { flag: '🇵🇭', name: 'Philippines', code: '+63' },
+  { flag: '🇨🇳', name: 'China', code: '+86' },
+  { flag: '🇯🇵', name: 'Japan', code: '+81' },
+  { flag: '🇰🇷', name: 'South Korea', code: '+82' },
+  { flag: '🇩🇪', name: 'Germany', code: '+49' },
+  { flag: '🇫🇷', name: 'France', code: '+33' },
+  { flag: '🇮🇹', name: 'Italy', code: '+39' },
+  { flag: '🇪🇸', name: 'Spain', code: '+34' },
+  { flag: '🇵🇹', name: 'Portugal', code: '+351' },
+  { flag: '🇳🇱', name: 'Netherlands', code: '+31' },
+  { flag: '🇧🇷', name: 'Brazil', code: '+55' },
+  { flag: '🇲🇽', name: 'Mexico', code: '+52' },
+  { flag: '🇨🇴', name: 'Colombia', code: '+57' },
+  { flag: '🇦🇷', name: 'Argentina', code: '+54' },
+  { flag: '🇯🇲', name: 'Jamaica', code: '+1' },
+  { flag: '🇹🇹', name: 'Trinidad & Tobago', code: '+1' },
+  { flag: '🇧🇧', name: 'Barbados', code: '+1' },
+] as const;
+
+type CountryEntry = { flag: string; name: string; code: string };
 
 interface AddressValidationResult {
   success: boolean;
@@ -53,7 +94,14 @@ export default function EditProfileScreen() {
   
   const [name, setName] = useState(userProfile?.name || '');
   const [email, setEmail] = useState(userProfile?.email || '');
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [emailError, setEmailError] = useState('');
   const [phone, setPhone] = useState(userProfile?.phone || '');
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
+  const [countryCode, setCountryCode] = useState<CountryEntry>({ flag: '🇺🇸', name: 'United States', code: '+1' });
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
   const [address, setAddress] = useState(userProfile?.address || '');
   // Address validation state
   const [addressValidation, setAddressValidation] = useState<AddressValidationResult | null>(null);
@@ -68,10 +116,13 @@ export default function EditProfileScreen() {
   const addressInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const [profileImagePath, setProfileImagePath] = useState<string | null>(userProfile?.profileImage || null);
+  const [profileImagePath, setProfileImagePath] = useState<string | null>(
+  userProfile?.profileImage && !userProfile.profileImage.startsWith('http')
+    ? userProfile.profileImage
+    : null
+  );
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
   
   // Toast state
@@ -100,8 +151,14 @@ export default function EditProfileScreen() {
       .createSignedUrl(path, 60 * 60);
 
     setProfileImageUrl(urlData?.signedUrl || null);
-    
     return urlData?.signedUrl || null;
+  };
+
+  const handleImageSelected = (path: string) => {
+    // ImagePickerComponent now passes the storage path (not a URL).
+    // Store the path and generate a signed URL for display.
+    setProfileImagePath(path);
+    handleGetImageUrl(path);
   };
 
   const showToast = (type: 'success' | 'error' | 'info', message: string) => {
@@ -114,6 +171,40 @@ export default function EditProfileScreen() {
     setDialogConfig({ title, message, buttons });
     setDialogVisible(true);
   };
+
+  // ── Email / Phone validation ───────────────────────────────────────
+  const validateEmail = useCallback((value: string): string => {
+    if (!value.trim()) return 'Email is required';
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!re.test(value.trim())) return 'Enter a valid email address';
+    return '';
+  }, []);
+
+  const validatePhone = useCallback((value: string): string => {
+    if (!value.trim()) return '';
+    const digits = value.replace(/\D/g, '');
+    if (countryCode.code === '+1') {
+      if (digits.length !== 10) return 'Enter a valid 10-digit phone number';
+    } else {
+      if (digits.length < 6 || digits.length > 15) return 'Enter a valid phone number';
+    }
+    return '';
+  }, [countryCode]);
+
+  const handleEmailChange = useCallback((text: string) => {
+    setEmail(text);
+    if (emailTouched) setEmailError(validateEmail(text));
+  }, [emailTouched, validateEmail]);
+
+  const handlePhoneChange = useCallback((text: string) => {
+    setPhone(text);
+    if (phoneTouched) setPhoneError(validatePhone(text));
+  }, [phoneTouched, validatePhone]);
+
+  // Re-validate phone when country code changes
+  useEffect(() => {
+    if (phoneTouched && phone) setPhoneError(validatePhone(phone));
+  }, [countryCode, phone, phoneTouched, validatePhone]);
 
   // ── Address helpers ────────────────────────────────────────────────
   const getAddressValidationColor = useCallback(() => {
@@ -248,6 +339,17 @@ export default function EditProfileScreen() {
       return;
     }
 
+    const emailErr = validateEmail(email);
+    const phoneErr = validatePhone(phone);
+    if (emailErr || phoneErr) {
+      setEmailTouched(true);
+      setEmailError(emailErr);
+      setPhoneTouched(true);
+      setPhoneError(phoneErr);
+      showToast('error', emailErr || phoneErr);
+      return;
+    }
+
     if (!user?.id) {
       showToast('error', 'User not authenticated');
       return;
@@ -256,7 +358,9 @@ export default function EditProfileScreen() {
     setSaving(true);
     try {
       // Determine which image path to save
-      const imagePathToSave = profileImagePath || userProfile?.profileImage;
+      const rawPath = userProfile?.profileImage;
+      const existingPath = rawPath && !rawPath.startsWith('http') ? rawPath : null;
+      const imagePathToSave = profileImagePath || existingPath;
       
       // Update profile in backend - save the path, not the signed URL
       const { data, error } = await userService.updateUserProfile(user.id, {
@@ -289,122 +393,6 @@ export default function EditProfileScreen() {
     }
   };
 
-  const handleImagePick = async () => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
-    try {
-      // Request permissions
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (permissionResult.granted === false) {
-        showDialog('Permission Required', 'Permission to access camera roll is required', [
-          { text: 'OK', onPress: () => {}, style: 'default' }
-        ]);
-        return;
-      }
-
-      // Launch image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        await uploadImage(result.assets[0]);
-      }
-    } catch (error: any) {
-      console.error('Image picker error:', error);
-      showToast('error', 'Failed to pick image');
-    }
-  };
-
-  const handleTakePhoto = async () => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
-    try {
-      // Request camera permissions
-      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-      
-      if (permissionResult.granted === false) {
-        showDialog('Permission Required', 'Permission to access camera is required', [
-          { text: 'OK', onPress: () => {}, style: 'default' }
-        ]);
-        return;
-      }
-
-      // Launch camera
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        await uploadImage(result.assets[0]);
-      }
-    } catch (error: any) {
-      console.error('Camera error:', error);
-      showToast('error', 'Failed to take photo');
-    }
-  };
-
-  const uploadImage = async (asset: ImagePicker.ImagePickerAsset) => {
-    if (!user?.id) {
-      showToast('error', 'User not authenticated');
-      return;
-    }
-    setUploadingImage(true);
-    
-    try {
-      // Generate unique filename
-      const fileExt = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
-      // const fileName = `${user.id}_${Date.now()}.${fileExt}`;
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-      console.log('Uploading image:', filePath);
-
-    const response = await fetch(asset.uri);
-    const arrayBuffer = await response.arrayBuffer();
-
-    console.log('ArrayBuffer size:', arrayBuffer.byteLength);
-
-    const mimeType = asset.mimeType || `image/${fileExt}`;
-
-    const { data, error } = await imageService.uploadImage(
-      'profile',
-      filePath,
-      arrayBuffer,
-      {
-        contentType: mimeType,
-        upsert: true, // safe to keep; RLS still enforces folder ownership
-      }
-    );
-
-    if (error) {
-      console.error('Upload error:', error);
-      throw error;
-    }
-
-    console.log('Upload successful:', data);
-
-    setProfileImagePath(filePath);
-    await handleGetImageUrl(filePath);
-
-    console.log('Image path stored:', filePath);
-    showToast('success', 'Image uploaded successfully');
-  } catch (error: any) {
-    console.error('Upload error:', error);
-    showToast('error', `Failed to upload image: ${error.message || 'Unknown error'}`);
-  } finally {
-    setUploadingImage(false);
-  }
-};
 
   return (
     <LinearGradient
@@ -460,68 +448,15 @@ export default function EditProfileScreen() {
             keyboardShouldPersistTaps="handled"
           >
             {/* Profile Image Section */}
-            <View style={styles.imageSection}>
-              <View style={styles.imageContainer}>
-                {uploadingImage ? (
-                  <View style={[styles.imagePlaceholder, { backgroundColor: currentColors.secondary + '20' }]}>
-                    <ActivityIndicator size="large" color={currentColors.secondary} />
-                  </View>
-                ) : profileImageUrl ? (
-                  <Image 
-                    source={{ uri: profileImageUrl }} 
-                    style={styles.profileImage}
-                    onError={() => {
-                      console.error('Failed to load image:', profileImageUrl);
-                      setProfileImageUrl(null);
-                      showToast('error', 'Failed to load image');
-                    }}
-                  />
-                ) : (
-                  <LinearGradient
-                    colors={[currentColors.secondary, currentColors.highlight]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.imagePlaceholder}
-                  >
-                    <IconSymbol name="person" size={48} color={currentColors.background} />
-                  </LinearGradient>
-                )}
-              </View>
-              
-              <View style={styles.imageButtons}>
-                <LinearGradient
-                  colors={[currentColors.secondary, currentColors.highlight]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.imageButton, uploadingImage && { opacity: 0.6 }]}
-                >
-                  <Pressable
-                    style={styles.imageButtonInner}
-                    onPress={handleImagePick}
-                    disabled={uploadingImage}
-                  >
-                    <IconSymbol name="photo.fill" size={20} color={currentColors.background} />
-                    <Text style={[styles.imageButtonText, { color: currentColors.background }]}>Gallery</Text>
-                  </Pressable>
-                </LinearGradient>
-                
-                <LinearGradient
-                  colors={[currentColors.secondary, currentColors.highlight]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.imageButton, uploadingImage && { opacity: 0.6 }]}
-                >
-                  <Pressable
-                    style={styles.imageButtonInner}
-                    onPress={handleTakePhoto}
-                    disabled={uploadingImage}
-                  >
-                    <IconSymbol name="camera" size={20} color={currentColors.background} />
-                    <Text style={[styles.imageButtonText, { color: currentColors.background }]}>Camera</Text>
-                  </Pressable>
-                </LinearGradient>
-              </View>
-            </View>
+            <ImagePickerComponent
+              currentImageUrl={profileImageUrl || undefined}
+              onImageSelected={handleImageSelected}
+              bucket="profile"
+              folder={user?.id || ''}
+              label="Profile Photo"
+              disabled={saving}
+              aspect={[1,1]}
+            />
 
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: currentColors.textSecondary }]}>Full Name</Text>
@@ -546,41 +481,65 @@ export default function EditProfileScreen() {
               <Text style={[styles.inputLabel, { color: currentColors.textSecondary }]}>Email</Text>
               <TextInput
                 style={[
-                  styles.input, 
-                  { 
-                    backgroundColor: currentColors.card, 
-                    color: currentColors.textSecondary, 
-                    borderColor: currentColors.border
+                  styles.input,
+                  {
+                    backgroundColor: currentColors.card,
+                    color: currentColors.textSecondary,
+                    borderColor: emailTouched && emailError ? '#C0392B' : currentColors.border
                   }
                 ]}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={handleEmailChange}
+                onBlur={() => { setEmailTouched(true); setEmailError(validateEmail(email)); }}
                 placeholder="Enter your email"
                 placeholderTextColor={currentColors.textSecondary}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 editable={!saving}
               />
+              {emailTouched && emailError ? (
+                <Text style={[styles.fieldValidationMessage, { color: '#C0392B' }]}>{emailError}</Text>
+              ) : null}
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: currentColors.textSecondary }]}>Phone</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
+              <View style={styles.phoneRow}>
+                <Pressable
+                  style={[styles.countryCodeButton, {
                     backgroundColor: currentColors.card,
-                    color: currentColors.textSecondary,
-                    borderColor: currentColors.border
-                  }
-                ]}
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="Enter your phone"
-                placeholderTextColor={currentColors.textSecondary}
-                keyboardType="phone-pad"
-                editable={!saving}
-              />
+                    borderColor: phoneTouched && phoneError ? '#C0392B' : currentColors.border,
+                  }]}
+                  onPress={() => { setCountrySearch(''); setShowCountryPicker(true); }}
+                  disabled={saving}
+                >
+                  <Text style={[styles.countryCodeText, { color: currentColors.textSecondary }]}>
+                    {countryCode.flag} {countryCode.code}
+                  </Text>
+                  <IconSymbol name="chevron.down" size={12} color={currentColors.textSecondary} />
+                </Pressable>
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.phoneInput,
+                    {
+                      backgroundColor: currentColors.card,
+                      color: currentColors.textSecondary,
+                      borderColor: phoneTouched && phoneError ? '#C0392B' : currentColors.border,
+                    }
+                  ]}
+                  value={phone}
+                  onChangeText={handlePhoneChange}
+                  onBlur={() => { setPhoneTouched(true); setPhoneError(validatePhone(phone)); }}
+                  placeholder="Phone number"
+                  placeholderTextColor={currentColors.textSecondary}
+                  keyboardType="phone-pad"
+                  editable={!saving}
+                />
+              </View>
+              {phoneTouched && phoneError ? (
+                <Text style={[styles.fieldValidationMessage, { color: '#C0392B' }]}>{phoneError}</Text>
+              ) : null}
             </View>
 
             <View style={[styles.inputGroup, { zIndex: 100 }]}>
@@ -721,6 +680,58 @@ export default function EditProfileScreen() {
           onHide={() => setDialogVisible(false)}
           currentColors={currentColors}
         />
+
+        {/* Country Code Picker Modal */}
+        <Modal
+          visible={showCountryPicker}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowCountryPicker(false)}
+        >
+          <Pressable style={styles.pickerOverlay} onPress={() => setShowCountryPicker(false)} />
+          <View style={[styles.pickerSheet, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}>
+            <View style={[styles.pickerHandle, { backgroundColor: currentColors.border }]} />
+            <Text style={[styles.pickerTitle, { color: currentColors.text }]}>Select Country Code</Text>
+            <TextInput
+              style={[styles.pickerSearch, { backgroundColor: currentColors.background, color: currentColors.text, borderColor: currentColors.border }]}
+              value={countrySearch}
+              onChangeText={setCountrySearch}
+              placeholder="Search country..."
+              placeholderTextColor={currentColors.textSecondary}
+              autoCorrect={false}
+            />
+            <FlatList
+              data={COUNTRY_CODES.filter(c =>
+                c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+                c.code.includes(countrySearch)
+              )}
+              keyExtractor={(item, index) => `${item.code}-${item.name}-${index}`}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.pickerItem,
+                    { borderBottomColor: currentColors.border },
+                    pressed && { backgroundColor: currentColors.secondary + '15' },
+                    item.name === countryCode.name && { backgroundColor: currentColors.secondary + '20' },
+                  ]}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setCountryCode(item);
+                    setShowCountryPicker(false);
+                  }}
+                >
+                  <Text style={styles.pickerItemFlag}>{item.flag}</Text>
+                  <Text style={[styles.pickerItemName, { color: currentColors.text }]}>{item.name}</Text>
+                  <Text style={[styles.pickerItemCode, { color: currentColors.textSecondary }]}>{item.code}</Text>
+                  {item.name === countryCode.name && (
+                    <IconSymbol name="checkmark" size={14} color={currentColors.secondary} />
+                  )}
+                </Pressable>
+              )}
+            />
+          </View>
+        </Modal>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -852,6 +863,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginLeft: 16,
   },
+  fieldValidationMessage: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    marginTop: 6,
+    marginLeft: 16,
+  },
   suggestionsDropdown: {
     borderRadius: 16,
     borderWidth: 0.5,
@@ -940,5 +957,87 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
     lineHeight: 20,
+  },
+  phoneRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  countryCodeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderTopLeftRadius: 36,
+    borderBottomLeftRadius: 36,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+    borderWidth: 0.2,
+    elevation: 4,
+  },
+  countryCodeText: {
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+  },
+  phoneInput: {
+    flex: 1,
+    borderTopRightRadius: 36,
+    borderBottomRightRadius: 36,
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+  },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  pickerSheet: {
+    maxHeight: '60%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 0.5,
+    borderLeftWidth: 0.5,
+    borderRightWidth: 0.5,
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
+  },
+  pickerHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  pickerTitle: {
+    fontSize: 18,
+    fontFamily: 'LibertinusSans_700Bold',
+    marginBottom: 12,
+  },
+  pickerSearch: {
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+    borderWidth: 0.5,
+    marginBottom: 8,
+  },
+  pickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: 0.5,
+  },
+  pickerItemFlag: {
+    fontSize: 22,
+  },
+  pickerItemName: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+  },
+  pickerItemCode: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
   },
 });

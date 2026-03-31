@@ -99,24 +99,39 @@ export default function ProfileScreen() {
   };
 
   useEffect(() => {
-    const fetchProfileImage = async () => {
-      if (!userProfile?.profileImage) return;
-      setImageLoading(true);
-      try {
-        const path = userProfile.profileImage;
-        let url = path.startsWith("http")
-          ? path
-          : (await supabase.storage.from("profile").createSignedUrl(path, 60 * 60 * 24 * 7)).data?.signedUrl || '';
-        setProfileImageUrl(url);
-      } catch (err) {
-        console.error("Failed to load profile image:", err);
-        showLocalToast("error", "Could not load profile picture");
-      } finally {
-        setImageLoading(false);
+  const fetchProfileImage = async () => {
+    if (!userProfile?.profileImage || !isAuthenticated) return;
+    setImageLoading(true);
+    try {
+      const path = userProfile.profileImage;
+      
+      // Only use path directly if it's truly a storage path, never a signed URL
+      if (path.startsWith('http')) {
+        // Stale signed URL in DB — do NOT use it, just show placeholder
+        setProfileImageUrl(null);
+        return;
       }
-    };
-    if (isAuthenticated) fetchProfileImage();
-  }, [userProfile?.profileImage, isAuthenticated]);
+      
+      const { data, error } = await supabase.storage
+        .from('profile')
+        .createSignedUrl(path, 60 * 60 * 24 * 7);
+      
+      if (error || !data?.signedUrl) {
+        setProfileImageUrl(null);
+        return;
+      }
+      
+      setProfileImageUrl(data.signedUrl);
+    } catch (err) {
+      console.error('Failed to load profile image:', err);
+      setProfileImageUrl(null);
+    } finally {
+      setImageLoading(false);
+    }
+  };
+  
+  fetchProfileImage();
+}, [userProfile?.profileImage, isAuthenticated]);
 
   const handleRefresh = async () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
