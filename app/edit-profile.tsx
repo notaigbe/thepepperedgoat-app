@@ -145,6 +145,25 @@ export default function EditProfileScreen() {
     }
   }, []);
 
+  // Parse phone number and extract country code on mount/profile change
+  useEffect(() => {
+    if (userProfile?.phone) {
+      const fullPhone = userProfile.phone;
+      // Try to find matching country code
+      for (const country of COUNTRY_CODES) {
+        if (fullPhone.startsWith(country.code)) {
+          setCountryCode(country);
+          // Extract phone number without country code
+          const phoneNumber = fullPhone.slice(country.code.length);
+          setPhone(phoneNumber);
+          return;
+        }
+      }
+      // If no country code found, just use the full phone number
+      setPhone(fullPhone);
+    }
+  }, [userProfile?.phone]);
+
   const handleGetImageUrl = async (path: string) => {
     const { data: urlData } = await supabase.storage
       .from("profile")
@@ -357,16 +376,19 @@ export default function EditProfileScreen() {
 
     setSaving(true);
     try {
-      // Determine which image path to save
+      // Update profile in backend - save the path, not the signed URL
       const rawPath = userProfile?.profileImage;
       const existingPath = rawPath && !rawPath.startsWith('http') ? rawPath : null;
       const imagePathToSave = profileImagePath || existingPath;
+      
+      // Combine country code with phone number
+      const phoneWithCountryCode = phone ? `${countryCode.code}${phone}` : undefined;
       
       // Update profile in backend - save the path, not the signed URL
       const { data, error } = await userService.updateUserProfile(user.id, {
         name,
         email,
-        phone,
+        phone: phoneWithCountryCode,
         address: validatedAddress || address || undefined,
         profileImage: imagePathToSave || undefined,
       });

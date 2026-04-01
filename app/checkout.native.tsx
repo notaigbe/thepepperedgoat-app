@@ -170,6 +170,7 @@ function CheckoutContent() {
   // ── State ──────────────────────────────────────────────────────────
   const [orderType, setOrderType]         = useState<OrderType>('pickup');
   const [deliveryAddress, setDeliveryAddress] = useState(userProfile?.address || '');
+  const [phone, setPhone]                 = useState(userProfile?.phone || '');
   const [pickupNotes, setPickupNotes]     = useState('');
   // const [usePoints, setUsePoints]         = useState(false);
   const [processing, setProcessing]       = useState(false);
@@ -200,12 +201,15 @@ function CheckoutContent() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType]       = useState<'success' | 'error' | 'info'>('success');
 
-  // ── Sync saved address from profile ────────────────────────────────
+  // ── Sync saved address and phone from profile ────────────────────────────────
   useEffect(() => {
     if (userProfile?.address && !deliveryAddress) {
       setDeliveryAddress(userProfile.address);
     }
-  }, [userProfile?.address]);
+    if (userProfile?.phone && !phone) {
+      setPhone(userProfile.phone);
+    }
+  }, [userProfile?.address, userProfile?.phone, deliveryAddress, phone]);
 
   // ── Computed values ────────────────────────────────────────────────
   // const availablePoints       = userProfile?.points || 0;
@@ -299,65 +303,6 @@ function CheckoutContent() {
     }
   }, []);
 
-  const handleSelectSuggestion = useCallback(async (prediction: PlacesPrediction) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setShowSuggestions(false);
-    setPlaceSuggestions([]);
-    setSuggestionSelected(true);
-    Keyboard.dismiss();
-
-    let chosenAddress = prediction.description;
-
-    if (GOOGLE_PLACES_API_KEY) {
-      try {
-        const url = new URL('https://maps.googleapis.com/maps/api/place/details/json');
-        url.searchParams.set('place_id', prediction.place_id);
-        url.searchParams.set('key', GOOGLE_PLACES_API_KEY);
-        url.searchParams.set('fields', 'formatted_address');
-
-        const response = await fetch(url.toString());
-        const data     = await response.json();
-        if (data.status === 'OK' && data.result?.formatted_address) {
-          chosenAddress = data.result.formatted_address;
-        }
-      } catch {
-        // fall back to prediction.description
-      }
-    }
-
-    setDeliveryAddress(chosenAddress);
-    setValidatedAddress(chosenAddress);
-    setAddressTouched(true);
-    setDeliveryQuote(null);
-    setQuoteError(null);
-    setAddressValidation(null);
-    setOutsideRadiusError(null);
-
-    validateAddress(chosenAddress);
-  }, []);
-
-  const handleAddressChange = useCallback((text: string) => {
-    setDeliveryAddress(text);
-    setAddressTouched(true);
-    setSuggestionSelected(false);
-    setDeliveryQuote(null);
-    setQuoteError(null);
-    setOutsideRadiusError(null);
-
-    if (text.trim().length >= 3) {
-      placesDebounceRef.current = setTimeout(() => fetchPlaceSuggestions(text), 350);
-    } else {
-      setPlaceSuggestions([]);
-      setShowSuggestions(false);
-    }
-  }, [fetchPlaceSuggestions]);
-
-  useEffect(() => {
-    return () => {
-      if (placesDebounceRef.current) clearTimeout(placesDebounceRef.current);
-    };
-  }, []);
-
   // ── Address validation ─────────────────────────────────────────────
   const validateAddress = useCallback(async (address: string, apt?: string) => {
     if (!address || address.trim().length < 5) {
@@ -449,6 +394,124 @@ function CheckoutContent() {
     }
   }, []);
 
+  const handleSelectSuggestion = useCallback(async (prediction: PlacesPrediction) => {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  setShowSuggestions(false);
+  setPlaceSuggestions([]);
+  setSuggestionSelected(true);
+  Keyboard.dismiss();
+
+  if (!GOOGLE_PLACES_API_KEY) return;
+
+  try {
+    const url = new URL('https://maps.googleapis.com/maps/api/place/details/json');
+    url.searchParams.set('place_id', prediction.place_id);
+    url.searchParams.set('key', GOOGLE_PLACES_API_KEY);
+    // Request address_components so we can build the structured UberAddress
+    url.searchParams.set('fields', 'formatted_address,address_components');
+
+    const response = await fetch(url.toString());
+    const data = await response.json();
+
+    if (data.status !== 'OK' || !data.result) {
+      // Fallback to prediction description if details call fails
+      setDeliveryAddress(prediction.description);
+      setValidatedAddress(prediction.description);
+      setAddressTouched(true);
+      validateAddress(prediction.description);
+      return;
+    }
+
+    const { formatted_address, address_components } = data.result;
+    const chosenAddress = formatted_address || prediction.description;
+
+    // ── Build structured UberAddress from address_components ──────────────
+    const get = (type: string) =>
+      address_components?.find((c: any) => c.types.includes(type));
+
+    const streetNumber = get('street_number')?.long_name ?? '';
+    const route        = get('route')?.long_name ?? '';
+    const city         =
+      get('locality')?.long_name ??
+      get('sublocality_level_1')?.long_name ??
+      get('administrative_area_level_2')?.long_name ?? '';
+    const state        = get('administrative_area_level_1')?.short_name ?? '';
+    const zip          = get('postal_code')?.long_name ?? '';
+    const country      = get('country')?.short_name ?? 'US';
+
+    const streetLine   = [streetNumber, route].filter(Boolean).join(' ');
+
+    let builtUberAddress = '';
+    if (streetLine && city && state && zip) {
+      const uberAddr = {
+        street_address: [streetLine, ''] as [string, string],
+        city,
+        state,
+        zip_code: zip,
+        country,
+      };
+      builtUberAddress = JSON.stringify(uberAddr);
+      console.log('[autocomplete] Built UberAddress:', builtUberAddress);
+    } else {
+      console.warn('[autocomplete] Incomplete address_components — falling back to verify-address');
+    }
+
+    setDeliveryAddress(chosenAddress);
+    setValidatedAddress(chosenAddress);
+    setValidatedUberAddress(builtUberAddress);
+    setAddressTouched(true);
+    setDeliveryQuote(null);
+    setQuoteError(null);
+    setAddressValidation(null);
+    setOutsideRadiusError(null);
+
+    if (builtUberAddress) {
+      // We have a structured address — set validation as high confidence
+      // and go straight to fetching the quote, skipping verify-address
+      setAddressValidation({
+        success: true,
+        isValid: true,
+        formattedAddress: chosenAddress,
+        uberAddress: builtUberAddress,
+        confidence: 'high',
+        status: 'accept',
+      });
+      fetchDeliveryQuote(chosenAddress, builtUberAddress);
+    } else {
+      // Missing some components — fall back to verify-address for validation
+      validateAddress(chosenAddress);
+    }
+  } catch (err) {
+    console.error('[autocomplete] Place Details error:', err);
+    setDeliveryAddress(prediction.description);
+    setValidatedAddress(prediction.description);
+    setAddressTouched(true);
+    validateAddress(prediction.description);
+  }
+}, [fetchDeliveryQuote, validateAddress]);
+
+  const handleAddressChange = useCallback((text: string) => {
+    setDeliveryAddress(text);
+    setAddressTouched(true);
+    setSuggestionSelected(false);
+    setDeliveryQuote(null);
+    setQuoteError(null);
+    setOutsideRadiusError(null);
+
+    if (text.trim().length >= 3) {
+      placesDebounceRef.current = setTimeout(() => fetchPlaceSuggestions(text), 350);
+    } else {
+      setPlaceSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [fetchPlaceSuggestions]);
+
+  useEffect(() => {
+    return () => {
+      if (placesDebounceRef.current) clearTimeout(placesDebounceRef.current);
+    };
+  }, []);
+
   // Fetch quote after address validated
   useEffect(() => {
     if (
@@ -498,88 +561,82 @@ function CheckoutContent() {
 
   // ── Payment sheet ──────────────────────────────────────────────────
   const initializePaymentSheet = useCallback(async () => {
-    if (!userProfile) throw new Error('User profile not found');
+  if (!userProfile) throw new Error('User profile not found');
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Not authenticated');
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not authenticated');
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not found');
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not found');
 
-    const { data: customerData } = await supabase
-      .from('user_profiles')
-      .select('stripe_customer_id')
-      .eq('user_id', user.id)
-      .single<{ stripe_customer_id: string | null }>();
+  const { data: customerData } = await supabase
+    .from('user_profiles')
+    .select('stripe_customer_id')
+    .eq('user_id', user.id)
+    .single<{ stripe_customer_id: string | null }>();
 
-    let customerId = customerData?.stripe_customer_id;
+  let customerId = customerData?.stripe_customer_id;
 
-    if (!customerId) {
-      const r = await fetch(`${SUPABASE_URL}/functions/v1/create-stripe-customer`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ email: userProfile?.email || user.email, name: userProfile?.name }),
-      });
-      if (!r.ok) throw new Error('Failed to create Stripe customer');
-      const { customerId: newId } = await r.json();
-      customerId = newId;
-    }
-
-    if (orderType === 'delivery' && deliveryQuote && isQuoteExpired()) {
-      const addr = validatedAddress || deliveryAddress;
-      if (addr) await fetchDeliveryQuote(addr);
-    }
-
-    // const pointsUsed = usePoints ? Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE) : 0;
-    const orderItems = cart.map((item) => ({
-      id: item.id, name: item.name, price: item.price, quantity: item.quantity,
-    }));
-
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
+  if (!customerId) {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-stripe-customer`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        amount: Math.round(total * 100),
-        currency: 'usd',
-        customerId,
-        setupFutureUsage: 'off_session',
-        metadata: {
-          user_id: user.id,
-          order_type: orderType,
-          delivery_address:       orderType === 'delivery' ? (validatedAddress || deliveryAddress) : '',
-          delivery_address_uber:  orderType === 'delivery' ? (validatedUberAddress || '') : '',
-          pickup_notes:           pickupNotes || '',
-          items:                  JSON.stringify(orderItems),
-          subtotal:               subtotal.toFixed(2),
-          tax:                    tax.toFixed(2),
-          delivery_fee:           deliveryFee.toFixed(2),
-          total:                  total.toFixed(2),
-          discount:               discount.toFixed(2),
-          // points_earned:          pointsToEarn.toString(),
-          // points_used:            pointsUsed.toString(),
-          // points_discount:        pointsDiscount.toFixed(2),
-          item_count:             cart.length.toString(),
-          customer_name:          userProfile?.name || '',
-          customer_email:         userProfile?.email || user.email || '',
-          customer_phone:         userProfile?.phone || '',
-          uber_quote_id:          deliveryQuote?.quoteId || '',
-        },
-      }),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ email: userProfile?.email || user.email, name: userProfile?.name }),
     });
+    if (!res.ok) throw new Error('Failed to create Stripe customer');
+    const { customerId: newId } = await res.json();
+    customerId = newId;
+  }
 
-    if (!response.ok) throw new Error('Failed to create payment intent');
-    return response.json();
-  }, [
-    total, orderType, cart, userProfile, validatedAddress, deliveryAddress, pickupNotes,
-    subtotal, tax, discount, deliveryFee, deliveryQuote, isQuoteExpired, fetchDeliveryQuote, validatedUberAddress,
-  ]);
+  if (orderType === 'delivery' && deliveryQuote && isQuoteExpired()) {
+    const addr = validatedAddress || deliveryAddress;
+    if (addr) await fetchDeliveryQuote(addr, validatedUberAddress || undefined);
+  }
 
+  // const pointsUsed = usePoints ? Math.floor(pointsDiscount / POINTS_TO_DOLLAR_RATE) : 0;
+  const orderItems = cart.map((item) => ({
+    id: item.id, name: item.name, price: item.price, quantity: item.quantity,
+  }));
+
+  // ── Full order snapshot — goes to pending_orders, NOT Stripe metadata ──
+  const pendingOrderPayload = {
+    order_type: orderType,
+    delivery_address: orderType === 'delivery' ? (validatedAddress || deliveryAddress) : '',
+    delivery_address_uber: orderType === 'delivery' ? (validatedUberAddress || '') : '',
+    pickup_notes: pickupNotes || '',
+    items: orderItems,           // full objects, no JSON.stringify needed
+    subtotal: subtotal,
+    tax: tax,
+    delivery_fee: deliveryFee,
+    total: total,
+    discount: discount,
+    // points_earned: pointsToEarn,
+    // points_used: pointsUsed,
+    // points_discount: pointsDiscount,
+    customer_name: userProfile?.name || '',
+    customer_email: userProfile?.email || user.email || '',
+    customer_phone: phone || userProfile?.phone || '',
+    uber_quote_id: deliveryQuote?.quoteId || '',
+  };
+
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({
+      amount: Math.round(total * 100),
+      currency: 'usd',
+      customerId,
+      setupFutureUsage: 'off_session',
+      pendingOrder: pendingOrderPayload,  // ← replaces the old metadata blob
+    }),
+  });
+
+  if (!response.ok) throw new Error('Failed to create payment intent');
+  return response.json();
+}, [
+  total, orderType, cart, userProfile, validatedAddress, deliveryAddress, validatedUberAddress, pickupNotes, phone,
+  subtotal, tax, discount, deliveryFee, deliveryQuote, isQuoteExpired, fetchDeliveryQuote,
+]);
   // ── Order polling ──────────────────────────────────────────────────
   const waitForOrderCreation = useCallback(async (paymentIntentId: string): Promise<string> => {
     for (let attempt = 0; attempt < 30; attempt++) {
@@ -1459,6 +1516,22 @@ function CheckoutContent() {
                 {renderDeliveryQuoteCard()}
               </View>
             )}
+
+            {/* ── Contact Info ── */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Contact Information</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[styles.input, { color: INK_MID }]}
+                  placeholder="Phone number"
+                  placeholderTextColor={INK_SOFT}
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  editable={!processing}
+                />
+              </View>
+            </View>
 
             {/* ── Notes ── */}
             <View style={styles.section}>
