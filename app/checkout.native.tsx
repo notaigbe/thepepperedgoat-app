@@ -529,8 +529,11 @@ function CheckoutContent() {
       setDeliveryQuote(null);
       setQuoteError(null);
       setOutsideRadiusError(null);
+    } else if (orderType === 'delivery' && deliveryAddress.trim() && !addressTouched) {
+      // Auto-validate pre-filled address when delivery is selected
+      validateAddress(deliveryAddress);
     }
-  }, [orderType]);
+  }, [orderType, deliveryAddress, addressTouched, validateAddress]);
 
   // Auto-refresh quote before expiry
   useEffect(() => {
