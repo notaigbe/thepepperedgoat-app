@@ -17,6 +17,9 @@ import { IconSymbol } from '@/components/IconSymbol';
 import * as Haptics from 'expo-haptics';
 import Toast from '@/components/Toast';
 import { SUPABASE_URL, supabase } from '@/app/integrations/supabase/client';
+import { getOrderingStatusFromSettings } from '@/utils/orderingHours';
+import { storeSettingsService } from '@/services/supabaseService';
+import type { StoreSettings } from '@/services/supabaseService';
 import { StripeProvider, useStripe } from '@stripe/stripe-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
@@ -201,6 +204,10 @@ function CheckoutContent() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType]       = useState<'success' | 'error' | 'info'>('success');
 
+  // Store status
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
+  const [orderingStatus, setOrderingStatus] = useState(() => getOrderingStatusFromSettings(null));
+
   // ── Sync saved address and phone from profile ────────────────────────────────
   useEffect(() => {
     if (userProfile?.address && !deliveryAddress) {
@@ -210,6 +217,26 @@ function CheckoutContent() {
       setPhone(userProfile.phone);
     }
   }, [userProfile?.address, userProfile?.phone, deliveryAddress, phone]);
+
+  // ── Store status — fetch + realtime ───────────────────────────────────────
+  useEffect(() => {
+    storeSettingsService.getSettings().then(({ data }) => { if (data) setStoreSettings(data); });
+    const channel = supabase.channel("store-settings-checkout")
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, (payload) => {
+        if (payload.new) setStoreSettings(payload.new as StoreSettings);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  useEffect(() => {
+    setOrderingStatus(getOrderingStatusFromSettings(storeSettings));
+    const interval = setInterval(
+      () => setOrderingStatus(getOrderingStatusFromSettings(storeSettings)),
+      60_000,
+    );
+    return () => clearInterval(interval);
+  }, [storeSettings]);
 
   // ── Computed values ────────────────────────────────────────────────
   // const availablePoints       = userProfile?.points || 0;
@@ -714,6 +741,10 @@ function CheckoutContent() {
   ]);
 
   const handlePlaceOrder = useCallback(async () => {
+    if (!orderingStatus.isOpen) {
+      showToast('error', orderingStatus.message);
+      return;
+    }
     if (orderType === 'delivery') {
   if (!deliveryAddress.trim()) {
     showToast('error', 'Please enter a delivery address.');
@@ -777,7 +808,7 @@ function CheckoutContent() {
   }
 }
     await proceedWithPayment();
-  }, [orderType, deliveryAddress, addressTouched, addressValidation, outsideRadiusError, showToast, proceedWithPayment]);
+  }, [orderType, deliveryAddress, addressTouched, addressValidation, outsideRadiusError, orderingStatus, showToast, proceedWithPayment]);
 
   // ============================================================================
   // STYLES — Black · Gold · Silver

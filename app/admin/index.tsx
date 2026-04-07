@@ -18,7 +18,8 @@ import { blackGoldLight } from "@/styles/commonStyles";
 import { colors } from "@/styles/commonStyles";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/AuthContext";
-import { orderService } from "@/services/supabaseService";
+import { orderService, storeSettingsService } from "@/services/supabaseService";
+import type { StoreSettings } from "@/services/supabaseService";
 import { supabase } from "@/app/integrations/supabase/client";
 import { useApp } from "@/contexts/AppContext";
 import Dialog from "@/components/Dialog";
@@ -82,6 +83,16 @@ export default function AdminDashboard() {
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType]       = useState<"success" | "error" | "info">("success");
+
+  const [storeSettings, setStoreSettings]           = useState<StoreSettings | null>(null);
+  const [storeSettingsLoading, setStoreSettingsLoading] = useState(true);
+
+  const formatHour = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    const period = h >= 12 ? "PM" : "AM";
+    const hour = h % 12 || 12;
+    return `${hour}:${m.toString().padStart(2, "0")} ${period}`;
+  };
 
   const showDialog = (title: string, message: string, buttons: typeof dialogConfig.buttons) => {
     setDialogConfig({ title, message, buttons }); setDialogVisible(true);
@@ -181,6 +192,39 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (isAuthenticated && isAdmin && shouldShowAnalytics) fetchStats();
   }, [isAuthenticated, isAdmin, viewAsAdmin, fetchStats, shouldShowAnalytics]);
+
+  // ── Store settings ────────────────────────────────────────────────────────────
+  const loadStoreSettings = useCallback(async () => {
+    setStoreSettingsLoading(true);
+    const { data } = await storeSettingsService.getSettings();
+    if (data) setStoreSettings(data);
+    setStoreSettingsLoading(false);
+  }, []);
+
+  const handleStoreToggle = async (field: "always_open" | "manually_closed", value: boolean) => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Optimistic update
+    setStoreSettings((prev) => prev ? { ...prev, [field]: value } : prev);
+    const { error } = await storeSettingsService.updateSettings({ [field]: value });
+    if (error) {
+      // Revert on failure
+      setStoreSettings((prev) => prev ? { ...prev, [field]: !value } : prev);
+      showToast("error", "Failed to update store status");
+    } else {
+      showToast("success", "Store status updated");
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+    loadStoreSettings();
+    const channel = supabase.channel("store-settings-admin")
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, (payload) => {
+        if (payload.new) setStoreSettings(payload.new as StoreSettings);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAuthenticated, isAdmin, loadStoreSettings]);
 
   const visibleSections = ADMIN_SECTIONS.filter(
     (s) => !s.superAdminOnly || (isSuperAdmin && !viewAsAdmin)
@@ -418,6 +462,64 @@ export default function AdminDashboard() {
             </View>
           </>
         )}
+
+        {/* ── Store status ── */}
+        <Text style={styles.sectionLabel}>STORE STATUS</Text>
+        <View style={styles.storeCard}>
+          {storeSettingsLoading ? (
+            <ActivityIndicator color={D.gold} style={{ paddingVertical: 16 }} />
+          ) : (
+            <>
+              {/* Status badge */}
+              <View style={styles.storeStatusRow}>
+                <View style={[
+                  styles.statusDot,
+                  { backgroundColor: storeSettings?.manually_closed ? D.danger : storeSettings?.always_open ? D.success : D.gold },
+                ]} />
+                <Text style={styles.storeStatusText}>
+                  {storeSettings?.manually_closed
+                    ? "MANUALLY CLOSED"
+                    : storeSettings?.always_open
+                    ? "ALWAYS OPEN"
+                    : `SCHEDULED  ${formatHour(storeSettings?.ordering_open_time ?? "11:30")} – ${formatHour(storeSettings?.ordering_close_time ?? "20:00")}`}
+                </Text>
+              </View>
+
+              <View style={styles.storeDivider} />
+
+              {/* Always open toggle */}
+              <View style={styles.storeToggleRow}>
+                <View style={styles.storeToggleText}>
+                  <Text style={styles.storeToggleTitle}>Always Open</Text>
+                  <Text style={styles.storeToggleHint}>Override schedule — store is always accepting orders</Text>
+                </View>
+                <Switch
+                  value={!!storeSettings?.always_open}
+                  onValueChange={(v) => handleStoreToggle("always_open", v)}
+                  trackColor={{ false: D.dividerStrong, true: D.success + "66" }}
+                  thumbColor={storeSettings?.always_open ? D.success : D.textMuted}
+                  disabled={!!storeSettings?.manually_closed}
+                />
+              </View>
+
+              <View style={styles.storeDivider} />
+
+              {/* Manually closed toggle */}
+              <View style={styles.storeToggleRow}>
+                <View style={styles.storeToggleText}>
+                  <Text style={styles.storeToggleTitle}>Manually Closed</Text>
+                  <Text style={styles.storeToggleHint}>Force close — overrides schedule and always open</Text>
+                </View>
+                <Switch
+                  value={!!storeSettings?.manually_closed}
+                  onValueChange={(v) => handleStoreToggle("manually_closed", v)}
+                  trackColor={{ false: D.dividerStrong, true: D.danger + "66" }}
+                  thumbColor={storeSettings?.manually_closed ? D.danger : D.textMuted}
+                />
+              </View>
+            </>
+          )}
+        </View>
 
         {/* ── Navigation sections ── */}
         <Text style={styles.sectionLabel}>MANAGE</Text>
@@ -691,6 +793,58 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "700",
     letterSpacing: 2,
+    color: D.textMuted,
+  },
+
+  // ── Store status ──
+  storeCard: {
+    marginHorizontal: 20,
+    backgroundColor: D.surfaceRaised,
+    borderRadius: D.radius,
+    borderWidth: 1,
+    borderColor: D.dividerStrong,
+    overflow: "hidden",
+  },
+  storeStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  storeStatusText: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+    color: D.textPrimary,
+  },
+  storeDivider: {
+    height: 1,
+    backgroundColor: D.divider,
+    marginHorizontal: 16,
+  },
+  storeToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  storeToggleText: { flex: 1 },
+  storeToggleTitle: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: D.textPrimary,
+    letterSpacing: 0.2,
+    marginBottom: 2,
+  },
+  storeToggleHint: {
+    fontSize: 11,
     color: D.textMuted,
   },
 

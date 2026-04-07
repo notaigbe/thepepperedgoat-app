@@ -16,7 +16,10 @@ import { IconSymbol } from "@/components/IconSymbol";
 import * as Haptics from "expo-haptics";
 import { MenuItem } from "@/types";
 import { LinearGradient } from "expo-linear-gradient";
-import { getOrderingStatus } from "@/utils/orderingHours";
+import { getOrderingStatusFromSettings } from "@/utils/orderingHours";
+import { storeSettingsService } from "@/services/supabaseService";
+import type { StoreSettings } from "@/services/supabaseService";
+import { supabase } from "@/app/integrations/supabase/client";
 
 // ─── Spice helpers ────────────────────────────────────────────────────────────
 const SPICE_LABELS: Record<number, string> = {
@@ -39,8 +42,28 @@ export default function ItemDetailScreen() {
   const insets = useSafeAreaInsets();
   const { addToCart, currentColors, menuItems, menuCategories } = useApp();
 
-  const [orderingStatus] = useState(getOrderingStatus);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
+  const [orderingStatus, setOrderingStatus] = useState(() => getOrderingStatusFromSettings(null));
   const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    storeSettingsService.getSettings().then(({ data }) => { if (data) setStoreSettings(data); });
+    const channel = supabase.channel("store-settings-item-detail")
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, (payload) => {
+        if (payload.new) setStoreSettings(payload.new as StoreSettings);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  useEffect(() => {
+    setOrderingStatus(getOrderingStatusFromSettings(storeSettings));
+    const interval = setInterval(
+      () => setOrderingStatus(getOrderingStatusFromSettings(storeSettings)),
+      60_000,
+    );
+    return () => clearInterval(interval);
+  }, [storeSettings]);
   const [item, setItem] = useState<MenuItem | null>(null);
   const [lastAddedQuantity, setLastAddedQuantity] = useState(1);
   const [showNotification, setShowNotification] = useState(false);

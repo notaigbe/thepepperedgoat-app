@@ -1899,3 +1899,50 @@ export const imageService = {
     }
   },
 };
+
+// ============================================
+// STORE SETTINGS SERVICE
+// ============================================
+
+export type StoreSettings = {
+  id: string;
+  always_open: boolean;
+  manually_closed: boolean;
+  ordering_open_time: string;
+  ordering_close_time: string;
+  updated_at: string | null;
+};
+
+export const storeSettingsService = {
+  async getSettings(): Promise<{ data: StoreSettings | null; error: any }> {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('store_settings')
+        .select('*')
+        .eq('id', 'singleton')
+        .single();
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Get store settings error:', error);
+      return { data: null, error };
+    }
+  },
+
+  async updateSettings(
+    updates: Partial<Pick<StoreSettings, 'always_open' | 'manually_closed'>>
+  ): Promise<{ data: StoreSettings | null; error: any }> {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('store_settings')
+        .upsert({ id: 'singleton', ...updates, updated_at: new Date().toISOString() })
+        .select()
+        .single();
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Update store settings error:', error);
+      return { data: null, error };
+    }
+  },
+};

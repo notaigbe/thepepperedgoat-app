@@ -1,9 +1,8 @@
 // ─── Ordering hours (Los Angeles time) ───────────────────────────────────────
-// Kitchen open: 12:00 PM – 8:00 PM daily.
-// Ordering opens 30 minutes early at 11:30 AM.
+// Status is driven by store_settings in the database.
+// Falls back to defaults (11:30 AM – 8:00 PM) when settings are not yet loaded.
 
-const ORDERING_OPEN_MINUTES  = 11 * 60 + 30; // 11:30 AM
-const ORDERING_CLOSE_MINUTES = 20 * 60;       // 8:00 PM
+import type { StoreSettings } from "@/services/supabaseService";
 
 function getLAMinutes(): number {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -17,18 +16,44 @@ function getLAMinutes(): number {
   return hour * 60 + minute;
 }
 
+function formatPT(h: number, m: number): string {
+  const period = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour}:${m.toString().padStart(2, "0")} ${period} (PT)`;
+}
+
 export interface OrderingStatus {
   isOpen: boolean;
   message: string;
 }
 
-export function getOrderingStatus(): OrderingStatus {
-  const mins = getLAMinutes();
-  if (mins >= ORDERING_OPEN_MINUTES && mins < ORDERING_CLOSE_MINUTES) {
+export function getOrderingStatusFromSettings(settings: StoreSettings | null): OrderingStatus {
+  if (settings?.manually_closed) {
+    return { isOpen: false, message: "We're currently closed." };
+  }
+  if (settings?.always_open) {
     return { isOpen: true, message: "" };
   }
-  if (mins < ORDERING_OPEN_MINUTES) {
-    return { isOpen: false, message: "Ordering opens at 11:30 AM (PT)" };
+
+  // Scheduled — use DB times or defaults
+  const openTime  = settings?.ordering_open_time  ?? "11:30";
+  const closeTime = settings?.ordering_close_time ?? "20:00";
+  const [openH,  openM]  = openTime.split(":").map(Number);
+  const [closeH, closeM] = closeTime.split(":").map(Number);
+  const openMinutes  = openH  * 60 + openM;
+  const closeMinutes = closeH * 60 + closeM;
+
+  const mins = getLAMinutes();
+  if (mins >= openMinutes && mins < closeMinutes) {
+    return { isOpen: true, message: "" };
   }
-  return { isOpen: false, message: "Ordering closed — reopens at 11:30 AM (PT)" };
+  if (mins < openMinutes) {
+    return { isOpen: false, message: `Ordering opens at ${formatPT(openH, openM)}` };
+  }
+  return { isOpen: false, message: `Ordering closed — reopens at ${formatPT(openH, openM)}` };
+}
+
+/** Backward-compatible wrapper used by cart and item-detail until they are refactored. */
+export function getOrderingStatus(): OrderingStatus {
+  return getOrderingStatusFromSettings(null);
 }

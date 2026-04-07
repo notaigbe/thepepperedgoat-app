@@ -20,11 +20,13 @@ import { useRouter } from "expo-router";
 import { IconSymbol } from "@/components/IconSymbol";
 import { useApp } from "@/contexts/AppContext";
 import * as Haptics from "expo-haptics";
-import { imageService } from "@/services/supabaseService";
+import { imageService, storeSettingsService } from "@/services/supabaseService";
+import type { StoreSettings } from "@/services/supabaseService";
+import { supabase } from "@/app/integrations/supabase/client";
 import Toast from "@/components/Toast";
 import { LinearGradient } from "expo-linear-gradient";
 import { blackGoldLight } from "@/styles/commonStyles";
-import { getOrderingStatus } from "@/utils/orderingHours";
+import { getOrderingStatusFromSettings } from "@/utils/orderingHours";
 
 // ─── Card geometry ────────────────────────────────────────────────────
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -320,12 +322,29 @@ export default function HomeScreen() {
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType]       = useState<"success" | "error" | "info">("success");
-  const [orderingStatus, setOrderingStatus] = useState(getOrderingStatus);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
+  const [orderingStatus, setOrderingStatus] = useState(() => getOrderingStatusFromSettings(null));
 
+  // Fetch settings once, then keep in sync via realtime
   useEffect(() => {
-    const interval = setInterval(() => setOrderingStatus(getOrderingStatus()), 60_000);
-    return () => clearInterval(interval);
+    storeSettingsService.getSettings().then(({ data }) => { if (data) setStoreSettings(data); });
+    const channel = supabase.channel("store-settings-home")
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, (payload) => {
+        if (payload.new) setStoreSettings(payload.new as StoreSettings);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // Recompute status when settings change or every minute (for scheduled open/close)
+  useEffect(() => {
+    setOrderingStatus(getOrderingStatusFromSettings(storeSettings));
+    const interval = setInterval(
+      () => setOrderingStatus(getOrderingStatusFromSettings(storeSettings)),
+      60_000,
+    );
+    return () => clearInterval(interval);
+  }, [storeSettings]);
 
   const unreadCount = getUnreadNotificationCount();
 

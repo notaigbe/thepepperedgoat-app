@@ -1,6 +1,6 @@
 import { useApp } from '@/contexts/AppContext';
 import type { CartItem } from '@/contexts/AppContext';
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,7 +21,10 @@ import {
 import { IconSymbol } from '@/components/IconSymbol';
 import Dialog from '@/components/Dialog';
 import { blackGoldLight } from "@/styles/commonStyles";
-import { getOrderingStatus } from "@/utils/orderingHours";
+import { getOrderingStatusFromSettings } from "@/utils/orderingHours";
+import { storeSettingsService } from "@/services/supabaseService";
+import type { StoreSettings } from "@/services/supabaseService";
+import { supabase } from "@/app/integrations/supabase/client";
 // import swallowImage from '@/assets/images/swallow.jpeg';
 // import soupImage from '@/assets/images/soup.jpg';
 
@@ -37,8 +40,28 @@ export default function CartScreen() {
   const router = useRouter();
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogType, setDialogType] = useState<'remove' | 'empty' | 'signin' | 'closed'>('remove');
-  const [orderingStatus] = useState(getOrderingStatus);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
+  const [orderingStatus, setOrderingStatus] = useState(() => getOrderingStatusFromSettings(null));
   const [itemToRemove, setItemToRemove] = useState<string | null>(null);
+
+  useEffect(() => {
+    storeSettingsService.getSettings().then(({ data }) => { if (data) setStoreSettings(data); });
+    const channel = supabase.channel("store-settings-cart")
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, (payload) => {
+        if (payload.new) setStoreSettings(payload.new as StoreSettings);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  useEffect(() => {
+    setOrderingStatus(getOrderingStatusFromSettings(storeSettings));
+    const interval = setInterval(
+      () => setOrderingStatus(getOrderingStatusFromSettings(storeSettings)),
+      60_000,
+    );
+    return () => clearInterval(interval);
+  }, [storeSettings]);
   const [swallowDrawerVisible, setSwallowDrawerVisible] = useState(false);
   const [soupDrawerVisible, setSoupDrawerVisible] = useState(false);
   const drawerAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
