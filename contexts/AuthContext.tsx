@@ -10,6 +10,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string, phone?: string, inviteCode?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
   isAuthenticated: boolean;
 }
 
@@ -148,6 +149,18 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://thepepperedgoat.com/reset-password',
+      });
+      if (error) return { error };
+      return { error: null };
+    } catch (error: any) {
+      return { error };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -157,6 +170,7 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess
         signIn,
         signUp,
         signOut,
+        resetPassword,
         isAuthenticated: !!session,
       }}
     >

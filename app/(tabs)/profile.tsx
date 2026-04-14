@@ -35,7 +35,7 @@ const STORAGE_KEYS = {
 export default function ProfileScreen() {
   const router = useRouter();
   const { currentColors, userProfile, showToast, loadUserProfile } = useApp();
-  const { isAuthenticated, signIn, signUp, signOut } = useAuth();
+  const { isAuthenticated, signIn, signUp, signOut, resetPassword } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -228,6 +228,25 @@ export default function ProfileScreen() {
     if (!newValue) await clearSavedCredentials();
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      showLocalToast('info', 'Enter your email above, then tap "Forgot password?"');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showLocalToast('error', 'Please enter a valid email address');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await resetPassword(email);
+      if (error) showLocalToast('error', error.message || 'Failed to send reset email');
+      else showLocalToast('success', 'Password reset email sent — check your inbox');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ── Auth screen ──────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
@@ -302,12 +321,17 @@ export default function ProfileScreen() {
                 </View>
 
                 {!isSignUp && (
-                  <Pressable style={styles.rememberMeContainer} onPress={toggleRememberMe} disabled={loading}>
-                    <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
-                      {rememberMe && <IconSymbol name="checkmark" size={12} color={blackGoldLight.INK_WHITE} />}
-                    </View>
-                    <Text style={styles.rememberMeText}>Remember me</Text>
-                  </Pressable>
+                  <>
+                    <Pressable style={styles.rememberMeContainer} onPress={toggleRememberMe} disabled={loading}>
+                      <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
+                        {rememberMe && <IconSymbol name="checkmark" size={12} color={blackGoldLight.INK_WHITE} />}
+                      </View>
+                      <Text style={styles.rememberMeText}>Remember me</Text>
+                    </Pressable>
+                    <Pressable style={styles.forgotPasswordButton} onPress={handleForgotPassword} disabled={loading}>
+                      <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                    </Pressable>
+                  </>
                 )}
 
                 {isSignUp && (
@@ -640,6 +664,12 @@ const styles = StyleSheet.create({
     // Gold highlight on the action word
     color: blackGoldLight.GOLD,
     fontFamily: 'LibertinusSans_700Bold',
+  },
+  forgotPasswordButton: { alignSelf: 'flex-end', marginBottom: 14, marginTop: -4 },
+  forgotPasswordText: {
+    fontSize: 13,
+    fontFamily: 'LibertinusSans_400Regular',
+    color: blackGoldLight.GOLD,
   },
 
   // ── Profile header ───────────────────────────────────────────────────────
