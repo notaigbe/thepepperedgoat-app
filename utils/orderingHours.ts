@@ -5,15 +5,21 @@
 import type { StoreSettings } from "@/services/supabaseService";
 
 function getLAMinutes(): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Los_Angeles",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: false,
-  }).formatToParts(new Date());
-  const hour   = parseInt(parts.find((p) => p.type === "hour")!.value, 10);
-  const minute = parseInt(parts.find((p) => p.type === "minute")!.value, 10);
-  return hour * 60 + minute;
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Los_Angeles",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: false,
+    }).formatToParts(new Date());
+    const hour   = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+    const minute = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+    return (hour % 24) * 60 + minute;
+  } catch {
+    // Fallback to device local time if Intl timezone support is unavailable
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  }
 }
 
 function formatPT(h: number, m: number): string {
