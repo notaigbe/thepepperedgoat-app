@@ -2,11 +2,11 @@
   "expo": {
     "name": "The Peppered Goat",
     "slug": "the-peppered-goat",
-    "version": "1.6.0",
+    "version": "1.6.1",
     "orientation": "portrait",
     "icon": "./assets/images/peppered-goat-logo.jpg",
     "userInterfaceStyle": "automatic",
-    // "newArchEnabled": true,
+    
     "splash": {
       "image": "./assets/images/peppered-goat-logo.jpg",
       "resizeMode": "contain",
@@ -26,7 +26,7 @@
         "foregroundImage": "./assets/images/peppered-goat-logo.jpg",
         "backgroundColor": "#000000"
       },
-      // "edgeToEdgeEnabled": true,
+      
       "package": "com.ooosumfoods.thepepperedgoat"
     },
     "web": {
