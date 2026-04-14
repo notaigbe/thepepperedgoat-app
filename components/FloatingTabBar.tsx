@@ -34,7 +34,7 @@ export default function FloatingTabBar({ tabs }: FloatingTabBarProps) {
   const { cart } = useApp();
 
   const handleTabPress = (route: string) => {
-    router.push(route as any);
+    router.navigate(route as any);
   };
 
   const isActive = (route: string) => {
