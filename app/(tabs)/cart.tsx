@@ -51,7 +51,10 @@ export default function CartScreen() {
         if (payload.new) setStoreSettings(payload.new as StoreSettings);
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      channel.unsubscribe();
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {

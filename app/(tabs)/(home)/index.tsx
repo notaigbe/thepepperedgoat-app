@@ -333,7 +333,10 @@ export default function HomeScreen() {
         if (payload.new) setStoreSettings(payload.new as StoreSettings);
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      channel.unsubscribe();
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Recompute status when settings change or every minute (for scheduled open/close)
@@ -365,10 +368,10 @@ export default function HomeScreen() {
     fetchHeaderImage();
   }, []);
 
-  useEffect(() => {
-    if (menuItems.length === 0) { setLoading(true); loadMenuItems().finally(() => setLoading(false)); }
-    if (menuCategories.length === 0) loadMenuCategories();
-  }, [menuItems.length, menuCategories.length, loadMenuItems, loadMenuCategories]);
+  // AppContext already loads menu data on mount — just track loading state here
+useEffect(() => {
+  setLoading(menuItems.length === 0);
+}, [menuItems.length]);
 
   const filteredItems = useMemo(() => {
     return menuItems.filter((item) => {

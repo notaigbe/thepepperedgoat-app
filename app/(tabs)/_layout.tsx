@@ -41,6 +41,7 @@ export default function TabLayout() {
           animation: 'none',
           contentStyle: { backgroundColor: colors.background },
         }}
+        detachInactiveScreens={false}
       >
         <Stack.Screen name="(home)" />
         <Stack.Screen name="cart" />

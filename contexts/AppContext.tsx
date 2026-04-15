@@ -59,6 +59,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const orderChannelRef = useRef<RealtimeChannel | null>(null);
+  const userRef = useRef(user);
+  userRef.current = user; // always fresh, but no effect re-fires
+  const profileLoadedForRef = useRef<string | null>(null);
+  const subscriptionSetupForRef = useRef<string | null>(null);
   const [toast, setToast] = useState<ToastConfig>({
     visible: false,
     message: '',
@@ -118,29 +122,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const loadUserProfile = useCallback(async () => {
-    if (!user) return;
+    const currentUser = userRef.current;
+    if (!currentUser) return;
     try {
-      console.log('Loading user profile for:', user.id);
-      const { data: profile, error } = await userService.getUserProfile(user.id);
+      console.log('Loading user profile for:', currentUser.id);
+      const { data: profile, error } = await userService.getUserProfile(currentUser.id);
       if (error) { console.error('Error loading user profile:', error); return; }
       if (!profile) {
         console.log('No profile found, creating default profile');
         await (supabase
           .from('user_profiles')
           .insert({
-            id: user.id,
-            user_id: user.id,
-            name: user.user_metadata?.name || 'User',
-            email: user.email || '',
-            phone: user.user_metadata?.phone || '',
+            id: currentUser.id,
+            user_id: currentUser.id,
+            name: currentUser.user_metadata?.name || 'User',
+            email: currentUser.email || '',
+            phone: currentUser.user_metadata?.phone || '',
             points: 0,
             user_role: 'user',
           } as any) as unknown) as { data: Database['public']['Tables']['user_profiles']['Row'][] | null; error: any };
         return loadUserProfile();
       }
-      const { data: orders } = await orderService.getOrderHistory(user.id);
-      const { data: paymentMethods } = await paymentMethodService.getPaymentMethods(user.id);
-      const { data: notifications } = await notificationService.getNotifications(user.id);
+      const { data: orders } = await orderService.getOrderHistory(currentUser.id);
+      const { data: paymentMethods } = await paymentMethodService.getPaymentMethods(currentUser.id);
+      const { data: notifications } = await notificationService.getNotifications(currentUser.id);
 
       const fullProfile: UserProfile = {
         id: profile.id,
@@ -194,66 +199,81 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Error loading user profile:', error);
     }
-  }, [user]);
+  }, []); // stable — reads user from userRef
 
   useEffect(() => {
     loadMenuItems();
     loadMenuCategories();
   }, [loadMenuItems, loadMenuCategories]);
 
+  // ─── Load profile once per user id ───────────────────────────────────
+  const userId = user?.id;
+
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && userId) {
+      if (profileLoadedForRef.current === userId) return; // already loaded
+      profileLoadedForRef.current = userId;
       loadUserProfile();
     } else {
+      profileLoadedForRef.current = null;
       setUserProfile(null);
     }
-  }, [isAuthenticated, user, loadUserProfile]);
+  }, [isAuthenticated, userId, loadUserProfile]);
 
   useEffect(() => {
-    if (!isAuthenticated || !user) {
-      if (orderChannelRef.current) {
-        supabase.removeChannel(orderChannelRef.current);
-        orderChannelRef.current = null;
-      }
-      return;
-    }
-    if ((orderChannelRef.current?.state as any) === 'subscribed') return;
-
-    const setupRealtimeSubscription = async () => {
-      console.log('Setting up real-time order subscription for user:', user.id);
-      const channel = supabase.channel(`orders-${user.id}`);
-      orderChannelRef.current = channel;
-      channel
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, (payload) => {
-          console.log('New order created:', payload);
-          showToast('New order placed!', 'success');
-          loadUserProfile();
-        })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, (payload) => {
-          console.log('Order updated:', payload);
-          const order = payload.new as any;
-          showToast(`Order status updated to: ${order.status}`, 'info');
-          loadUserProfile();
-        })
-        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, (payload) => {
-          console.log('Order deleted:', payload);
-          loadUserProfile();
-        })
-        .subscribe((status, err) => {
-          console.log('Order subscription status:', status);
-          if (err) console.error('Order subscription error:', err);
-        });
-    };
-
-    setupRealtimeSubscription();
-    return () => {
+    if (!isAuthenticated || !userId) {
       if (orderChannelRef.current) {
         console.log('Cleaning up order subscription');
         supabase.removeChannel(orderChannelRef.current);
         orderChannelRef.current = null;
       }
+      subscriptionSetupForRef.current = null;
+      return;
+    }
+
+    // Already subscribed for this user — skip
+    if (subscriptionSetupForRef.current === userId) return;
+    subscriptionSetupForRef.current = userId;
+
+    // Clean up any stale channel before creating a new one
+    if (orderChannelRef.current) {
+      supabase.removeChannel(orderChannelRef.current);
+      orderChannelRef.current = null;
+    }
+
+    console.log('Setting up real-time order subscription for user:', userId);
+    const channel = supabase.channel(`orders-${userId}`);
+    orderChannelRef.current = channel;
+    channel
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `user_id=eq.${userId}` }, (payload) => {
+        console.log('New order created:', payload);
+        showToast('New order placed!', 'success');
+        loadUserProfile();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `user_id=eq.${userId}` }, (payload) => {
+        console.log('Order updated:', payload);
+        const order = payload.new as any;
+        showToast(`Order status updated to: ${order.status}`, 'info');
+        loadUserProfile();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'orders', filter: `user_id=eq.${userId}` }, (payload) => {
+        console.log('Order deleted:', payload);
+        loadUserProfile();
+      })
+      .subscribe((status, err) => {
+        console.log('Order subscription status:', status);
+        if (err) console.error('Order subscription error:', err);
+      });
+
+    return () => {
+      if (orderChannelRef.current) {
+        console.log('Cleaning up order subscription');
+        supabase.removeChannel(orderChannelRef.current);
+        orderChannelRef.current = null;
+        subscriptionSetupForRef.current = null;
+      }
     };
-  }, [isAuthenticated, user, loadUserProfile]);
+  }, [isAuthenticated, userId, loadUserProfile]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // THEME — light body with dark header, black/white palette
