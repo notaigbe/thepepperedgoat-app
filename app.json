@@ -2,11 +2,10 @@
   "expo": {
     "name": "The Peppered Goat",
     "slug": "the-peppered-goat",
-    "version": "1.6.3",
+    "version": "1.6.5",
     "orientation": "portrait",
     "icon": "./assets/images/peppered-goat-logo.jpg",
     "userInterfaceStyle": "automatic",
-    
     "splash": {
       "image": "./assets/images/peppered-goat-logo.jpg",
       "resizeMode": "contain",
@@ -26,7 +25,6 @@
         "foregroundImage": "./assets/images/peppered-goat-logo.jpg",
         "backgroundColor": "#000000"
       },
-      
       "package": "com.ooosumfoods.thepepperedgoat"
     },
     "web": {
@@ -45,14 +43,7 @@
         }
       ],
       "expo-build-properties",
-      "expo-sharing",
-    //   [
-    //   "@sentry/react-native/expo",
-    //   {
-    //     "organization": "gnotable-technologies",  // ← must match exactly
-    //     "project": "com.ooosumfoods.thepepperedgoat"    // ← must match exactly
-    //   }
-    // ]
+      "expo-sharing"
     ],
     "scheme": "thepepperedgoat",
     "experiments": {
@@ -63,6 +54,12 @@
       "eas": {
         "projectId": "85dee9c3-316f-4103-bdcb-6c322c575992"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/85dee9c3-316f-4103-bdcb-6c322c575992"
     }
   }
 }
