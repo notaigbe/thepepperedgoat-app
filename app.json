@@ -46,13 +46,13 @@
       ],
       "expo-build-properties",
       "expo-sharing",
-      [
-      "@sentry/react-native/expo",
-      {
-        "organization": "gnotable-technologies",  // ← must match exactly
-        "project": "com.ooosumfoods.thepepperedgoat"    // ← must match exactly
-      }
-    ]
+    //   [
+    //   "@sentry/react-native/expo",
+    //   {
+    //     "organization": "gnotable-technologies",  // ← must match exactly
+    //     "project": "com.ooosumfoods.thepepperedgoat"    // ← must match exactly
+    //   }
+    // ]
     ],
     "scheme": "thepepperedgoat",
     "experiments": {
