@@ -326,18 +326,26 @@ export default function HomeScreen() {
   const [orderingStatus, setOrderingStatus] = useState(() => getOrderingStatusFromSettings(null));
 
   // Fetch settings once, then keep in sync via realtime
-  useEffect(() => {
-    storeSettingsService.getSettings().then(({ data }) => { if (data) setStoreSettings(data); });
-    const channel = supabase.channel("store-settings-home")
-      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, (payload) => {
+useEffect(() => {
+  storeSettingsService.getSettings().then(({ data }) => {
+    if (data) setStoreSettings(data);
+  });
+
+  const channelName = `store-settings-home-${Date.now()}`;
+  const channel = supabase
+    .channel(channelName)
+    .on("postgres_changes",
+      { event: "*", schema: "public", table: "store_settings" },
+      (payload) => {
         if (payload.new) setStoreSettings(payload.new as StoreSettings);
-      })
-      .subscribe();
-    return () => {
-      channel.unsubscribe();
-      supabase.removeChannel(channel);
-    };
-  }, []);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, []);
 
   // Recompute status when settings change or every minute (for scheduled open/close)
   useEffect(() => {

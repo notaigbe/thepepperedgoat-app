@@ -44,18 +44,26 @@ export default function CartScreen() {
   const [orderingStatus, setOrderingStatus] = useState(() => getOrderingStatusFromSettings(null));
   const [itemToRemove, setItemToRemove] = useState<string | null>(null);
 
-  useEffect(() => {
-    storeSettingsService.getSettings().then(({ data }) => { if (data) setStoreSettings(data); });
-    const channel = supabase.channel("store-settings-cart")
-      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, (payload) => {
+useEffect(() => {
+  storeSettingsService.getSettings().then(({ data }) => {
+    if (data) setStoreSettings(data);
+  });
+
+  const channelName = `store-settings-cart-${Date.now()}`;
+  const channel = supabase
+    .channel(channelName)
+    .on("postgres_changes",
+      { event: "*", schema: "public", table: "store_settings" },
+      (payload) => {
         if (payload.new) setStoreSettings(payload.new as StoreSettings);
-      })
-      .subscribe();
-    return () => {
-      channel.unsubscribe();
-      supabase.removeChannel(channel);
-    };
-  }, []);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, []);
 
   useEffect(() => {
     setOrderingStatus(getOrderingStatusFromSettings(storeSettings));
