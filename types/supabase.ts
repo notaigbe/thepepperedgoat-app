@@ -261,7 +261,7 @@ export type Database = {
           doordash_delivery_status: string | null
           doordash_proof_of_delivery: Json | null
           doordash_tracking_url: string | null
-          full_name: string | null
+          customer_name: string | null
           id: string
           order_number: number
           payment_id: string | null
@@ -297,7 +297,7 @@ export type Database = {
           doordash_delivery_status?: string | null
           doordash_proof_of_delivery?: Json | null
           doordash_tracking_url?: string | null
-          full_name?: string | null
+          customer_name?: string | null
           id?: string
           order_number?: number
           payment_id?: string | null
@@ -333,7 +333,7 @@ export type Database = {
           doordash_delivery_status?: string | null
           doordash_proof_of_delivery?: Json | null
           doordash_tracking_url?: string | null
-          full_name?: string | null
+          customer_name?: string | null
           id?: string
           order_number?: number
           payment_id?: string | null
